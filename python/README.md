@@ -27,7 +27,7 @@ ships exactly the `nodes.core` subpackage.
 
 The language-neutral format and behavior specification, both
 implementations, and the shared conformance fixtures live at
-<https://github.com/nodes-dev/core>.
+<https://github.com/verifiably/nodes>.
 
 ## License
 

@@ -5,11 +5,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nodes-dev/core.git",
+    "url": "git+https://github.com/verifiably/nodes.git",
     "directory": "ts"
   },
-  "homepage": "https://github.com/nodes-dev/core",
-  "bugs": { "url": "https://github.com/nodes-dev/core/issues" },
+  "homepage": "https://github.com/verifiably/nodes",
+  "bugs": { "url": "https://github.com/verifiably/nodes/issues" },
   "type": "module",
   "engines": { "node": ">=20" },
   "packageManager": "npm@11.11.0",
