@@ -4,8 +4,14 @@
 **Status:** Draft — direction approved 2026-08-03; detailed review pending
 **Authority:** `docs/STANDARD.md` 1.2 remains normative until the amendments below land.
 **Consumer requirements:** science's four system-redesign designs of 2026-08-02 (epistemic
-kernel, substrate consolidation, world addressing, computation & reproducibility), in the
-science repository's `system-redesign` worktree.
+kernel, substrate consolidation, world addressing, computation & reproducibility).
+
+> **Consumer state, 2026-08-08.** Those four designs are banked on science's `main`, and the
+> corpus around them has grown to sixteen. None of the later designs changes a delta below —
+> the domain-extension boundary of 2026-08-04 makes a point of costing **zero `nodes` delta**
+> — but two of them touch this document and are noted at their sites: the tamper-evident log
+> is a second consumer of §2.2, and the domain boundary asks for one parity fixture whose
+> owning repository is not yet settled (§5).
 
 ## 1. Why
 
@@ -54,6 +60,12 @@ survives by accident of the glob.
 - Traversal escape: no walk follows a symlink — file or directory, at any depth (today
   only the first path component is checked against `.nodes-index/`); every yielded path
   resolves within the root.
+
+*(2026-08-08:)* science has a second consumer — its tamper-evident log design of 2026-08-03
+puts each engine root's hash chain at a reserved in-corpus path, after `corpus.yaml`. The
+contract above already covers it, because the guarantee is stated over all non-`*.md`
+content rather than over an enumerated list of consumer paths. Recorded because it is the
+first evidence that this clause is load-bearing for more than the manifest.
 
 ### 2.3 Recoverable construction
 
@@ -134,8 +146,9 @@ stops growing away from it:
 - This dissolves the parity conflict: both kernels emit the same portable plan; only the
   executor is deployment-specific. It also re-attributes the single-writer MUST: nodes
   performs no coordination; the executor owns serialization and durability.
-- Not scheduled until science's composition root needs it (`atoms` A6–A8); recorded so
-  intermediate work does not entangle the write path further.
+- Not scheduled until science's composition root needs it (`atoms` A7–A8 — this gate was
+  written as A6–A8 and lost its first stage when `atoms` landed coherent capture on
+  2026-08-08); recorded so intermediate work does not entangle the write path further.
 
 ## 5. Housekeeping
 
@@ -157,6 +170,12 @@ Mechanical; lands with this design's plan:
 - **Release follow-ups.** First-publish-recovery §4's post-tag steps (npm 0.0.0
   deprecation, attestation verification, credential revocation) get a status note
   recording whether they happened.
+- **Undecided, added 2026-08-08.** Science's domain-extension-boundary design (D4) requires
+  one parity fixture pinning a *namespaced* facet key — `biology/gene-axis` — identically
+  through both canonical projections, so that the facet-key freedom stays deliberate rather
+  than incidental. Whether it lands here or in science is open: it tests `nodes`' projection,
+  which argues for here, but §2.1 makes that projection public API, which lets science pin it
+  from outside. Not a fifth contract delta either way — nothing about `nodes` changes.
 
 ## 6. Standard changes summary
 
