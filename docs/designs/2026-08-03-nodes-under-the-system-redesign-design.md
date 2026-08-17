@@ -1,7 +1,7 @@
 # Nodes under the system redesign — design
 
 **Date:** 2026-08-03
-**Status:** Draft — direction approved 2026-08-03; detailed review pending
+**Status:** Draft — direction approved 2026-08-03; §4 frozen into the seam design 2026-08-17; detailed review of §2/§3/§5 pending
 **Authority:** `docs/STANDARD.md` 1.2 remains normative until the amendments below land.
 **Consumer requirements:** science's four system-redesign designs of 2026-08-02 (epistemic
 kernel, substrate consolidation, world addressing, computation & reproducibility).
@@ -149,6 +149,10 @@ stops growing away from it:
 - Not scheduled until science's composition root needs it (`atoms` A7–A8 — this gate was
   written as A6–A8 and lost its first stage when `atoms` landed coherent capture on
   2026-08-08); recorded so intermediate work does not entangle the write path further.
+
+*(2026-08-17:)* superseded — the seam contract is frozen in
+`2026-08-17-nodes-write-plan-executor-seam-design.md`, which now owns it; the direction
+text above and its spent A7–A8 gate line no longer speak for the seam.
 
 ## 5. Housekeeping
 
