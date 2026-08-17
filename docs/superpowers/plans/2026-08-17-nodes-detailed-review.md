@@ -54,10 +54,14 @@ Confirm before writing: `add` permits an overwrite when uid and id both match (`
 
 Pin every spec §3 item-1 decision. The pre-made positions below are the plan's recommendations with their rationale; the implementer adopts them unless the evidence from Step 2 contradicts one, and records the rationale in the section either way:
 
-- **The value is named `WritePlan`** — an ordered sequence of ops (this is the type name §3 of the seam doc and science's adapter design will use). **Three op kinds** — `create` (precondition: path absent), `replace` (precondition: path present), `delete` (precondition: path present). Explicit beats a merged upsert op: the preconditions differ and the durable executor maps them to different intents.
+- **The value is named `WritePlan`** — an ordered sequence of ops with an exact discriminated-union schema, written into the section as the amendment's future API:
+  - `CreateOp` — `{op: "create", path, content}`; implicit precondition: path absent.
+  - `ReplaceOp` — `{op: "replace", path, content, expected_digest}`; implicit precondition: path present with matching digest.
+  - `DeleteOp` — `{op: "delete", path, expected_digest}`; implicit precondition: path present with matching digest.
+  - `path` is a root-relative POSIX string; `content` is raw bytes (Python `bytes`, TypeScript `Uint8Array`; serialized node documents are UTF-8); `expected_digest` is lowercase-hex SHA-256 over the on-disk bytes the op replaces or deletes — portable across languages because both read the same disk state, unlike emitted content. Preconditions are these fields, not a separate structure; enforcement is declared per atomicity class in the seam doc's §3.
+  - Three distinct op kinds rather than a merged upsert: the preconditions differ and the durable executor maps them to different effect types.
 - **`add` selects create vs replace** by whether the (uid, id) pair is live: unseen → `create`; matching existing entry → `replace` (the overwrite path mindful v6's `tag()` uses in production). Collision refusal stays **corpus-side, before plan construction** — `assert_addable`'s two refusals (uid claimed by a different id; identity claim owned by a different uid) are unchanged and never reach an executor.
-- **Payload: serialized document bytes**, produced by the emitting kernel's own serializer. Rationale: the executor stays pure file mechanics (as `Store` is today) and needs no kernel serialization service. **Plan equality is semantic**: two plans are equal when op kinds, root-relative POSIX paths, and preconditions match position-wise and each content payload parses to the same canonical JSON projection (standard §1: byte-identical serialization is a non-goal). Parity fixture obligation: pinned at implementation time as part of the standard amendment; **tier 1** (it is mutation semantics).
-- **Preconditions are carried as data** on every op (absent / present; whether `replace`/`delete` also carry an expected content digest is pinned here — recommendation: carry the digest, since the durable executor can enforce it and the default executor ignores it; enforcement is declared per atomicity class in §3 of the seam doc).
+- **Payload: serialized document bytes**, produced by the emitting kernel's own serializer. Rationale: the executor stays pure file mechanics (as `Store` is today) and needs no kernel serialization service. **Plan equality is semantic**: two plans are equal when op kinds, paths, and `expected_digest` values match position-wise and each `content` payload parses to the same canonical JSON projection (standard §1: byte-identical serialization is a non-goal). Parity fixture obligation: pinned at implementation time as part of the standard amendment; **tier 1** (it is mutation semantics).
 - **Ordering and the crash surface, per operation position.** Rename's emitted plan keeps write-new-first → delete-old → referrer replaces. State the crash surface at each position under the best-effort class, including the one **acknowledged invalid prefix**: after the new file lands and before the old file's delete, two files carry one uid; strict construction refuses this state (`CollisionError` at `Index.build`), and whether the collecting mode can report it is §2.3's verdict in the trailing review (cite the spec). State why reordering cannot close the window and why an atomic move op does not help either: rename changes the node's content (id field, `deprecated_ids`), so the transition is never a pure move — every order of create/replace/delete has an invalid or misleading intermediate, and this design chooses the duplicate-uid window as the specified one because it is the only intermediate strict construction refuses loudly rather than resolving wrongly.
 
 - [ ] **Step 4: Run the gates**
@@ -75,27 +79,27 @@ git commit -m "docs(designs): scaffold the seam design and pin the write-plan va
 
 **Files:**
 - Modify: `docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md` (sections 3, 4, 5)
-- Read (evidence): `python/src/nodes/core/corpus.py:129-151` (`flush_index`, `_load`), `python/src/nodes/core/snapshot.py` (what `.nodes-index/` holds and `iter_corpus_files`), `docs/STANDARD.md` §7 and §10, spec §3 items 2–4
+- Read (evidence): `python/src/nodes/core/corpus.py:74-151` (`_full_rebuild`, `_reconcile`, `flush_index`), `python/src/nodes/core/snapshot.py` (what `.nodes-index/` holds and `iter_corpus_files`), `docs/STANDARD.md` §7 and §10, spec §3 items 2–4
 
 **Interfaces:**
-- Consumes: Task 1's op kinds (`create`/`replace`/`delete`) and precondition vocabulary.
-- Produces: the executor protocol names later tasks cite — `WritePlanExecutor` (the protocol/interface name), `execute(plan)`, `DefaultExecutor` (best-effort class), the error names `PlanRefusedError` and `ExecutionError`.
+- Consumes: Task 1's `WritePlan` and its op types (`CreateOp`/`ReplaceOp`/`DeleteOp`).
+- Produces: the executor protocol names later tasks cite — `WritePlanExecutor` (the protocol/interface name), `execute(plan)` returning `None`/`void`, `DefaultExecutor` (best-effort class), the error names `PlanRefusedError` and `ExecutionError`.
 
 - [ ] **Step 1: Write §3 (the executor protocol)**
 
 Pin, per spec §3 item 2:
 
-- Signatures in both languages, as future API (pre-normative — these are the amendment's text, not shipped code): Python `class WritePlanExecutor(Protocol): def execute(self, plan: WritePlan) -> ExecutionReport: ...`; TypeScript `interface WritePlanExecutor { execute(plan: WritePlan): ExecutionReport }`. `ExecutionReport` carries per-op outcomes in plan order.
+- Signatures in both languages, as future API (pre-normative — these are the amendment's text, not shipped code): Python `class WritePlanExecutor(Protocol): def execute(self, plan: WritePlan) -> None: ...`; TypeScript `interface WritePlanExecutor { execute(plan: WritePlan): void }`. **Success is a normal return; there is no report type** — on full success every per-op outcome is identical ("applied"), so a report would carry no information the return does not; failures are exceptions (below).
 - **Atomicity classes:** `DefaultExecutor` — best-effort ordered writes; a crash leaves a prefix of the plan applied; this is today's `Store` behavior, now named. Durable executor — supplied by a composition root (`atoms` via science's Python composition root); applies the plan all-or-nothing; `nodes` depends on `atoms` in neither language.
 - **Concurrency posture, per executor:** `DefaultExecutor` provides **no serialization** — the single-writer obligation stays with the deployment exactly as standard §7 places it today; the durable executor owns serialization. Re-attribution of the single-writer MUST means: the kernel never coordinates; each executor declares whether it serializes or passes the obligation through.
-- **Refusal semantics per class:** the durable executor refuses before any effect (precondition failure aborts the transaction; nothing applied); `DefaultExecutor` checks each op's existence precondition at that op and stops at the first failure, leaving the applied prefix — content-digest preconditions are carried but not enforced by `DefaultExecutor` (declared, so the limit is stated rather than implied).
-- **Plan validation:** the **plan builder** (corpus-side) never emits a path outside the corpus root or inside a reserved namespace; the **executor** additionally refuses a malformed plan — a path escaping the root (after resolution), a reserved-namespace path, an unknown op kind — with `PlanRefusedError` before any effect, in both classes. Execution failures surface as `ExecutionError` carrying the failing op's index and applied-prefix extent.
-- **Return:** `ExecutionReport`; the corpus applies its in-memory updates only after a fully successful report.
-- **Supply surface** (spec §3 item 2's last bullet): the executor is injected at `Corpus` construction (a `Corpus(executor=...)` parameter; omitted → `DefaultExecutor`); the corpus hands the executor its root at construction, so plans stay root-relative; the seam's public error additions are exactly `PlanRefusedError` and `ExecutionError`. These are the pieces science's adapter wires without re-opening `nodes`.
+- **Refusal semantics per class:** the durable executor refuses before any effect (precondition failure aborts the transaction; nothing applied); `DefaultExecutor` checks each op's existence precondition at that op and stops at the first failure, leaving the applied prefix — `expected_digest` values are carried but not enforced by `DefaultExecutor` (declared, so the limit is stated rather than implied).
+- **Plan validation:** the **plan builder** (corpus-side) never emits a path outside the corpus root or inside a reserved namespace; the **executor** additionally refuses a malformed plan — a path escaping the root (after resolution), a reserved-namespace path, an unknown op kind — with `PlanRefusedError` before any effect, in both classes. Execution failures surface as `ExecutionError` carrying the failing op's index and the count of applied ops.
+- **Return:** `None`/`void`; the corpus applies its in-memory updates only after `execute` returns.
+- **Supply surface** (spec §3 item 2's last bullet): an executor is **root-bound at construction** — `DefaultExecutor(root)`; the protocol itself stays `execute(plan)` with no root parameter, so plans stay root-relative values. Injection happens at `Corpus` construction (a `Corpus(root, executor=...)` parameter; omitted → the corpus constructs `DefaultExecutor(root)` itself). An injected executor is built by the composition root against the same corpus root — a stated obligation of the composition root; `Corpus` does not rebind it. The seam's public error additions are exactly `PlanRefusedError` and `ExecutionError`. These are the pieces science's adapter wires without re-opening `nodes`.
 
 - [ ] **Step 2: Write §4 (boundary attribution)**
 
-Per spec §3 item 3: the kernel performs no coordination; serialization and durability are each executor's declared responsibility or explicitly passed to the deployment (§3's posture table is the authority). In-memory state (structural index, search index, manifest) updates happen corpus-side only after the executor reports full success; the partial-failure story per class: durable — refusal or crash leaves disk and in-memory state at the pre-plan state (nothing applied, nothing updated); best-effort — a mid-plan failure leaves the applied prefix on disk and the corpus object **stale by exactly the unapplied suffix**, with reconstruction from disk (and its strict/collecting behavior) as the stated recovery.
+Per spec §3 item 3: the kernel performs no coordination; serialization and durability are each executor's declared responsibility or explicitly passed to the deployment (§3's posture table is the authority). In-memory state (structural index, search index, manifest) updates happen corpus-side only after `execute` returns; the partial-failure story per class: durable — refusal or crash leaves disk and in-memory state at the pre-plan state (nothing applied, nothing updated); best-effort — a mid-plan failure leaves the **applied prefix on disk while memory remains entirely pre-plan**, so the corpus object is stale by exactly the applied prefix relative to disk (and lacks the whole plan relative to the intended final state), with reconstruction from disk (and its strict/collecting behavior) as the stated recovery.
 
 - [ ] **Step 3: Write §5 (derived indexes and reserved paths)**
 
@@ -114,7 +118,7 @@ git commit -m "docs(designs): pin the executor protocol and boundary attribution
 
 **Files:**
 - Modify: `docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md` (sections 6, 7, 8; whole-document pass)
-- Read (evidence): science `docs/designs/2026-08-17-conformance-cut-4.md` §1–§2 (the add-only slice, the chained-but-unanchored close), science `docs/designs/2026-08-03-redesign-adoption-ledger.md` rows 3–4, spec §3 item 5
+- Read (evidence): science `docs/designs/2026-08-17-conformance-cut-4.md` §1–§2 (the add-only slice, the chained-but-unanchored close), science `docs/designs/2026-08-03-redesign-adoption-ledger.md` rows 3–4, spec §3 item 5; **the engine itself**: `~/d/atoms/python/src/atoms/core/effects.py` (`FileState(content_hash, mode, byte_len)`; `CreateFileNoClobber(effect_id, path, post)`; `ReplaceFile(effect_id, path, pre, post)`; `DeletePath(effect_id, path, pre)`; `MoveNoClobber`) and `~/d/atoms/python/src/atoms/core/spec.py:31-40` (`TransactionSpec`: `schema_version`, `consumer_tag`, `intent_digest`, `initial_surface`, `final_surface`, `effects`, `dependencies`, `fulfills`, `registered_paths`)
 
 **Interfaces:**
 - Consumes: §2's ops and preconditions, §3's protocol names.
@@ -122,7 +126,15 @@ git commit -m "docs(designs): pin the executor protocol and boundary attribution
 
 - [ ] **Step 1: Write §6 (consumer sufficiency)**
 
-Per spec §3 item 5: demonstrate — as a consumer note, not a `nodes` obligation — that each op maps onto a durable transaction's intents (`create`/`replace` → write intents with the carried precondition; `delete` → delete intent with post-state absence capture), so science's adapter design can wire `WritePlanExecutor` without re-opening `nodes`. Record verbatim the engine fact from the spec: the durable engine appends registration-chain entries in every transaction, invisible to `nodes` (science cut 4's "chained but unanchored" fact). Name what the adapter supplies from its side: the injection at `Corpus` construction, the corpus root binding, and the composition root's exclusive ownership of executor choice.
+Per spec §3 item 5: demonstrate — as a consumer note verified against the engine's actual types, not a `nodes` obligation — that every field a durable transaction needs is derivable from (the plan, adapter-side constants, adapter-side reads), so science's adapter design can wire `WritePlanExecutor` without re-opening `nodes`. Write the mapping field-by-field:
+
+- `CreateOp` → `CreateFileNoClobber(effect_id, path, post)`: `post.content_hash` and `post.byte_len` computed from the op's `content` bytes; `post.mode` an adapter-supplied constant (`nodes` does not model file modes — state this explicitly as an adapter decision).
+- `ReplaceOp` → `ReplaceFile(effect_id, path, pre, post)`: `post` as above; `pre` obtained by the adapter's own read of the current file at transaction build, cross-checked against the op's `expected_digest` (a mismatch is a refusal before any effect).
+- `DeleteOp` → `DeletePath(effect_id, path, pre)`: `pre` as for replace.
+- `TransactionSpec` fields: `schema_version` (engine constant), `consumer_tag` and `effect_id`s (adapter-minted), `intent_digest` (adapter-computed per engine rules), `initial_surface`/`final_surface` (derived from the pre/post states above), `dependencies`/`fulfills` (adapter's call; none required by the plan), `registered_paths` (the engine's registration surface — record verbatim the engine fact from the spec: the durable engine appends registration-chain entries in every transaction, invisible to `nodes`; science cut 4's "chained but unanchored" fact).
+- Note that `MoveNoClobber` exists and is deliberately unused: rename is never a pure move because the renamed node's content changes (seam §2's argument).
+
+Close with what the adapter supplies from its side: executor construction bound to the corpus root, injection at `Corpus` construction, and the composition root's exclusive ownership of executor choice.
 
 - [ ] **Step 2: Write §7 (pending standard amendments)**
 
@@ -130,7 +142,7 @@ Exactly two entries, each with the amendment wording fixed now and marked pendin
 
 - [ ] **Step 3: Write §8 (amendment record) and run the freeze pass**
 
-§8: the exercise map from Task 1 Step 1 (no part consumer-exercised yet; the create path becomes exercised when science's adapter design banks) and an empty amendments log with the recording format (date, part, change, reviewer, consumer sign-off if the part is exercised). Then the freeze pass over the whole document: every spec §3 decision item has a pinned answer (grep the spec's §3 list against the document); no TBDs; every code citation checked against the file it names; internal names consistent (`WritePlan`, `WritePlanExecutor`, `ExecutionReport`, `DefaultExecutor`, `PlanRefusedError`, `ExecutionError`; op kinds `create`/`replace`/`delete`).
+§8: the exercise map from Task 1 Step 1 (no part consumer-exercised yet; the create path becomes exercised when science's adapter design banks) and an empty amendments log with the recording format (date, part, change, reviewer, consumer sign-off if the part is exercised). Then the freeze pass over the whole document: every spec §3 decision item has a pinned answer (grep the spec's §3 list against the document); no TBDs; every code citation checked against the file it names; internal names consistent (`WritePlan`, `CreateOp`/`ReplaceOp`/`DeleteOp`, `WritePlanExecutor` with `execute(plan)` returning `None`/`void`, `DefaultExecutor`, `PlanRefusedError`, `ExecutionError`).
 
 - [ ] **Step 4: Run the gates** (same commands as Task 1 Step 4).
 
@@ -167,7 +179,7 @@ Stop. Use superpowers:finishing-a-development-branch scoped to this landing: gat
 
 - [ ] **Step 4: Science follow-up commit (after the merge, on science `main`)**
 
-In `~/d/science`: ledger row 3's status cell gains: "Seam frozen 2026-08-XX (`nodes` `2026-08-17-nodes-write-plan-executor-seam-design.md`, pre-normative — binds the future standard amendment); §2/§3/§5 detailed review in progress." In `docs/guide/open-questions.md`, the cut-4 bullet's clause naming the seam freeze as pending is updated to name it frozen (the adapter design's dependency is now satisfied; the adapter design itself remains the open item). Run science's suite from `python/`: `pytest` (10-minute timeout; verify exit 0) and `ruff check .`. Commit:
+In `~/d/science`: ledger row 3's status cell gains: "Seam frozen 2026-08-XX (`nodes` `2026-08-17-nodes-write-plan-executor-seam-design.md`, pre-normative — binds the future standard amendment); §2/§3/§5 detailed review in progress." In `docs/guide/open-questions.md`, the cut-4 bullet's clause naming the seam freeze as pending is updated to name it frozen (the adapter design's dependency is now satisfied; the adapter design itself remains the open item). Run science's gates from its `python/`: `uv run --frozen pytest -q` (10-minute timeout; science's pytest config suppresses the summary line — verify exit 0), `uv run --frozen ruff check .`, `uv run --frozen pyright`. Commit:
 
 ```bash
 git add docs/designs/2026-08-03-redesign-adoption-ledger.md docs/guide/open-questions.md
@@ -194,11 +206,16 @@ Expected: only `python/tests/_canonical.py` and the TS test twin (plus fixture r
 
 - [ ] **Step 2: Verify §2.2 (reserved paths) and write its verdict**
 
-Read `python/src/nodes/core/snapshot.py` (`iter_corpus_files`): confirm membership is the positive `*.md` glob minus `.nodes-index/`, and confirm the symlink check's actual depth (the claim: only the first path component is checked; a symlink at depth is followed). Confirm the tamper-evident log consumer (science `docs/designs/2026-08-03-tamper-evident-log-design.md`, the reserved in-corpus path). Verdict expected **stands**; if the code has changed since 2026-08-03, **stands amended** with the current mechanics.
+Read `python/src/nodes/core/snapshot.py:40-42` and `ts/src/snapshot.ts` (`listCorpusMarkdownPaths`), and keep two separate checks that §2.2's text conflates:
+
+- **The reserved-namespace exclusion**: Python checks `rel.parts[0] == ".nodes-index"` — first path component only — and TS compares the root-relative path at directory level; confirm both as the delta's "stated positively, minus `.nodes-index/`" premise.
+- **Symlink traversal**: verify actual current behavior per language, not the delta's blanket claim. Known going in: TS skips **every** symlink entry, file or directory, at any depth (`entry.isSymbolicLink()` → `continue`); Python skips symlink **files** at any depth (`p.is_symlink()` at snapshot.py:42), and directory-symlink recursion depends on `Path.rglob`'s behavior on the running Python version — test it (create a temp corpus with a symlinked directory and run `iter_corpus_files`) rather than asserting it.
+
+Confirm the tamper-evident log consumer (science `docs/designs/2026-08-03-tamper-evident-log-design.md`, the reserved in-corpus path). Expected verdict: **stands amended** — the contract direction holds, but the delta's description of today's symlink handling must be corrected to the per-language mechanics found above.
 
 - [ ] **Step 3: Verify §2.3 (recoverable construction), write its verdict with the collision decision**
 
-Confirm fail-hard: `Corpus._load`/`node_from_markdown` raise on the first unparseable file (cite lines). Then the spec-required addition: the verdict decides whether **corpus-level collisions** (duplicate uid — `CollisionError` at `Index.build`, `structural_index.py:175`) join the collecting mode. Recommendation to adopt unless evidence argues otherwise: yes — the collecting mode gains a corpus-level `uid-collision` finding (severity error) with **both** claimants excluded from the constructed corpus, because the seam's specified invalid prefix (rename's duplicate-uid window) is exactly this state and an audit that cannot see it cannot report the crash the seam acknowledges. Verdict: **stands amended** (scope grows by the collision finding).
+Confirm fail-hard: construction (`Corpus._full_rebuild`, corpus.py:92, and `_reconcile`, corpus.py:108, via `node_from_markdown`) raises on the first unparseable file (cite lines). Then the spec-required addition: the verdict decides whether **corpus-level collisions** (duplicate uid — `CollisionError` at `Index.build`, `structural_index.py:175`) join the collecting mode. Recommendation to adopt unless evidence argues otherwise: yes — the collecting mode gains a corpus-level `uid-collision` finding (severity error) with **both** claimants excluded from the constructed corpus, because the seam's specified invalid prefix (rename's duplicate-uid window) is exactly this state and an audit that cannot see it cannot report the crash the seam acknowledges. Verdict: **stands amended** (scope grows by the collision finding).
 
 - [ ] **Step 4: Verify §2.4 (digest-shaped ids) and write its verdict**
 
@@ -270,11 +287,17 @@ git commit -m "docs(designs): record the §3 withdrawal verdicts"
 
 - [ ] **Step 2: Refresh the consumer-state note**
 
-Replace the 2026-08-08 note's facts with the current world, verified against science: the corpus at twenty-three documents (`grep -c '^| ' ~/d/science/README.md` or read its count sentence), `atoms` A8 certified 2026-08-17 (ledger row 4), conformance cut 4 drafted against this seam (cut-4 §1), the tamper log confirmed as §2.2's second consumer. Keep it a dated note in the same style.
+Replace the 2026-08-08 note's facts with the current world, verified against science: the science corpus's current document count (read README's explicit count sentence — "Twenty-three documents" as of 2026-08-17 — and cross-check with `ls ~/d/science/docs/designs/*.md | wc -l`; use whatever the count is when the step runs), `atoms` A8 certified 2026-08-17 (ledger row 4), conformance cut 4 drafted against this seam (cut-4 §1), the tamper log confirmed as §2.2's second consumer. Keep it a dated note in the same style.
 
 - [ ] **Step 3: Write the §6 version-policy verdict**
 
-Annotate §6 with the ruling required by spec §4. The arithmetic depends on Task 6: if similarity's withdrawal was itself withdrawn, no pinned tier-2 behavior is removed and **1.3 (minor)** stands for the remaining deltas (additive contracts; `dangling()`/`descendants`/`ancestors` removals are tier-1-surface removals that break no existing corpus reading/writing — record the §12 reading that removal-without-behavior-change is minor); if similarity is still withdrawn, the amendment is **2.0 (major)** under §12's "changes pinned tier-2 behavior." Record whichever ruling the verdicts imply, with the §12 reading stated.
+Annotate §6 with the ruling required by spec §4, over the **full inventory of pinned surfaces the deltas touch** — not similarity alone:
+
+- similarity: pinned tier-2 (`similarity-corpus/`, `similarity.vectors.json`, `similarity.oracle.json` in the §11 fixture table);
+- `descendants`/`ancestors`: **also pinned tier-2** — `traversal.oracle.json` explicitly pins all four membership-traversal operations (§11 table), so their withdrawal touches pinned behavior regardless of the similarity verdict;
+- `dangling()`: check the §11 table and §8's finding codes for any fixture pinning the *API* (the `dangling-ref`/`dangling-member` findings stay either way).
+
+The honest default: if **any** surviving withdrawal removes a surface a §11 fixture pins, the amendment is **2.0 (major)** under §12's "changes pinned tier-2 behavior." A **1.3 (minor)** ruling is reachable only if every surviving withdrawal is unpinned, or if the review explicitly rules that deleting a pinned surface *with its fixture* is a "removal … that breaks neither reading/writing existing corpora nor pinned tier-2 behavior" rather than a change to it — if so, that reading of §12's removal-vs-change boundary must be recorded in the annotation as the ruling's basis. Record whichever ruling the Task 5–6 verdicts imply.
 
 - [ ] **Step 4: Advance the status header**
 
@@ -289,10 +312,10 @@ git commit -m "docs(designs): complete the detailed review of the redesign delta
 
 - [ ] **Step 6: USER CHECKPOINT — landing two, then the science follow-up**
 
-Stop; superpowers:finishing-a-development-branch for the remaining branch commits (merge to `main`; worktree cleanup per the skill). After the merge, in `~/d/science` on `main`: ledger row 3's status becomes "Detailed review complete 2026-08-XX; deltas await implementation" (keeping the seam-frozen fact and replacing "Direction approved"); grep science docs for any other "direction approved"-era claim about the nodes review (`grep -rn "Direction approved\|detailed review" docs/ --include="*.md"`) and correct what the landing made stale. Science suite green (`pytest` exit 0, `ruff check .`), then:
+Stop; superpowers:finishing-a-development-branch for the remaining branch commits (merge to `main`; worktree cleanup per the skill). After the merge, in `~/d/science` on `main`: ledger row 3's status becomes "Detailed review complete 2026-08-XX; deltas await implementation" (keeping the seam-frozen fact and replacing "Direction approved"); grep science docs for any other "direction approved"-era claim about the nodes review (`grep -rn "Direction approved\|detailed review" docs/ --include="*.md"`) and correct what the landing made stale. Science gates green from its `python/` (`uv run --frozen pytest -q` exit 0, `uv run --frozen ruff check .`, `uv run --frozen pyright`), then stage **exactly the files the sweep edited** — the ledger plus whichever files the grep surfaced, each named explicitly:
 
 ```bash
-git add -A docs/
+git add docs/designs/2026-08-03-redesign-adoption-ledger.md   # plus each swept file, by name
 git commit -m "docs: record the nodes detailed-review completion"
 ```
 
