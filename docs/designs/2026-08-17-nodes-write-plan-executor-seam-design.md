@@ -85,9 +85,80 @@ because strict construction refuses it loudly rather than resolving it wrongly.
 
 ## 3. The executor protocol
 
+The future API is `WritePlanExecutor`, with no result-report type: a normal
+return means every operation applied, so a per-operation report would contain
+only the same `applied` outcome. Failures raise instead.
+
+```python
+class WritePlanExecutor(Protocol):
+    def execute(self, plan: WritePlan) -> None: ...
+```
+
+```ts
+interface WritePlanExecutor {
+  execute(plan: WritePlan): void
+}
+```
+
+`DefaultExecutor` is the named form of today's best-effort ordered writes. A
+crash can leave an applied prefix of the plan. A durable executor is supplied
+by a composition root (`atoms` through science's Python composition root) and
+applies a plan all-or-nothing; `nodes` depends on `atoms` in neither language.
+
+| Executor | Atomicity and preconditions | Serialization |
+| --- | --- | --- |
+| `DefaultExecutor` | Checks each operation's existence precondition when it reaches that operation and stops at the first failure, leaving the applied prefix. It carries but does not enforce `expected_digest`. | Provides no serialization; the deployment retains the standard §7 single-writer obligation. |
+| Durable executor | Refuses a failed precondition before any effect: the transaction aborts and nothing applies. | Owns serialization. |
+
+The kernel never coordinates concurrency. Each executor declares whether it
+serializes or passes the single-writer obligation through to the deployment.
+
+The plan builder never emits a path outside the corpus root or in a reserved
+namespace. Both executor classes additionally reject, before any effect, a
+malformed plan containing a path that escapes the root after resolution, a
+reserved-namespace path, or an unknown operation kind. They raise
+`PlanRefusedError` for that refusal. Other execution failures raise
+`ExecutionError`, carrying the failing operation's index and the number of
+operations already applied. The seam adds exactly those two public error names.
+
+The executor returns `None` / `void`; only after `execute` returns does the
+corpus update its in-memory state.
+
+An executor is root-bound at construction: `DefaultExecutor(root)`. The
+protocol remains `execute(plan)` without a root parameter, keeping plans
+root-relative values. `Corpus(root, executor_factory=...)` calls a root-taking
+factory with its own root (`executor_factory(root) -> WritePlanExecutor` in
+Python; `(root: string) => WritePlanExecutor` in TypeScript); when omitted, it
+constructs `DefaultExecutor(root)`. A composition root closes over its engine
+handles but lets the corpus supply the root. It never supplies a pre-bound
+executor whose root the corpus cannot verify. This is the seam science's
+adapter wires without re-opening `nodes`.
+
 ## 4. Boundary attribution
 
+The kernel performs no coordination. Serialization and durability are each an
+executor's declared responsibility or are explicitly passed to the deployment;
+§3's posture table is the authority. Corpus-side in-memory state—the structural
+index, search index, and manifest—updates only after `execute` returns.
+
+For a durable executor, refusal or a crash leaves both disk and in-memory state
+at their pre-plan state: nothing applies and nothing updates. For the
+best-effort executor, a mid-plan failure leaves the applied prefix on disk while
+memory remains entirely pre-plan. The corpus object is therefore stale by
+exactly that applied prefix relative to disk, and lacks the whole plan relative
+to the intended final state. Reconstruction from disk, with its existing strict
+or collecting behavior, is the recovery.
+
 ## 5. Derived indexes and reserved paths
+
+`.nodes-index/` snapshot writes (`flush_index`) do not route through the
+executor. They are rebuildable derived state in the reserved namespace, as
+redesign design §2.2 describes, and are excluded from plans entirely. A plan
+containing a reserved-namespace path is malformed and raises `PlanRefusedError`
+under §3.
+
+Consequently, a durable executor's all-or-nothing claim covers corpus content
+only. Index snapshots remain best-effort and rebuildable by design.
 
 ## 6. Consumer sufficiency
 
