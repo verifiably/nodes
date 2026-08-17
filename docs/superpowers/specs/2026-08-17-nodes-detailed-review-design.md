@@ -41,8 +41,8 @@ relationship to the standard:
   against it) and changes nothing about shipped code; the standard keeps
   describing the code that exists.
 - **Touchpoints with existing normative text are recorded, not applied.** The
-  seam re-attributes the single-writer MUST (standard §13) and re-states
-  `rename`'s crash language (§7). The seam design fixes the amendment wording
+  seam re-attributes the single-writer MUST (standard §7) and re-states
+  `rename`'s crash language (§3). The seam design fixes the amendment wording
   for both now and marks them pending; the standard is not contradicted in the
   interim because the seam's surface does not exist in shipped code.
 - **Graduated amendment procedure.** Any change to a part of the contract that
@@ -57,8 +57,18 @@ This mirrors science's freeze discipline; it is the first `nodes` design to
 carry such a clause because it is the first whose direct consumer is a design
 in another repository.
 
-The seam design merges to `main` **alone and first**. Immediately after, one
-commit on science `main`:
+The seam design merges to `main` **first**, and the same merge corrects what it
+makes stale — the status rule is "correct the status in the same change," so
+the first landing also amends the redesign design minimally:
+
+- §4 (the execution seam) gains a dated annotation: superseded by the seam
+  design, which now owns the contract — the direction text and its spent
+  A7–A8 gate line no longer speak for the seam;
+- the status header becomes "Draft — direction approved 2026-08-03; §4 frozen
+  into the seam design YYYY-MM-DD; detailed review of §2/§3/§5 pending."
+
+Nothing else in the redesign design changes at landing one. Immediately after,
+one commit on science `main`:
 
 - adoption ledger (`docs/designs/2026-08-03-redesign-adoption-ledger.md`) row 3
   gains the seam-frozen fact and the seam design's path;
@@ -73,16 +83,15 @@ parenthetical annotations at the affected site — the document already carries
 
 - every §2, §3, and §5 delta gets its review verdict at its site (protocol in
   §4 below);
-- §4 (the execution seam) is replaced by a short pointer to the seam design —
-  the direction text is superseded by the frozen contract;
 - the consumer-state note (dated 2026-08-08: sixteen science designs, A7–A8
   pending) is refreshed to the world at review time: the science corpus at
   twenty-three documents, `atoms` A8 certified 2026-08-17, conformance cut 4
   drafted against this seam, the tamper-evident log confirmed as a second
   consumer of §2.2;
-- the status header advances from "Draft — direction approved 2026-08-03;
-  detailed review pending" to "Detailed review complete YYYY-MM-DD — deltas
-  await implementation," with the seam design named.
+- the status header advances from landing one's form ("… §4 frozen into the
+  seam design …; detailed review of §2/§3/§5 pending") to "Detailed review
+  complete YYYY-MM-DD — deltas await implementation," with the seam design
+  named.
 
 Second merge; then a second science-`main` commit updating ledger row 3's
 status ("Direction approved" → detailed-review-complete wording, deltas still
@@ -106,7 +115,13 @@ transaction layer.
    - Op kinds: create, replace, delete — the file operations the three mutators
      (`add`, `rename`, `delete`) need. Whether create and replace are one op
      kind with a precondition distinguishing them, or two, is the seam design's
-     call; the contract states it either way.
+     call; the contract states it either way. `add` is **create-or-replace
+     today**: `assert_addable` permits an overwrite when uid and id both match
+     the existing entry, refuses a uid claimed by a different id and an id
+     claimed by a different uid, and mindful v6 relies on the overwrite path
+     in production (`api.ts` `tag()` re-adds an existing node). The seam design
+     must state how `add`'s plan selects create versus replace and preserve
+     exactly this collision behavior.
    - Per-op payload: root-relative POSIX path; full serialized content for
      creates/replaces (the plan carries bytes, not closures).
    - Per-op preconditions: create requires path-absent; replace/delete state
@@ -117,12 +132,18 @@ transaction layer.
      surface is stated **per operation position** under the best-effort class —
      including the known-invalid window in today's rename order (new file
      written, old not yet deleted: a duplicate uid that strict construction
-     refuses and only §2.3's collecting mode can even report). The seam design
-     either re-orders the emitted plan to close that window or specifies it as
-     an acknowledged invalid intermediate; "renamed node first, then referrers"
-     is restated as a property of the plans the mutators emit, with whatever
-     precision the chosen answer supports — not as a blanket
-     forward-resolvability claim, which the current order does not satisfy.
+     refuses, and that §2.3's collecting mode as drafted does not report
+     either — see the §2.3 verdict below). **Reordering alone cannot close
+     this**: with only create/replace/delete in the vocabulary, every order
+     has an invalid or misleading intermediate (duplicate uid, or a deleted
+     source with no target yet, or referrers rewritten toward a node that
+     does not exist). The seam design must therefore either (a) pick an order,
+     specify its one invalid prefix exactly, and state how construction
+     surfaces it, or (b) add an atomic move operation to the op vocabulary and
+     state its portability cost. "Renamed node first, then referrers" is
+     restated with whatever precision the chosen answer supports — not as a
+     blanket forward-resolvability claim, which no order of the three basic
+     ops can satisfy.
    - Purity and portability: the plan is a pure, fully-determined,
      serializable value — no closures, no callbacks. Plan **equality is
      semantic**, consistent with the standard's parity model (§1: byte-identical
@@ -143,7 +164,7 @@ transaction layer.
      the plan all-or-nothing. `nodes` depends on `atoms` in neither language.
    - Concurrency posture, declared per executor and stated explicitly: the
      **default executor provides no serialization** — the single-writer
-     obligation stays with the deployment, exactly as standard §13 places it
+     obligation stays with the deployment, exactly as standard §7 places it
      today; the durable executor owns serialization. "Re-attribution" of the
      single-writer MUST therefore means: the kernel never coordinates, and
      each executor declares whether it does or passes the obligation through.
@@ -201,7 +222,13 @@ What is re-verified, per delta:
   still first-component-only; the tamper-evident log's reserved-path use is
   confirmed as the second consumer.
 - **§2.3 (recoverable construction):** construction still fails hard on the
-  first unparseable file; `check` is unrunnable over a damaged corpus.
+  first unparseable file; `check` is unrunnable over a damaged corpus. The
+  verdict must additionally decide whether **corpus-level collisions** join
+  the collecting mode: §2.3 as drafted collects per-file parse and structural
+  errors only, while a duplicate uid is a corpus-level `CollisionError`
+  raised at index build — and the seam's rename crash window produces exactly
+  that state, so a collecting mode that cannot report it leaves the seam's
+  acknowledged invalid prefix invisible to audit.
 - **§2.4 (digest-shaped ids):** the case-fold hazard reproduced against
   `path_for` (exact-case mapping, no existence check, no `check` comparison);
   the collation gap confirmed (Python code points vs TS UTF-16 code units);
@@ -242,8 +269,8 @@ does not land (see §5 below).
 
 ## 5. Out of scope
 
-- **No code changes.** The repository gates are run before each merge and must
-  pass, trivially.
+- **No code changes.** The repository gates run before every commit, as
+  AGENTS.md requires, and must pass — trivially, since only documents change.
 - **No STANDARD amendment.** The amendment (1.3 or 2.0, per the version
   verdict) lands with the future implementation plan, as the redesign design's
   §6 envisions. The standard remains authoritative at 1.2 throughout this
@@ -263,12 +290,17 @@ does not land (see §5 below).
 2. Every §2/§3/§5 delta site in the redesign design carries a dated verdict;
    the status header and consumer-state note are current; §4 points to the
    seam design.
-3. No stale claim survives in either repository, grep-verified at each landing:
-   "detailed review pending," the A7–A8 gate line, science ledger row 3's
-   "Direction approved," and the open-questions seam-pending wording.
-4. The full AGENTS.md gate set passes at both merges: from `python/`,
-   `uv run --frozen pytest -q`, `uv run --frozen ruff check .`,
-   `uv run --frozen pyright src`; from `ts/`, `npm test`, `npm run typecheck`,
-   `npm run check`.
+3. No stale claim survives its own landing, grep-verified per landing.
+   **Landing one retires:** the unannotated §4 direction text and its spent
+   A7–A8 gate line, science's open-questions seam-freeze-pending wording, and
+   ledger row 3's silence on the seam (it gains the seam-frozen fact). The
+   narrowed "detailed review of §2/§3/§5 pending" header is *correct* after
+   landing one and survives it. **Landing two retires:** every remaining
+   "detailed review … pending" form and ledger row 3's "Direction approved"
+   wording.
+4. The full AGENTS.md gate set — from `python/`, `uv run --frozen pytest -q`,
+   `uv run --frozen ruff check .`, `uv run --frozen pyright src`; from `ts/`,
+   `npm test`, `npm run typecheck`, `npm run check` — runs before every
+   commit and is green at both merges.
 5. Science `main` carries the two follow-up commits, each landed immediately
    after its `nodes` merge.
