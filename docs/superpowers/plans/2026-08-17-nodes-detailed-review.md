@@ -316,7 +316,7 @@ git commit -m "docs(designs): complete the detailed review of the redesign delta
 Stop; superpowers:finishing-a-development-branch for the remaining branch commits (merge to `main`; worktree cleanup per the skill). After the merge, in `~/d/science` on `main`: ledger row 3's status becomes "Detailed review complete 2026-08-XX; deltas await implementation" (keeping the seam-frozen fact and replacing "Direction approved"); grep science docs for any other "direction approved"-era claim about the nodes review (`grep -rn "Direction approved\|detailed review" docs/ --include="*.md"`) and correct what the landing made stale. **Before editing anything**, require a clean science tree (`git -C ~/d/science status --porcelain` empty; if not empty, stop and ask the user — another workstream's changes must not ride along). After the edits, list what changed (`git status --porcelain`), and stage **each changed file by explicit name** — the ledger plus every file the sweep edited; if the list contains anything the sweep does not account for, stop for inspection instead of staging. Science gates green from its `python/` (`uv run --frozen pytest -q` exit 0, `uv run --frozen ruff check .`, `uv run --frozen pyright`, and `uv run --frozen python tools/check_guide.py` if the sweep touched the guide), then:
 
 ```bash
-git add docs/designs/2026-08-03-redesign-adoption-ledger.md <each swept file, by name>
+git add -A docs/
 git commit -m "docs: record the nodes detailed-review completion"
 ```
 
