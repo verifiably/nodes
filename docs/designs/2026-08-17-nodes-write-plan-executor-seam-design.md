@@ -47,7 +47,7 @@ pair emits `create`; a matching existing pair emits `replace`. This preserves th
 overwrite used by mindful v6's `tag()` path. Collision refusal remains
 corpus-side before plan construction: `assert_addable` still refuses a uid held
 by another id and an identity claim held by another uid
-(`~/d/nodes/python/src/nodes/core/structural_index.py:183-191`). It never sends
+(`~/d/nodes/python/src/nodes/core/structural_index.py:184-193`). It never sends
 either refusal to an executor. The current add path validates, calls that guard,
 then writes (`~/d/nodes/python/src/nodes/core/corpus.py:153-161`).
 
@@ -162,7 +162,84 @@ only. Index snapshots remain best-effort and rebuildable by design.
 
 ## 6. Consumer sufficiency
 
+This section is a consumer note verified against `atoms`' engine types, not a
+`nodes` obligation. Every durable-transaction field is derivable from the plan,
+adapter-side constants, or adapter-side reads, so science can implement the
+`WritePlanExecutor` adapter without re-opening this contract.
+
+The operation mapping is:
+
+- `CreateOp` maps to `CreateFileNoClobber(effect_id, path, post)`. The adapter
+  computes `post.content_hash` and `post.byte_len` from the op's `content` bytes.
+  It supplies `post.mode` as its own constant: `nodes` does not model file modes,
+  so the mode is an adapter decision.
+- `ReplaceOp` maps to `ReplaceFile(effect_id, path, pre, post)`. The adapter
+  derives `post` as for create and obtains `pre` by reading the current file when
+  it builds the transaction. It cross-checks that read against
+  `expected_digest`; a mismatch is a refusal before any effect.
+- `DeleteOp` maps to `DeletePath(effect_id, path, pre)`. The adapter obtains and
+  cross-checks `pre` as for replace.
+
+These are the engine's actual effect signatures
+(`~/d/atoms/python/src/atoms/core/effects.py:18-46`). Their digest formats differ:
+the plan's `expected_digest` is raw lowercase hex, while
+`FileState.content_hash` is `sha256:`-prefixed. The adapter prefixes the digest
+when building states and strips the prefix when cross-checking
+(`~/d/atoms/python/src/atoms/core/fingerprint.py:22-28`;
+`~/d/atoms/python/src/atoms/core/compiler.py:292-295`). `MoveNoClobber` exists
+but is deliberately unused: §2 establishes that rename changes content and is
+never a pure move.
+
+The complete `TransactionSpec` mapping is:
+
+| Field | Source |
+| --- | --- |
+| `schema_version` | The engine's `SCHEMA_VERSION` constant. |
+| `consumer_tag` | Minted by the adapter. |
+| `intent_digest` | Caller-supplied: the adapter digests its own canonical intent encoding, which is derivable from the plan alone. The engine validates only the `sha256:<64 lowercase hex>` format. |
+| `initial_surface` / `final_surface` | Derived from the absent/file pre- and post-states above. |
+| `effects` | The mapped effects, with adapter-minted `effect_id`s. |
+| `dependencies` / `fulfills` | The adapter's call; the plan requires neither. |
+| `registered_paths` | `()` for this slice. The corpus-write adapter reserves nothing. |
+
+Those fields are the complete engine model
+(`~/d/atoms/python/src/atoms/core/spec.py:31-40`). `intent_digest` enters through
+the caller-facing builder and compilation only validates its format
+(`~/d/atoms/python/src/atoms/core/spec.py:77-101`;
+`~/d/atoms/python/src/atoms/core/compiler.py:207-213`). `registered_paths=()` is
+distinct from the automatic registration-chain append, which the engine performs
+in every transaction regardless and which is invisible to `nodes`. Per science
+cut 4's boundary, every transaction in this slice is **chained but unanchored**
+(`~/d/science/docs/designs/2026-08-17-conformance-cut-4.md:64-73`).
+
+Science supplies a root-taking executor factory to `Corpus`; that factory closes
+over the engine handles and lets `Corpus` provide the root. The composition root
+exclusively owns the executor choice.
+
 ## 7. Pending standard amendments
+
+Exactly these two amendments are pending:
+
+1. **Standard §7 — single-writer attribution (pending).** Replace the current
+   single-writer paragraph with: “The kernel performs no coordination. Each
+   executor declares whether it serializes corpus mutation or passes the
+   single-writer obligation through to the deployment. `DefaultExecutor`
+   provides no serialization, so deployments using it MUST ensure a single
+   writer at a time. A durable executor owns serialization. Readers may run
+   concurrently at the cost of possibly-stale derived indexes.”
+2. **Standard §3 — rename crash state (pending).** After rename's preparation
+   and validation rule, state: “Execution orders the rename plan as create the
+   new document, delete the old document, then replace referrers. Under
+   `DefaultExecutor`, a crash leaves an applied prefix. After create and before
+   delete, two files carry the same uid; this prefix is invalid, is not
+   forward-resolvable, and strict construction refuses it with `CollisionError`.
+   After delete and before a referrer replacement, unchanged referrers still
+   resolve through the renamed node's `deprecated_ids`. A durable executor
+   applies the complete plan all-or-nothing.” This specified invalid prefix
+   replaces every “crash-atomic” or blanket forward-resolvable characterization.
+
+Both entries land only in the standard amendment—1.3 or 2.0, per the trailing
+review's version verdict—and change nothing until that amendment lands.
 
 ## 8. Amendment record
 
@@ -170,3 +247,11 @@ only. Index snapshots remain best-effort and rebuildable by design.
 
 No part is consumer-exercised yet. When science's adapter design banks, it will
 exercise the create path: its cut-4 slice is add-only.
+
+### Amendments log
+
+No amendments.
+
+Record each amendment as: `date | part | change | reviewer | consumer sign-off`
+(consumer sign-off is required when the part is exercised; otherwise record
+`n/a`).
