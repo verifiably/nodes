@@ -27,11 +27,35 @@ that goes stale at each landing.
 
 A new dated document, `docs/designs/YYYY-MM-DD-nodes-write-plan-executor-seam-design.md`
 (dated the day it is written), containing the full write-plan/executor contract
-per §3 below. It carries an explicit stability clause: **frozen on banking** —
-consumers in other repositories build against it, and any later change is an
-amendment requiring consumer sign-off, recorded in the document. This mirrors
-science's freeze discipline; it is the first `nodes` design to carry one because
-it is the first whose direct consumer is a design in another repository.
+per §3 below. It carries an explicit stability clause with a stated authority
+relationship to the standard:
+
+- **Frozen on banking, pre-normative.** This repository's authority order makes
+  `docs/designs/` rationale-only and the standard the sole normative contract,
+  and requires tier-1/tier-2 changes to update the standard and fixtures in the
+  same change — which happens at implementation, not here. The seam design is
+  therefore frozen as a **contract about the future amendment**: its text lands
+  in the standard amendment that ships the seam (1.3 or 2.0, per the trailing
+  review's version verdict), unchanged except through the amendment procedure
+  below. Until then it binds design consumers (science's adapter design builds
+  against it) and changes nothing about shipped code; the standard keeps
+  describing the code that exists.
+- **Touchpoints with existing normative text are recorded, not applied.** The
+  seam re-attributes the single-writer MUST (standard §13) and re-states
+  `rename`'s crash language (§7). The seam design fixes the amendment wording
+  for both now and marks them pending; the standard is not contradicted in the
+  interim because the seam's surface does not exist in shipped code.
+- **Graduated amendment procedure.** Any change to a part of the contract that
+  a landed consumer exercises requires that consumer's sign-off, recorded in
+  the document. Parts no consumer exercises yet (science's cut-4 slice is
+  add-only, so replace/delete, rename recovery, and snapshot routing start
+  unexercised) may be amended by `nodes`-side review alone until their first
+  consumer lands — the full shape is frozen as intent, but unexercised
+  decisions do not accrete cross-repo veto before anything depends on them.
+
+This mirrors science's freeze discipline; it is the first `nodes` design to
+carry such a clause because it is the first whose direct consumer is a design
+in another repository.
 
 The seam design merges to `main` **alone and first**. Immediately after, one
 commit on science `main`:
@@ -70,9 +94,13 @@ These are settled during execution, in the seam design itself. The list is the
 spec's completeness bar: the seam design must pin every item below, and a plan
 task that skips one is incomplete. Current code facts the contract formalizes:
 `Store.write_file` is a bare `write_text`; `Corpus.rename` prepares all rewrites
-in memory, validates all before writing any, then commits renamed-node-first
-then referrers; substrate consolidation §7 (science) rules this a validation
-boundary, not a durability one, and forbids any interim transaction layer.
+in memory, validates all before writing any, then commits in the order
+write-new-file → delete-old-file → rewrite-referrers — so a crash between the
+first two leaves **two files carrying one uid**, which strict construction
+refuses (`CollisionError`, `structural_index.py`), an intermediate state that is
+*not* forward-resolvable; substrate consolidation §7 (science) rules this write
+path a validation boundary, not a durability one, and forbids any interim
+transaction layer.
 
 1. **The write-plan value.**
    - Op kinds: create, replace, delete — the file operations the three mutators
@@ -85,14 +113,27 @@ boundary, not a durability one, and forbids any interim transaction layer.
      their expected prior state (at minimum path-present; whether an expected
      content digest is carried, and who checks it under each atomicity class,
      is decided in the seam design).
-   - Plan-level ordering: the plan is an ordered sequence; `rename`'s existing
-     promise (renamed node first, then referrers — a crash leaves a
-     forward-resolvable state) is restated as a property of the plans the
-     mutators emit, not of the executor.
-   - Purity and portability: the plan is a pure, serializable, language-neutral
-     value; both kernels emit identical plans for identical mutations. Its
-     conformance-tier placement (tier 1 vs tier 2) and its parity-fixture
-     obligation are decided and stated.
+   - Plan-level ordering: the plan is an ordered sequence, and the crash
+     surface is stated **per operation position** under the best-effort class —
+     including the known-invalid window in today's rename order (new file
+     written, old not yet deleted: a duplicate uid that strict construction
+     refuses and only §2.3's collecting mode can even report). The seam design
+     either re-orders the emitted plan to close that window or specifies it as
+     an acknowledged invalid intermediate; "renamed node first, then referrers"
+     is restated as a property of the plans the mutators emit, with whatever
+     precision the chosen answer supports — not as a blanket
+     forward-resolvability claim, which the current order does not satisfy.
+   - Purity and portability: the plan is a pure, fully-determined,
+     serializable value — no closures, no callbacks. Plan **equality is
+     semantic**, consistent with the standard's parity model (§1: byte-identical
+     serialization is a non-goal; equivalence is defined over the canonical
+     projection): both kernels emit semantically identical plans for identical
+     mutations, with content payloads compared via the canonical projection
+     while each language serializes with its own emitter. Whether the payload
+     is the serialized document or the node value with serialization as a
+     named kernel service is the seam design's call. Its conformance-tier
+     placement (tier 1 vs tier 2) and its parity-fixture obligation are
+     decided and stated.
 2. **The executor protocol.**
    - The execute operation's signature and result type in both languages.
    - Atomicity classes, declared per executor: the **default executor** is
@@ -100,13 +141,28 @@ boundary, not a durability one, and forbids any interim transaction layer.
      the plan applied — now named as such; a **durable executor** (supplied by
      a composition root; `atoms` via science's Python composition root) applies
      the plan all-or-nothing. `nodes` depends on `atoms` in neither language.
+   - Concurrency posture, declared per executor and stated explicitly: the
+     **default executor provides no serialization** — the single-writer
+     obligation stays with the deployment, exactly as standard §13 places it
+     today; the durable executor owns serialization. "Re-attribution" of the
+     single-writer MUST therefore means: the kernel never coordinates, and
+     each executor declares whether it does or passes the obligation through.
    - Refusal semantics: what a precondition failure does and when, per class —
      before any effect, or at the failing op — and what the caller can assume
      about applied state after a refusal, per class.
+   - Plan validation: an executor's obligations on a malformed plan and on a
+     path that escapes the corpus root or enters the reserved namespace —
+     which of plan builder and executor refuses, and with what error.
    - What the executor returns to the corpus, and what the corpus does with it.
+   - The supply surface: how a composition root injects an executor (the
+     `Corpus` construction point), how the executor learns the corpus root,
+     and the public error types the seam adds — the pieces science's adapter
+     must wire without re-opening `nodes`.
 3. **Boundary attribution.**
-   - The single-writer MUST re-attributed: `nodes` performs no coordination;
-     the executor owns serialization and durability.
+   - The single-writer MUST re-attributed as item 2's concurrency posture
+     states: the kernel performs no coordination; serialization and durability
+     are each executor's declared responsibility or explicitly passed to the
+     deployment.
    - In-memory state (structural index, search index, manifest) updates happen
      corpus-side only after the executor reports success; the partial-failure
      story is stated per atomicity class (what the corpus object's state is
@@ -155,7 +211,17 @@ What is re-verified, per delta:
   `dangling()`, and `descendants`/`ancestors`; the line-count claim (~2,800)
   re-measured; `rename`'s prospective caller (address correction / inbound
   rewrite) still stands in the science designs; the `(crash-atomic)` code
-  comment still overclaims.
+  comment still overclaims. **One outcome is already known:** mindful v6's
+  `api.ts` ships production `similar()` and `similarText()` calls delegating
+  to `corpus.similar`, so the similarity withdrawal's stated basis — "zero
+  production callers ever, in either language; the one consumer (mindful)
+  shipped its own semantic stack instead" — fails against the current tree.
+  The review adjudicates whether the delta is withdrawn or re-argued on a
+  different basis; either way the verdict is surfaced to the user before it
+  lands, since it changes the design's largest delta. The rename delta is
+  expected to land **stands amended** at minimum: its ordering language
+  ("a crash leaves a forward-resolvable state") is false at the
+  write-new/delete-old window (§3 above).
 - **§5 (housekeeping):** each item's stale fact re-checked (which design
   statuses still misdescribe shipped code; the four path corrections; the
   README consumer claim; the identity-boundary sentence; the release
@@ -165,16 +231,25 @@ What is re-verified, per delta:
 - **The consumer-state note:** refreshed as the second landing (this spec's
   §2.2) describes.
 
-§6 (standard changes summary) is reviewed only for consistency with the
-verdicts — the amendment itself does not land (see §5 below).
+§6 (standard changes summary) is reviewed for consistency with the verdicts
+**and gets an explicit version-policy verdict against standard §12**: §6 calls
+the tier-2 removals "minor under §12's removal clause," but §12 defines a
+**major** bump as one that "changes pinned tier-2 behavior," and the similarity
+facet is pinned tier-2 with fixtures in the §11 table. The review rules whether
+the amendment the deltas imply is 1.3 or 2.0, and records the reading of §12's
+removal-vs-change boundary that the ruling rests on. The amendment itself still
+does not land (see §5 below).
 
 ## 5. Out of scope
 
-- **No code changes.** The suite is run before each merge and must be green,
-  trivially.
-- **No STANDARD amendment.** 1.2 → 1.3 lands with the future implementation
-  plan, as the redesign design's §6 envisions. The standard remains authoritative
-  at 1.2 throughout this workstream.
+- **No code changes.** The repository gates are run before each merge and must
+  pass, trivially.
+- **No STANDARD amendment.** The amendment (1.3 or 2.0, per the version
+  verdict) lands with the future implementation plan, as the redesign design's
+  §6 envisions. The standard remains authoritative at 1.2 throughout this
+  workstream; the seam design's authority until then is exactly what its
+  stability clause states (§2.1) — a frozen pre-normative contract binding the
+  future amendment, not a competing normative text.
 - **No science adapter design.** That is the next front, consuming the frozen
   seam.
 - **No implementation scheduling.** The deltas' implementation plan is future
@@ -191,6 +266,9 @@ verdicts — the amendment itself does not land (see §5 below).
 3. No stale claim survives in either repository, grep-verified at each landing:
    "detailed review pending," the A7–A8 gate line, science ledger row 3's
    "Direction approved," and the open-questions seam-pending wording.
-4. The `nodes` test suite is green at both merges.
+4. The full AGENTS.md gate set passes at both merges: from `python/`,
+   `uv run --frozen pytest -q`, `uv run --frozen ruff check .`,
+   `uv run --frozen pyright src`; from `ts/`, `npm test`, `npm run typecheck`,
+   `npm run check`.
 5. Science `main` carries the two follow-up commits, each landed immediately
    after its `nodes` merge.
