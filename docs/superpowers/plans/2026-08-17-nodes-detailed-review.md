@@ -4,9 +4,9 @@
 
 **Goal:** Freeze the write-plan/executor seam as a pre-normative contract, then complete the detailed review of the 2026-08-03 redesign design, in two landings.
 
-**Architecture:** Documents only — no code changes anywhere in this plan. Tasks 1–3 write the seam design; Task 4 is landing one (seam merge + science follow-up); Tasks 5–7 are the trailing per-delta review of the redesign design; landing two closes it. Every factual claim written into a document is verified against the tree in the same task, with the verification command recorded in the step.
+**Architecture:** The `nodes` repository changes in this plan are documents only; no code changes are made there. Tasks 1–3 write the seam design; Task 4 is landing one (seam merge + science follow-up); Tasks 5–7 are the trailing per-delta review of the redesign design; landing two closes it. The science follow-up may update existing documentation-guard metadata/allowlists when a required citation triggers that guard. Every factual claim written into a document is verified against the tree in the same task, with the verification command recorded in the step.
 
-**Tech Stack:** Markdown; git; the repository gates (pytest/ruff/pyright, npm test/typecheck/check) run before every commit and must pass trivially since only documents change.
+**Tech Stack:** Markdown; git; the repository gates (pytest/ruff/pyright, npm test/typecheck/check) run before every commit and must pass. Nodes changes are documents only, with the authorized science documentation-guard metadata exception described above.
 
 **Spec:** `docs/superpowers/plans/../specs/2026-08-17-nodes-detailed-review-design.md` — the plan argues from it; executors read both. The spec's §3 is the seam design's completeness bar; its §4 is the verdict protocol.
 
@@ -185,7 +185,7 @@ In `~/d/science`: ledger row 3's status cell gains: "Seam frozen 2026-08-XX (`no
 **2026-08-17 ruling:** add the new seam filename to science `python/tests/test_designs_corpus.py::EXTERNAL_DOCUMENTS` in this same follow-up commit. This documentation-guard entry is within the plan's intent; later follow-ups reuse the registered entry so the issue does not recur.
 
 ```bash
-git add docs/designs/2026-08-03-redesign-adoption-ledger.md docs/guide/open-questions.md
+git add docs/designs/2026-08-03-redesign-adoption-ledger.md docs/guide/open-questions.md python/tests/test_designs_corpus.py
 git commit -m "docs: record the nodes seam freeze"
 ```
 
