@@ -158,7 +158,7 @@ git commit -m "docs(designs): complete the seam contract for freeze"
 
 **Files:**
 - Modify: `docs/designs/2026-08-03-nodes-under-the-system-redesign-design.md` (§4 and the status header only)
-- After merge, in science (`~/d/science`, on `main` directly): `docs/designs/2026-08-03-redesign-adoption-ledger.md` (row 3), `docs/guide/open-questions.md` (the cut-4 bullet, lines ~175–194)
+- After merge, in science (`~/d/science`, on `main` directly): `docs/designs/2026-08-03-redesign-adoption-ledger.md` (row 3), `docs/guide/open-questions.md` (the cut-4 bullet, lines ~175–194), `python/tests/test_designs_corpus.py` (documentation-guard infrastructure for external citations)
 
 **Interfaces:**
 - Consumes: the finished seam design and its exact filename.
