@@ -210,6 +210,13 @@ The operation mapping is:
 - `DeleteOp` maps to `DeletePath(effect_id, path, pre)`. The adapter obtains and
   cross-checks `pre` as for replace.
 
+*(Consumer-note addendum, 2026-08-18:)* the landed adapter additionally
+derives `CreateDirectory` effects for a created file's missing parents,
+inside the same transaction and ordered before the file — the engine refuses
+a create whose parent neither exists nor is created by that transaction. The
+note's claim stands: every field remains derivable from the plan, adapter
+constants, or adapter reads, and no part of this contract re-opened.
+
 These are the engine's actual effect signatures
 (`~/d/atoms/python/src/atoms/core/effects.py:18-46`). Their digest formats differ:
 the plan's `expected_digest` is raw lowercase hex, while
@@ -286,6 +293,7 @@ unexercised.
 | --- | --- | --- | --- | --- |
 | 2026-08-18 | §§3–4 | Made `ExecutionError.index` and `.applied` optional, with `applied=None` meaning restoration unproved; narrowed `PlanRefusedError` to lexically decidable malformedness and made durable resolution-time refusals `ExecutionError(None, 0)`; replaced the blanket durable crash claim with the persistent, evidence-preserving halt carve-out. | `nodes`-side review | n/a — no landed consumer exercises these parts |
 | 2026-08-18 | §1 | Recorded the implementation landing and the fixture-pinned uid order of referrer replaces; status note only, no contract change. | `nodes`-side review | n/a — status note only |
+| 2026-08-18 | §6 | Consumer-note addendum: science's landed adapter derives `CreateDirectory` effects for missing parents inside the same transaction; the note's derivability claim stands and no contract part changed. | `nodes`-side review | n/a — status note only |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record
