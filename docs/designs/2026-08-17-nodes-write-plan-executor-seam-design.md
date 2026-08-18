@@ -265,8 +265,10 @@ review's version verdict—and change nothing until that amendment lands.
 
 ### Exercise map
 
-No part is consumer-exercised yet. When science's adapter design banks, it will
-exercise the create path: its cut-4 slice is add-only.
+Science's composition-root adapter design banked 2026-08-18 at science commit
+`2140805`. Its add-only cut-4 slice consumer-exercises the create path, so any
+amendment to that path requires Science sign-off. Replace and delete remain
+unexercised.
 
 ### Amendments log
 
