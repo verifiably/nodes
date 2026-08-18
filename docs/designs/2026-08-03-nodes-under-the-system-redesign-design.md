@@ -46,6 +46,11 @@ whole node", and the exact corpus-state identity digests the sorted
 - The existing parity fixtures continue to pin it — they become tests of shipped API
   instead of a private helper.
 
+*(2026-08-17:)* **stands.** Neither public source tree exposes the projection;
+`to_canonical` / `toCanonical` remain test-helper-only, while science's world-addressing
+and epistemic-kernel designs still depend on exact corpus-state identities derived from
+nodes' normative canonical projection.
+
 ### 2.2 Reserved-path contract
 
 Corpus membership is stated positively (every `*.md` under the root, minus
@@ -67,6 +72,13 @@ contract above already covers it, because the guarantee is stated over all non-`
 content rather than over an enumerated list of consumer paths. Recorded because it is the
 first evidence that this clause is load-bearing for more than the manifest.
 
+*(2026-08-17:)* **stands amended.** The contract direction and the tamper-log consumer
+stand, but today's traversal is language-specific: Python excludes `.nodes-index` only as
+the first relative component and rejects yielded symlink files; on Python 3.13.12,
+`Path.rglob` also did not descend through a directory symlink. TypeScript excludes the
+root-relative `.nodes-index` directory and skips every symlink entry at every depth. The
+future no-follow and within-root guarantees remain the required contract.
+
 ### 2.3 Recoverable construction
 
 Corpus construction fails hard on the first unparseable file, so one stray or
@@ -80,6 +92,11 @@ the detection mechanism — the audit must be able to run over a damaged corpus.
 - Strict construction remains the default; the collecting mode is the documented posture
   for audit and import boundaries. This completes the standard's own report-don't-raise
   argument, which currently stops at the parse floor.
+
+*(2026-08-17:)* **stands amended.** Strict rebuild and reconcile still fail on the first
+unparseable file. The collecting mode also gains a corpus-level `uid-collision` error
+finding and excludes both claimants: the frozen seam's rename plan acknowledges exactly
+this duplicate-uid prefix, so audit must be able to report it.
 
 ### 2.4 Digest-shaped ids
 
@@ -97,6 +114,11 @@ per-kind directory. The id grammar already admits them; three hazards remain:
   because the id grammar is ASCII today. Pin code-point order, matching §8.2 and §9.1.
 - **uid opacity.** "New nodes SHOULD mint 32-char lowercase hex (UUIDv4)" reads as a
   constraint; state that uid is opaque and any minting rule is a profile decision.
+
+*(2026-08-17:)* **stands.** `path_for` still maps exact case without an existence check,
+`Corpus.check` does not compare indexed ids with mapped paths, Python and TypeScript still
+use different unpinned native string collations for corpus ordering, and the standard
+still carries the uid-minting SHOULD. The frozen seam changes none of these hazards.
 
 ## 3. Withdrawals
 
