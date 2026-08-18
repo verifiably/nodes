@@ -115,11 +115,20 @@ serializes or passes the single-writer obligation through to the deployment.
 
 The plan builder never emits a path outside the corpus root or in a reserved
 namespace. Both executor classes additionally reject, before any effect, a
-malformed plan containing a path that escapes the root after resolution, a
-reserved-namespace path, or an unknown operation kind. They raise
-`PlanRefusedError` for that refusal. Other execution failures raise
-`ExecutionError`, carrying the failing operation's index and the number of
-operations already applied. The seam adds exactly those two public error names.
+malformed plan containing a lexically escaping path (absolute, or containing
+`..` after lexical normalization), a reserved-namespace path, or an unknown
+operation kind. They raise `PlanRefusedError` for that lexically decidable
+refusal. A durable executor's authoritative rooted resolution can additionally
+refuse path or deployment topology; that is an execution failure, not malformed
+plan syntax, and raises `ExecutionError(index=None, applied=0)`.
+
+Other execution failures raise `ExecutionError(index, applied)`, where each
+field is `int | None` in Python (`number | null` in TypeScript). `index=None`
+means the failure is not attributable to an operation. `applied=None` means
+restoration is unproved: the executor cannot prove disk is at its pre-plan
+state. A known pre-effect or cleanly restored refusal carries `applied=0`; a
+durable transaction-level refusal has `index=None`. The seam adds exactly these
+two public error names.
 
 The executor returns `None` / `void`; only after `execute` returns does the
 corpus update its in-memory state.
@@ -141,13 +150,24 @@ executor's declared responsibility or are explicitly passed to the deployment;
 §3's posture table is the authority. Corpus-side in-memory state—the structural
 index, search index, and manifest—updates only after `execute` returns.
 
-For a durable executor, refusal or a crash leaves both disk and in-memory state
-at their pre-plan state: nothing applies and nothing updates. For the
-best-effort executor, a mid-plan failure leaves the applied prefix on disk while
-memory remains entirely pre-plan. The corpus object is therefore stale by
-exactly that applied prefix relative to disk, and lacks the whole plan relative
-to the intended final state. Reconstruction from disk, with its existing strict
-or collecting behavior, is the recovery.
+For a durable executor, a clean refusal leaves both disk and in-memory state at
+their pre-plan state. After a crash, recovery under a later lease either proves
+and restores the pre-plan state or completes the fully applied plan and its
+commit before returning. If the durable executor cannot prove restoration,
+`execute` does not return and `ExecutionError(applied=None)` is the only honest
+attribution: memory remains pre-plan, while disk is halted or otherwise
+unattributable and must not be described as restored.
+
+`TransactionHalted` is the named durable halt case. Its evidence is preserved,
+and the halt persists until the diagnostic's operator action is performed; a
+later lease then resumes recovery or re-raises the halt. The adapter neither
+invokes nor reimplements that recovery.
+
+For the best-effort executor, a mid-plan failure leaves the applied prefix on
+disk while memory remains entirely pre-plan. The corpus object is therefore
+stale by exactly that applied prefix relative to disk, and lacks the whole plan
+relative to the intended final state. Reconstruction from disk, with its
+existing strict or collecting behavior, is the recovery.
 
 ## 5. Derived indexes and reserved paths
 
@@ -250,7 +270,9 @@ exercise the create path: its cut-4 slice is add-only.
 
 ### Amendments log
 
-No amendments.
+| date | part | change | reviewer | consumer sign-off |
+| --- | --- | --- | --- | --- |
+| 2026-08-18 | §§3–4 | Made `ExecutionError.index` and `.applied` optional, with `applied=None` meaning restoration unproved; narrowed `PlanRefusedError` to lexically decidable malformedness and made durable resolution-time refusals `ExecutionError(None, 0)`; replaced the blanket durable crash claim with the persistent, evidence-preserving halt carve-out. | `nodes`-side review | n/a — no landed consumer exercises these parts |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record
