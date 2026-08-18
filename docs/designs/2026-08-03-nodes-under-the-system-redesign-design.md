@@ -1,17 +1,18 @@
 # Nodes under the system redesign — design
 
 **Date:** 2026-08-03
-**Status:** Draft — direction approved 2026-08-03; §4 frozen into the seam design 2026-08-17; detailed review of §2/§3/§5 pending
+**Status:** Detailed review complete 2026-08-17 — §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; deltas await implementation
 **Authority:** `docs/STANDARD.md` 1.2 remains normative until the amendments below land.
 **Consumer requirements:** science's four system-redesign designs of 2026-08-02 (epistemic
 kernel, substrate consolidation, world addressing, computation & reproducibility).
 
-> **Consumer state, 2026-08-08.** Those four designs are banked on science's `main`, and the
-> corpus around them has grown to sixteen. None of the later designs changes a delta below —
-> the domain-extension boundary of 2026-08-04 makes a point of costing **zero `nodes` delta**
-> — but two of them touch this document and are noted at their sites: the tamper-evident log
-> is a second consumer of §2.2, and the domain boundary asks for one parity fixture whose
-> owning repository is not yet settled (§5).
+> **Consumer state, 2026-08-17.** Science's corpus now contains twenty-three design
+> documents: its README's explicit count matches `docs/designs/*.md`. `atoms` A8 was
+> certified 2026-08-17 (adoption-ledger row 4), and conformance cut 4 is drafted against
+> that certified engine at Science's composition-root seam; cut 4 §1 makes its adapter
+> design wait on the now-frozen `nodes` write-plan/executor seam. The tamper-evident log
+> confirms §2.2's second consumer: its per-root chain occupies a reserved in-corpus path
+> after `corpus.yaml`.
 
 ## 1. Why
 
@@ -213,24 +214,54 @@ Mechanical; lands with this design's plan:
   spec review" — moot if §3 lands), and ts-corpus-fingerprints ("draft") designs all
   describe shipped, published code; the substrate and ts-kernel designs carry superseded
   sections (layering, the fat `Store`, the science migration path) with no banner.
+
+  *(2026-08-17:)* **stands.** All five headers still misdescribe the shipped tree:
+  fulltext still says “pending implementation plan,” similarity says “pending spec review,”
+  ts-corpus-fingerprints says “draft design,” and the substrate and ts-kernel designs still
+  say “Draft” without a banner marking their superseded layering, fat-`Store`, and science
+  migration sections.
 - **Path corrections.** `src/nodes/kernel/…` → `python/src/nodes/core/…` in four designs;
   `@nodes/kernel` → `@nodes-dev/core` in the fingerprints design.
+
+  *(2026-08-17:)* **stands amended.** The actual old-Python-path matches are in
+  `2026-06-21-nodes-structural-index-design.md`, `2026-06-21-nodes-ts-kernel-design.md`,
+  `2026-06-22-nodes-fulltext-search-design.md`,
+  `2026-06-22-nodes-similarity-index-design.md`,
+  `2026-06-23-nodes-index-persistence-design.md`,
+  `2026-07-13-nodes-python-package-layout-design.md`, and this design. The old npm package
+  name appears in the ts-kernel, ts-corpus-fingerprints, membership-traversal-and-check,
+  package-identity-and-ownership, and this design. The implementation sweep must distinguish
+  stale directions from historical statements about the names being replaced.
 - **README.** Science is listed as a consumer that "builds on the Python kernel" — false
   today; restate as the intended consumer via the redesign. The mindful path is
   `~/d/mindful/v6/`.
+
+  *(2026-08-17:)* **stands.** The README still makes the active-consumer claim, while
+  science's Python package has no `nodes-core` dependency and no `nodes.core` import.
 - **Identity boundary.** One sentence in the standard: the exact corpus-state identity is
   a distinct, science-owned primitive (digest over `corpus_id` plus sorted
   `(uid, content identity)` pairs); neither the `(path, mtime, size)` fingerprint nor the
   path-keyed snapshot manifest may be extended toward it.
+
+  *(2026-08-17:)* **stands.** STANDARD still contains no “corpus-state identity” boundary;
+  the implementation amendment must add the sentence above.
 - **Release follow-ups.** First-publish-recovery §4's post-tag steps (npm 0.0.0
   deprecation, attestation verification, credential revocation) get a status note
   recording whether they happened.
+
+  *(2026-08-17:)* **stands.** The recovery plan specifies all three post-tag checks, but no
+  dated status note records whether they happened; plan expectations and unchecked steps
+  are not completion evidence.
 - **Undecided, added 2026-08-08.** Science's domain-extension-boundary design (D4) requires
   one parity fixture pinning a *namespaced* facet key — `biology/gene-axis` — identically
   through both canonical projections, so that the facet-key freedom stays deliberate rather
   than incidental. Whether it lands here or in science is open: it tests `nodes`' projection,
   which argues for here, but §2.1 makes that projection public API, which lets science pin it
   from outside. Not a fifth contract delta either way — nothing about `nodes` changes.
+
+  *(2026-08-17:)* **stands amended.** Re-park the fixture with the public-projection work:
+  the future §2.1 implementation plan owns it, and §2.1 landing is the trigger. The fixture
+  tests the shipped projection and cannot precede that API.
 
 ## 6. Standard changes summary
 
@@ -240,3 +271,14 @@ additions (projection API and version, reserved paths, collecting construction,
 the §3 removals (similarity, `dangling()`, `descendants`/`ancestors` and their oracle
 rows) are minor under §12's removal clause; the single-writer re-attribution is editorial
 until §4 lands.
+
+*(2026-08-17:)* **stands amended.** The reviewed amendment is **2.0 (major)**. Similarity
+is pinned tier-2 by `similarity-corpus/`, `similarity.vectors.json`, and
+`similarity.oracle.json`, but its proposed withdrawal is withdrawn, so it contributes no
+removal. `descendants` and `ancestors` remain withdrawals, and `traversal.oracle.json`
+explicitly pins both operations; deleting them and their oracle rows therefore changes
+pinned tier-2 behavior. `Corpus.dangling()` also remains a withdrawal, but §11 pins only
+the retained `dangling-ref` and `dangling-member` findings through `check.oracle.json`, not
+the convenience API itself. Under §12, the surviving pinned traversal removal requires a
+major bump. **1.3 (minor)** is available only if every surviving withdrawal leaves pinned
+surfaces untouched, which this inventory does not.
