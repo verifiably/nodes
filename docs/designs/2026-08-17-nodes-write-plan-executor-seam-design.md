@@ -18,6 +18,16 @@ amendment wording in §7 here, not applied to the standard. A change to a part
 exercised by a landed consumer requires that consumer's sign-off, recorded in
 §8; `nodes`-side review alone may amend parts no landed consumer exercises.
 
+**Implementation status (2026-08-18):** the seam is implemented in both kernels
+(`nodes.core.write_plan` and `~/d/nodes/ts/src/write-plan.ts`; errors in
+`nodes.core.errors` / `~/d/nodes/ts/src/errors.ts`;
+`Corpus(root, executor_factory=...)` in both). The §2 plan-equality obligation
+is pinned by the tier-1 fixture `fixtures/write-plan.rename.canonical.json`,
+which fixes referrer replace operations in uid order — the deterministic order
+position-wise equality requires and §2 left to the fixture. The §7 amendments
+remain pending on the trailing review's version verdict; the standard still
+describes 1.2 and gained no seam text.
+
 ## 2. The write plan
 
 `WritePlan` is a pure, fully determined, serializable ordered sequence of these
@@ -275,6 +285,7 @@ unexercised.
 | date | part | change | reviewer | consumer sign-off |
 | --- | --- | --- | --- | --- |
 | 2026-08-18 | §§3–4 | Made `ExecutionError.index` and `.applied` optional, with `applied=None` meaning restoration unproved; narrowed `PlanRefusedError` to lexically decidable malformedness and made durable resolution-time refusals `ExecutionError(None, 0)`; replaced the blanket durable crash claim with the persistent, evidence-preserving halt carve-out. | `nodes`-side review | n/a — no landed consumer exercises these parts |
+| 2026-08-18 | §1 | Recorded the implementation landing and the fixture-pinned uid order of referrer replaces; status note only, no contract change. | `nodes`-side review | n/a — status note only |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record
