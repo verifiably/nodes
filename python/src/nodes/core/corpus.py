@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Literal
 
@@ -24,6 +24,14 @@ from nodes.core.snapshot import (
     write_snapshot,
 )
 from nodes.core.store import Store
+from nodes.core.write_plan import (
+    CreateOp,
+    DefaultExecutor,
+    DeleteOp,
+    ReplaceOp,
+    WriteOp,
+    WritePlanExecutor,
+)
 
 
 def _rewrite_refs(node: Node, old: str, new: str) -> None:
@@ -68,8 +76,17 @@ class Finding(BaseModel):
 class Corpus:
     """Coordinator over a `Store` + an in-memory `Index`. The primary kernel API."""
 
-    def __init__(self, root: Path, registry: Registry | None = None, embedder: Embedder | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        registry: Registry | None = None,
+        embedder: Embedder | None = None,
+        executor_factory: Callable[[Path], WritePlanExecutor] | None = None,
+    ) -> None:
         self.store = Store(root)
+        # Root-taking factory, never a pre-bound executor: the corpus supplies its own root.
+        factory = executor_factory if executor_factory is not None else DefaultExecutor
+        self.executor: WritePlanExecutor = factory(self.store.root)
         self.registry = registry
         self.embedder = embedder
         self.vector_cache: VectorCache | None = VectorCache(root) if embedder is not None else None
@@ -84,10 +101,8 @@ class Corpus:
     def _rel_path(self, node_id: str) -> str:
         return self.store.path_for(node_id).relative_to(self.store.root).as_posix()
 
-    def _record_manifest(self, node: Node) -> None:
-        path = self._rel_path(node.id)
-        data = node_to_markdown(node).encode("utf-8")
-        self.manifest[path] = ManifestEntry(path=path, sha256=hash_bytes(data), uid=node.uid)
+    def _record_manifest(self, path: str, data: bytes, uid: str) -> None:
+        self.manifest[path] = ManifestEntry(path=path, sha256=hash_bytes(data), uid=uid)
 
     def _full_rebuild(self) -> None:
         nodes: list[Node] = []
@@ -158,12 +173,20 @@ class Corpus:
         if self.vector_index is not None:
             assert self.embedder is not None and self.vector_cache is not None
             prepared = self.vector_index.prepare(node, self.embedder, self.vector_cache)
-        self.store.write_file(node)
+        path = self._rel_path(node.id)
+        data = node_to_markdown(node).encode("utf-8")
+        # assert_addable guarantees a live uid holds this same id: matching pair → replace.
+        plan: list[WriteOp]
+        if node.uid in self.index.by_uid:
+            plan = [ReplaceOp(path=path, content=data, expected_digest=self.manifest[path].sha256)]
+        else:
+            plan = [CreateOp(path=path, content=data)]
+        self.executor.execute(plan)
         self.index.upsert(node)
         self.search_index.upsert(node)
         if self.vector_index is not None and prepared is not None:
             self.vector_index.commit(node, prepared)
-        self._record_manifest(node)
+        self._record_manifest(path, data, node.uid)
         return node
 
     def get(self, ref: str) -> Node:
@@ -180,7 +203,7 @@ class Corpus:
         if uid is None:
             raise RefError(f"no live node at {node_id!r}")
         path = self._rel_path(node_id)
-        self.store.delete_file(node_id)
+        self.executor.execute([DeleteOp(path=path, expected_digest=self.manifest[path].sha256)])
         self.index.remove(uid)
         self.search_index.remove(uid)
         if self.vector_index is not None:
@@ -262,8 +285,7 @@ class Corpus:
 
         # --- prepare: rewrite every node that will change, in memory ---
         node = self.store.read_file(old_id)
-        old_path = self.store.path_for(old_id)
-        old_rel_path = old_path.relative_to(self.store.root).as_posix()
+        old_rel_path = self._rel_path(old_id)
         node.id = new_id
         node.kind = NodeId.parse(new_id).kind
         if old_id not in node.deprecated_ids:
@@ -271,7 +293,7 @@ class Corpus:
         _rewrite_refs(node, old_id, new_id)
 
         referrers: list[Node] = []
-        for referrer_uid in referrer_uids:
+        for referrer_uid in sorted(referrer_uids):  # uid order: deterministic plan positions
             if referrer_uid == uid:
                 continue
             referrer = self.store.read_file(self.index.by_uid[referrer_uid].id)
@@ -293,26 +315,42 @@ class Corpus:
             for referrer in referrers:
                 prepared_referrers.append(self.vector_index.prepare(referrer, self.embedder, self.vector_cache))
 
-        # --- commit: renamed node first (crash-atomic), then referrers ---
-        new_path = self.store.write_file(node)
-        if old_path != new_path:
-            self.store.delete_file(old_id)
+        # --- plan: create new → delete old → replace referrers ---
+        new_rel_path = self._rel_path(new_id)
+        node_data = node_to_markdown(node).encode("utf-8")
+        plan: list[WriteOp] = []
+        if new_rel_path != old_rel_path:
+            plan.append(CreateOp(path=new_rel_path, content=node_data))
+            plan.append(DeleteOp(path=old_rel_path, expected_digest=self.manifest[old_rel_path].sha256))
+        else:
+            # ids differ but map to the same file: replace in place, nothing to delete
+            plan.append(
+                ReplaceOp(path=new_rel_path, content=node_data, expected_digest=self.manifest[old_rel_path].sha256)
+            )
+        referrer_writes: list[tuple[str, bytes]] = []
+        for referrer in referrers:
+            rpath = self._rel_path(referrer.id)
+            rdata = node_to_markdown(referrer).encode("utf-8")
+            plan.append(ReplaceOp(path=rpath, content=rdata, expected_digest=self.manifest[rpath].sha256))
+            referrer_writes.append((rpath, rdata))
+
+        # --- execute, then update in-memory state only after it returns ---
+        self.executor.execute(plan)
         self.index.upsert(node)
+        self.search_index.upsert(node)
+        if self.vector_index is not None and prepared is not None:
+            self.vector_index.commit(node, prepared)
         for i, referrer in enumerate(referrers):
-            self.store.write_file(referrer)
             self.index.upsert(referrer)
             self.search_index.upsert(referrer)
             if self.vector_index is not None:
                 self.vector_index.commit(referrer, prepared_referrers[i])
-
-        self.search_index.upsert(node)
-        if self.vector_index is not None and prepared is not None:
-            self.vector_index.commit(node, prepared)
-        if old_path != new_path:
+        if new_rel_path != old_rel_path:
             self.manifest.pop(old_rel_path, None)
-        self._record_manifest(node)
-        for referrer in referrers:
-            self._record_manifest(referrer)
+        self._record_manifest(new_rel_path, node_data, node.uid)
+        for i, referrer in enumerate(referrers):
+            rpath, rdata = referrer_writes[i]
+            self._record_manifest(rpath, rdata, referrer.uid)
         return node
 
     def check(self, registry: Registry | None = None) -> list[Finding]:
