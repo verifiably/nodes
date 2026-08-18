@@ -1,10 +1,12 @@
 export {
   CollisionError,
   EmbedderRequiredError,
+  ExecutionError,
   FacetError,
   IdError,
   InvariantError,
   NodesError,
+  PlanRefusedError,
   RefError,
   UnknownKindError,
   ValidationError,
@@ -53,6 +55,17 @@ export {
 } from "./shapes.js";
 export type { Edges, Keys, Membership, Order } from "./shapes.js";
 export { Store } from "./store.js";
+export {
+  type CreateOp,
+  type DeleteOp,
+  type ReplaceOp,
+  type WriteOp,
+  type WritePlan,
+  type WritePlanExecutor,
+  DefaultExecutor,
+  RESERVED_NAMESPACE,
+  validatePlan,
+} from "./write-plan.js";
 export { Corpus, type Finding } from "./corpus.js";
 export {
   type CorpusFile,
