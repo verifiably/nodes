@@ -8,27 +8,8 @@ import { CollisionError, ExecutionError } from "../src/errors.js";
 import { nodeToMarkdown } from "../src/frontmatter.js";
 import { type Node, makeNode } from "../src/node.js";
 import { relatesTo } from "../src/relations.js";
-import {
-  DefaultExecutor,
-  type ReplaceOp,
-  type WriteOp,
-  type WritePlan,
-  type WritePlanExecutor,
-} from "../src/write-plan.js";
-
-class RecordingExecutor implements WritePlanExecutor {
-  readonly inner: DefaultExecutor;
-  readonly plans: WriteOp[][] = [];
-
-  constructor(root: string) {
-    this.inner = new DefaultExecutor(root);
-  }
-
-  execute(plan: WritePlan): void {
-    this.plans.push([...plan]);
-    this.inner.execute(plan);
-  }
-}
+import { DefaultExecutor, type ReplaceOp, type WritePlan, type WritePlanExecutor } from "../src/write-plan.js";
+import { RecordingExecutor } from "./_executors.js";
 
 class RefusingExecutor implements WritePlanExecutor {
   execute(_plan: WritePlan): void {

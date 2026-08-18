@@ -1,0 +1,100 @@
+[
+  {
+    "op": "create",
+    "path": "topic/new.md",
+    "content": {
+      "id": "topic:new",
+      "uid": "11111111111111111111111111111111",
+      "kind": "topic",
+      "title": "Old",
+      "body": "",
+      "metadata": {
+        "created": null,
+        "updated": null,
+        "version": 1
+      },
+      "relations": [],
+      "facets": {},
+      "deprecated_ids": [
+        "topic:old"
+      ]
+    }
+  },
+  {
+    "op": "delete",
+    "path": "topic/old.md",
+    "expected_digest": "f98417260368cc3513bebc78b05bed996a586ade2cc16fdc59d2d8dc83118931"
+  },
+  {
+    "op": "replace",
+    "path": "note/r.md",
+    "content": {
+      "id": "note:r",
+      "uid": "22222222222222222222222222222222",
+      "kind": "note",
+      "title": "R",
+      "body": "",
+      "metadata": {
+        "created": null,
+        "updated": null,
+        "version": 1
+      },
+      "relations": [
+        {
+          "source": "note:r",
+          "predicate": "relatesTo",
+          "target": "topic:new",
+          "directed": true,
+          "weight": null,
+          "attrs": {}
+        },
+        {
+          "source": "note:r",
+          "predicate": "cites",
+          "target": "topic:new",
+          "directed": true,
+          "weight": null,
+          "attrs": {}
+        }
+      ],
+      "facets": {},
+      "deprecated_ids": []
+    },
+    "expected_digest": "80d515d611a06a566a2c383c97b0aaa3cda41b03c57cf03d2754527a94f02230"
+  },
+  {
+    "op": "replace",
+    "path": "graph/g.md",
+    "content": {
+      "id": "graph:g",
+      "uid": "33333333333333333333333333333333",
+      "kind": "graph",
+      "title": "G",
+      "body": "",
+      "metadata": {
+        "created": null,
+        "updated": null,
+        "version": 1
+      },
+      "relations": [],
+      "facets": {
+        "membership": {
+          "members": [
+            "topic:new"
+          ]
+        },
+        "edges": {
+          "edges": [
+            {
+              "source": "topic:new",
+              "predicate": "to",
+              "target": "topic:new"
+            }
+          ]
+        }
+      },
+      "deprecated_ids": []
+    },
+    "expected_digest": "13cdbefe93b7f8d33e55639ad216067b21c575c1961fdeb0664a56f07eee3ab1"
+  }
+]

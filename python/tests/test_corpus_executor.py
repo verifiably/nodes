@@ -12,17 +12,7 @@ from nodes.core.node import Node
 from nodes.core.relations import relates_to
 from nodes.core.write_plan import CreateOp, DefaultExecutor, DeleteOp, ReplaceOp, WritePlan
 
-
-class RecordingExecutor:
-    """Records every executed plan, then delegates to DefaultExecutor."""
-
-    def __init__(self, root: Path) -> None:
-        self.inner = DefaultExecutor(root)
-        self.plans: list[list] = []
-
-    def execute(self, plan: WritePlan) -> None:
-        self.plans.append(list(plan))
-        self.inner.execute(plan)
+from tests._executors import RecordingExecutor
 
 
 class RefusingExecutor:
