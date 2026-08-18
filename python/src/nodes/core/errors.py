@@ -35,3 +35,23 @@ class ValidationError(NodesError):
 
 class EmbedderRequiredError(NodesError):
     """Raised when a similarity API is used on a Corpus built without an embedder."""
+
+
+class PlanRefusedError(NodesError):
+    """Raised when a write plan is lexically malformed: an unknown operation kind,
+    an escaping path (absolute, or containing `..` after lexical normalization),
+    or a reserved-namespace path. Refused before any effect."""
+
+
+class ExecutionError(NodesError):
+    """Raised when write-plan execution fails.
+
+    `index=None` means the failure is not attributable to an operation.
+    `applied=None` means restoration is unproved: the executor cannot prove
+    disk is at its pre-plan state.
+    """
+
+    def __init__(self, message: str, *, index: int | None, applied: int | None) -> None:
+        super().__init__(message)
+        self.index = index
+        self.applied = applied
