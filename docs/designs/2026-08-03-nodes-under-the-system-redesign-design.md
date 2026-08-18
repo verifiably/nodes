@@ -136,15 +136,35 @@ Measured against them:
   the standard's similarity section, and simplify the prepare/commit ordering it forced
   into `Corpus.add`/`rename`. Re-admission goes through the admission criteria like any
   other candidate.
+
+  *(2026-08-17:)* **withdrawn.** This withdraws the proposed withdrawal, not the
+  similarity facet. Re-measurement finds two reachable shipped delegations:
+  `Mindful.similar()` to `Corpus.similar()` and `Mindful.similarText()` to
+  `Corpus.similarText()` (`api.ts:165-170`); `Mindful` is exported at the package root,
+  and both methods ship in `dist/api.js` and `dist/api.d.ts`. Both factual legs therefore
+  fail: production callers are not zero, and mindful did not replace nodes similarity
+  exclusively with its own semantic stack. Similarity and its pinned tier-2 standard
+  section and fixtures stay. The cleanup rider falls with the withdrawal: the similarity
+  hooks remain, so the proposed prepare/commit simplification in `Corpus.add`/`rename`
+  does not proceed. For §6's version arithmetic, similarity contributes no removal; Task
+  7 inventories the surviving withdrawals.
 - **`Corpus.dangling()`** — zero callers (mindful hand-rolls the same check inline), and
   the world design rules the corpus-local answer wrong by construction in a multi-corpus
   world. Withdraw the API; the `dangling-ref`/`dangling-member` findings stay — they are
   reports, and the world layer reinterprets them.
+
+  *(2026-08-17:)* **stands.** Re-measurement finds zero `.dangling()` callers in mindful
+  v6; its inline dangling-member check remains separate. The API withdrawal and the
+  retention of the two findings stand.
 - **`descendants` / `ancestors`** — zero callers in the only consumer; the world layer's
   traversal supersedes the corpus-local walk, which truncates at the corpus edge.
   Withdraw, with their oracle rows. `members`/`containers`/`outbound`/`inbound`/
   `neighbors` stay and are declared the complete one-hop graph surface —
   `outbound`/`inbound` are exactly what the world layer consumes.
+
+  *(2026-08-17:)* **stands.** Re-measurement finds zero `.descendants()` and zero
+  `.ancestors()` callers in mindful v6. The two API withdrawals and their oracle-row
+  removal stand.
 - **`rename`, re-specified rather than withdrawn.** It keeps a prospective caller — the
   redesign's address correction, and merge's inbound rewrite is "nodes' rename mechanics
   applied across corpora" — but its atomicity language overclaims: the referrer rewrite
@@ -152,6 +172,15 @@ Measured against them:
   `write_text`. Until §4's seam lands, the standard states ordering only (renamed node
   first, then referrers; a crash leaves a forward-resolvable state, not an atomic one),
   and the `(crash-atomic)` code comment is corrected to match.
+
+  *(2026-08-17:)* **stands amended.** The ordering-only direction and rejection of an
+  atomicity claim stand, but “a crash leaves a forward-resolvable state” is false during
+  the write-new/delete-old window: two files carry one uid and strict construction
+  refuses that state. The frozen seam design §2 specifies this invalid prefix and the
+  later forward-resolvable prefixes. The `(crash-atomic)` comments still exist at
+  `~/d/nodes/python/src/nodes/core/corpus.py:296` and
+  `~/d/nodes/ts/src/corpus.ts:333`; correcting them remains queued for the implementation
+  plan, not this review.
 
 ## 4. The execution seam (direction, not built now)
 
