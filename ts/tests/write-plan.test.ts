@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ExecutionError, NodesError, PlanRefusedError } from "../src/errors.js";
-import { type WriteOp, DefaultExecutor } from "../src/write-plan.js";
+import { DefaultExecutor, type WriteOp } from "../src/write-plan.js";
 
 function sha(data: string): string {
   return createHash("sha256").update(data, "utf-8").digest("hex");

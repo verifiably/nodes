@@ -17,6 +17,7 @@ import {
 } from "./snapshot.js";
 import { Store } from "./store.js";
 import { Index, type ResolvedEdge } from "./structural-index.js";
+import { DefaultExecutor, type WriteOp, type WritePlanExecutor } from "./write-plan.js";
 
 /** Rewrite every position in `node` that holds `oldId` to `newId` (in place):
  * top-level relations plus the built-in structural form facets. */
@@ -76,6 +77,7 @@ export interface Finding {
 /** Coordinator over a `Store` + an in-memory `Index`. The primary kernel API. */
 export class Corpus {
   readonly store: Store;
+  readonly executor: WritePlanExecutor;
   readonly registry?: Registry;
   index!: Index;
   searchIndex!: SearchIndex;
@@ -84,8 +86,15 @@ export class Corpus {
   vectorIndex?: VectorIndex;
   manifest: Map<string, ManifestEntry>;
 
-  constructor(root: string, registry?: Registry, embedder?: Embedder) {
+  constructor(
+    root: string,
+    registry?: Registry,
+    embedder?: Embedder,
+    executorFactory?: (root: string) => WritePlanExecutor,
+  ) {
     this.store = new Store(root);
+    // Root-taking factory, never a pre-bound executor: the corpus supplies its own root.
+    this.executor = executorFactory !== undefined ? executorFactory(root) : new DefaultExecutor(root);
     this.registry = registry;
     this.embedder = embedder;
     this.vectorCache = embedder !== undefined ? new VectorCache(root) : undefined;
@@ -100,10 +109,14 @@ export class Corpus {
     return pathForNodeId(nodeId);
   }
 
-  private recordManifest(node: Node): void {
-    const path = this.relPath(node.id);
-    const data = Buffer.from(nodeToMarkdown(node), "utf-8");
-    this.manifest.set(path, { path, sha256: hashBytes(data), uid: node.uid });
+  private recordManifest(path: string, data: Buffer, uid: string): void {
+    this.manifest.set(path, { path, sha256: hashBytes(data), uid });
+  }
+
+  private manifestDigest(path: string): string {
+    const entry = this.manifest.get(path);
+    if (entry === undefined) throw new RefError(`no manifest entry for ${JSON.stringify(path)}`);
+    return entry.sha256;
   }
 
   private fullRebuild(): void {
@@ -192,13 +205,19 @@ export class Corpus {
       this.vectorIndex !== undefined
         ? this.vectorIndex.prepare(node, this.embedder as Embedder, this.vectorCache as VectorCache)
         : undefined;
-    this.store.writeFile(node);
+    const path = this.relPath(node.id);
+    const data = Buffer.from(nodeToMarkdown(node), "utf-8");
+    // assertAddable guarantees a live uid holds this same id: matching pair → replace.
+    const plan: WriteOp[] = this.index.byUid.has(node.uid)
+      ? [{ op: "replace", path, content: data, expectedDigest: this.manifestDigest(path) }]
+      : [{ op: "create", path, content: data }];
+    this.executor.execute(plan);
     this.index.upsert(node);
     this.searchIndex.upsert(node);
     if (this.vectorIndex !== undefined && prepared !== undefined) {
       this.vectorIndex.commit(node, prepared);
     }
-    this.recordManifest(node);
+    this.recordManifest(path, data, node.uid);
     return node;
   }
 
@@ -214,7 +233,7 @@ export class Corpus {
     const uid = this.index.idToUid.get(nodeId);
     if (uid === undefined) throw new RefError(`no live node at ${JSON.stringify(nodeId)}`);
     const path = this.relPath(nodeId);
-    this.store.deleteFile(nodeId);
+    this.executor.execute([{ op: "delete", path, expectedDigest: this.manifestDigest(path) }]);
     this.index.remove(uid);
     this.searchIndex.remove(uid);
     this.vectorIndex?.remove(uid);
@@ -296,16 +315,15 @@ export class Corpus {
 
     // 3. Rewrite the renamed node itself (incl. its own oldId refs).
     const node = this.store.readFile(oldId);
-    const oldPath = this.store.pathFor(oldId);
     const oldRelPath = this.relPath(oldId);
     node.id = newId;
     node.kind = NodeId.parse(newId).kind;
     if (!node.deprecatedIds.includes(oldId)) node.deprecatedIds.push(oldId);
     rewriteRefs(node, oldId, newId);
 
-    // 4. Rewrite every OTHER referrer in memory.
+    // 4. Rewrite every OTHER referrer in memory, in uid order (deterministic plan positions).
     const referrers: Node[] = [];
-    for (const referrerUid of referrerUids) {
+    for (const referrerUid of [...referrerUids].sort()) {
       if (referrerUid === uid) continue;
       const referrer = this.store.readFile(this.idFor(referrerUid));
       rewriteRefs(referrer, oldId, newId);
@@ -330,27 +348,48 @@ export class Corpus {
           )
         : [];
 
-    // 6. Commit: renamed node first (crash-atomic), then referrers. Each written once.
-    const newPath = this.store.writeFile(node);
-    if (oldPath !== newPath) this.store.deleteFile(oldId);
-    this.index.upsert(node);
-    for (let i = 0; i < referrers.length; i++) {
-      const referrer = referrers[i];
-      this.store.writeFile(referrer);
-      this.index.upsert(referrer);
-      this.searchIndex.upsert(referrer);
-      if (this.vectorIndex !== undefined) this.vectorIndex.commit(referrer, preparedReferrers[i]);
+    // 6. Plan: create new → delete old → replace referrers.
+    const newRelPath = this.relPath(newId);
+    const nodeData = Buffer.from(nodeToMarkdown(node), "utf-8");
+    const plan: WriteOp[] = [];
+    if (newRelPath !== oldRelPath) {
+      plan.push({ op: "create", path: newRelPath, content: nodeData });
+      plan.push({ op: "delete", path: oldRelPath, expectedDigest: this.manifestDigest(oldRelPath) });
+    } else {
+      // ids differ but map to the same file: replace in place, nothing to delete
+      plan.push({
+        op: "replace",
+        path: newRelPath,
+        content: nodeData,
+        expectedDigest: this.manifestDigest(oldRelPath),
+      });
+    }
+    const referrerWrites: Array<{ path: string; data: Buffer }> = [];
+    for (const referrer of referrers) {
+      const rpath = this.relPath(referrer.id);
+      const rdata = Buffer.from(nodeToMarkdown(referrer), "utf-8");
+      plan.push({ op: "replace", path: rpath, content: rdata, expectedDigest: this.manifestDigest(rpath) });
+      referrerWrites.push({ path: rpath, data: rdata });
     }
 
+    // 7. Execute, then update in-memory state only after it returns.
+    this.executor.execute(plan);
+    this.index.upsert(node);
     this.searchIndex.upsert(node);
     if (this.vectorIndex !== undefined && prepared !== undefined) {
       this.vectorIndex.commit(node, prepared);
     }
-
-    // 7. Manifest: remove old path on move; re-record the renamed node and every rewritten referrer.
-    if (oldPath !== newPath) this.manifest.delete(oldRelPath);
-    this.recordManifest(node);
-    for (const referrer of referrers) this.recordManifest(referrer);
+    for (let i = 0; i < referrers.length; i++) {
+      const referrer = referrers[i];
+      this.index.upsert(referrer);
+      this.searchIndex.upsert(referrer);
+      if (this.vectorIndex !== undefined) this.vectorIndex.commit(referrer, preparedReferrers[i]);
+    }
+    if (newRelPath !== oldRelPath) this.manifest.delete(oldRelPath);
+    this.recordManifest(newRelPath, nodeData, node.uid);
+    for (let i = 0; i < referrers.length; i++) {
+      this.recordManifest(referrerWrites[i].path, referrerWrites[i].data, referrers[i].uid);
+    }
     return node;
   }
 

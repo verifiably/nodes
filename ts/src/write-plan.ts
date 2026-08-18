@@ -87,11 +87,7 @@ export class DefaultExecutor implements WritePlanExecutor {
       const target = join(this.root, op.path);
       if (op.op === "create") {
         if (existsSync(target)) {
-          throw new ExecutionError(
-            `create target already present: ${JSON.stringify(op.path)}`,
-            index,
-            index,
-          );
+          throw new ExecutionError(`create target already present: ${JSON.stringify(op.path)}`, index, index);
         }
         mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, op.content);
