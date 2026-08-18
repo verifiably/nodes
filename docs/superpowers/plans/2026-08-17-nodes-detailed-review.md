@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **No code changes.** If a task believes a code change is needed, it reports BLOCKED; it does not make the change.
+- **No code changes in the `nodes` repository.** If a task believes a code change is needed here, it reports BLOCKED; it does not make the change. The science follow-up may update existing documentation-guard metadata/allowlists when a required documentation citation triggers that guard; that guard update belongs in the same science docs commit.
 - **Gates before every commit** (AGENTS.md): from `python/`: `uv run --frozen pytest -q`, `uv run --frozen ruff check .`, `uv run --frozen pyright src`; from `ts/`: `npm test`, `npm run typecheck`, `npm run check`.
 - **Conventional commits; no AI-attribution trailers.**
 - **Filepaths in docs use `~/d/nodes/...`** (AGENTS.md); never write `/home/keith` or `/mnt/ssd/Dropbox` into a document.
@@ -181,6 +181,8 @@ Stop. Use superpowers:finishing-a-development-branch scoped to this landing: gat
 - [ ] **Step 4: Science follow-up commit (after the merge, on science `main`)**
 
 In `~/d/science`: ledger row 3's status cell gains: "Seam frozen 2026-08-XX (`nodes` `2026-08-17-nodes-write-plan-executor-seam-design.md`, pre-normative — binds the future standard amendment); §2/§3/§5 detailed review in progress." In `docs/guide/open-questions.md`, the cut-4 bullet's clause naming the seam freeze as pending is updated to name it frozen (the adapter design's dependency is now satisfied; the adapter design itself remains the open item). Run science's gates from its `python/`: `uv run --frozen pytest -q` (10-minute timeout; science's pytest config suppresses the summary line — verify exit 0), `uv run --frozen ruff check .`, `uv run --frozen pyright`, and — because this landing edits the guide — `uv run --frozen python tools/check_guide.py`. Commit:
+
+**2026-08-17 ruling:** add the new seam filename to science `python/tests/test_designs_corpus.py::EXTERNAL_DOCUMENTS` in this same follow-up commit. This documentation-guard entry is within the plan's intent; later follow-ups reuse the registered entry so the issue does not recur.
 
 ```bash
 git add docs/designs/2026-08-03-redesign-adoption-ledger.md docs/guide/open-questions.md
