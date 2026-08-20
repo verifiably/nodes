@@ -30,6 +30,7 @@
     "check": "biome check ."
   },
   "dependencies": {
+    "canonicalize": "^3.0.0",
     "yaml": "^2.5.0",
     "zod": "^3.23.0"
   },

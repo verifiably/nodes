@@ -6,9 +6,9 @@ from pathlib import Path
 
 from nodes.core.corpus import Corpus
 from nodes.core.frontmatter import node_from_markdown
+from nodes.core.projection import to_canonical
 from nodes.core.write_plan import CreateOp, ReplaceOp, WritePlan
 
-from tests._canonical import to_canonical
 from tests._executors import RecordingExecutor
 
 FIXTURES = Path(__file__).parent.parent.parent / "fixtures"

@@ -2,19 +2,41 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { ValidationError } from "../src/errors.js";
 import { nodeFromMarkdown, nodeToMarkdown } from "../src/frontmatter.js";
-import { toCanonical } from "./_canonical.js";
+import { PROJECTION_VERSION, toCanonical, toCanonicalJson } from "../src/projection.js";
 
 // new URL(..., import.meta.url) resolves on all supported Node (no import.meta.dirname dependency).
 const FIXTURES = fileURLToPath(new URL("../../fixtures/", import.meta.url));
 const SOURCE = join(FIXTURES, "gene_phf19.md");
 const ORACLE = join(FIXTURES, "gene_phf19.canonical.json");
+const CANONICAL_TEXT = join(FIXTURES, "projection.v1.canonical.json");
 const TS_EMIT = join(FIXTURES, "gene_phf19.ts-emit.md");
 
 const oracle = () => JSON.parse(readFileSync(ORACLE, "utf-8"));
 const sourceNode = () => nodeFromMarkdown(readFileSync(SOURCE, "utf-8"));
 
 describe("cross-language parity (TS side)", () => {
+  it("exports projection.v1 canonical text", () => {
+    expect(PROJECTION_VERSION).toBe("projection.v1");
+    expect(`${toCanonicalJson(sourceNode())}\n`).toBe(readFileSync(CANONICAL_TEXT, "utf-8"));
+  });
+
+  it("pins RFC 8785 number spelling", () => {
+    const node = structuredClone(sourceNode());
+    node.relations[0].weight = 1e16;
+    node.facets.numeric = { small: 1e-7 };
+    const text = toCanonicalJson(node);
+    expect(text).toContain('"weight":10000000000000000');
+    expect(text).toContain('"small":1e-7');
+  });
+
+  it("rejects non-finite numbers", () => {
+    const node = structuredClone(sourceNode());
+    node.relations[0].weight = Number.POSITIVE_INFINITY;
+    expect(() => toCanonicalJson(node)).toThrow(ValidationError);
+  });
+
   it("TS parse of the shared fixture matches the oracle (check 2)", () => {
     expect(toCanonical(sourceNode())).toEqual(oracle());
   });

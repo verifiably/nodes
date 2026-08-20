@@ -214,9 +214,10 @@ not re-argued from the document. Verdicts are one of:
 
 What is re-verified, per delta:
 
-- **§2.1 (projection API):** the canonical projection still lives only in test
-  helpers (`python/tests/_canonical.py` and its TS twin); the science-side
-  digest requirements still name the projection as their base.
+- **§2.1 (projection API):** the 2026-08-17 review recorded the pre-public
+  projection surface. On 2026-08-20, `projection.v1` landed as public value and
+  RFC 8785 text APIs in both languages; science still owns the Decimal-aware
+  identities derived from that text.
 - **§2.2 (reserved paths):** membership is still stated positively with the
   manifest surviving "by accident of the glob"; symlink handling in the walk is
   still first-component-only; the tamper-evident log's reserved-path use is

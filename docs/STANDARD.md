@@ -354,8 +354,10 @@ assert against them.
 
 ### 11.1 Canonical JSON projection
 
-Cross-language node equality is defined over this projection (implemented by the
-`to_canonical` / `toCanonical` test helpers):
+Cross-language node equality is defined over the public `projection.v1` projection
+(`to_canonical` / `toCanonical`). The parsed accessor is convenience only; its normative
+serialized form is the RFC 8785 UTF-8 JSON text returned by `to_canonical_json` /
+`toCanonicalJson`:
 
 ```json
 {
@@ -368,14 +370,18 @@ Cross-language node equality is defined over this projection (implemented by the
 }
 ```
 
-Relations are normalized (`source` explicit, every field present) in document order;
+Relations are normalized (`source` explicit, every field present) in source order;
 dates render as `YYYY-MM-DD` strings or `null`; field names use the on-disk forms
-(`deprecated_ids`).
+(`deprecated_ids`). Arrays, including relations, preserve source order. Object keys use
+RFC 8785 UTF-16 ordering. Non-finite numbers and values outside JSON MUST be refused.
+Any change to this projection's value or canonical text requires a major
+projection-version bump.
 
 ### 11.2 Fixture inventory
 
 | Fixture | Pins |
 |---------|------|
+| `projection.v1.canonical.json` | byte/text oracle for `projection.v1` RFC 8785 canonical JSON |
 | `gene_phf19.md`, `gene_phf19.canonical.json` | frontmatter parse → canonical JSON projection |
 | `gene_phf19.py-emit.md`, `gene_phf19.ts-emit.md` | cross-emitted samples: each language re-emits (regenerate-and-diff) and parses the other's |
 | `corpus/`, `corpus.rename.canonical.json` | rename semantics across referrers (whole-corpus post-rename oracle) |
@@ -394,6 +400,8 @@ dates render as `YYYY-MM-DD` strings or `null`; field names use the on-disk form
   existing corpora, or change pinned tier-2 behavior.
 - Any tier-1/tier-2 change MUST update this document and the affected fixtures in the
   same change. Tier-3 additions do not touch this document.
+- Projection versions are stable: changing a projection's value or canonical text is a
+  major bump of that projection version.
 - History: **1.0** (2026-07-10) — initial consolidation; adds §8 corpus validity.
   **1.1** (2026-07-11) — membership traversal (§7); `dangling-member` finding (§8.2).
   **1.2** (2026-07-12) — knowledge vocab retired from the shipped surface

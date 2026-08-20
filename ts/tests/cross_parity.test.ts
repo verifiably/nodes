@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { nodeFromMarkdown } from "../src/frontmatter.js";
-import { toCanonical } from "./_canonical.js";
+import { toCanonical } from "../src/projection.js";
 
 const FIXTURES = fileURLToPath(new URL("../../fixtures/", import.meta.url));
 

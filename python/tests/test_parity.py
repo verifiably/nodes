@@ -3,18 +3,42 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from nodes.core.frontmatter import node_from_markdown, node_to_markdown
+import pytest
 
-from tests._canonical import to_canonical
+from nodes.core.errors import ValidationError
+from nodes.core.frontmatter import node_from_markdown, node_to_markdown
+from nodes.core.projection import PROJECTION_VERSION, to_canonical, to_canonical_json
 
 FIXTURES = Path(__file__).parent.parent.parent / "fixtures"
 SOURCE = FIXTURES / "gene_phf19.md"
 ORACLE = FIXTURES / "gene_phf19.canonical.json"
+CANONICAL_TEXT = FIXTURES / "projection.v1.canonical.json"
 PY_EMIT = FIXTURES / "gene_phf19.py-emit.md"
 
 
 def _node():
     return node_from_markdown(SOURCE.read_text(encoding="utf-8"))
+
+
+def test_projection_version_and_text_are_public():
+    assert PROJECTION_VERSION == "projection.v1"
+    assert to_canonical_json(_node()) + "\n" == CANONICAL_TEXT.read_text(encoding="utf-8")
+
+
+def test_projection_text_pins_number_spelling():
+    node = _node().model_copy(deep=True)
+    node.relations[0].weight = 1e16
+    node.facets["numeric"] = {"small": 1e-7}
+    text = to_canonical_json(node)
+    assert '"weight":10000000000000000' in text
+    assert '"small":1e-7' in text
+
+
+def test_projection_text_rejects_non_finite_numbers():
+    node = _node().model_copy(deep=True)
+    node.relations[0].weight = float("inf")
+    with pytest.raises(ValidationError, match="canonical JSON"):
+        to_canonical_json(node)
 
 
 def test_python_parse_matches_oracle():

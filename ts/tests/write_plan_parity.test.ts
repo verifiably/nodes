@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Corpus } from "../src/corpus.js";
 import { nodeFromMarkdown } from "../src/frontmatter.js";
+import { toCanonical } from "../src/projection.js";
 import type { WritePlan } from "../src/write-plan.js";
-import { toCanonical } from "./_canonical.js";
 import { RecordingExecutor } from "./_executors.js";
 
 const FIXTURES = fileURLToPath(new URL("../../fixtures/", import.meta.url));

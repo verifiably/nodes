@@ -31,6 +31,12 @@ export {
   newUid,
 } from "./node.js";
 export { nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "./frontmatter.js";
+export {
+  PROJECTION_VERSION,
+  type JsonValue,
+  toCanonical,
+  toCanonicalJson,
+} from "./projection.js";
 export { type Invariant, type KindSpec, type ShapeSpec, type Violation, Registry } from "./registry.js";
 export {
   EDGES,

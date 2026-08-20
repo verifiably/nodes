@@ -1,8 +1,8 @@
 # Nodes under the system redesign — design
 
 **Date:** 2026-08-03
-**Status:** Detailed review complete 2026-08-17 — §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; deltas await implementation
-**Authority:** `docs/STANDARD.md` 1.2 remains normative until the amendments below land.
+**Status:** Detailed review complete 2026-08-17 — §2.1 landed 2026-08-20; §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; other deltas await implementation
+**Authority:** `docs/STANDARD.md` remains normative; this document records rationale and implementation status.
 **Consumer requirements:** science's four system-redesign designs of 2026-08-02 (epistemic
 kernel, substrate consolidation, world addressing, computation & reproducibility).
 
@@ -33,24 +33,26 @@ mechanical housekeeping (§5).
 
 ### 2.1 Ship the canonical projection as public, versioned API
 
-STANDARD §11.1's canonical JSON projection is implemented only by test helpers
-(`python/tests/_canonical.py` and its TS twin). The redesign digests it: node content
-identity is a science-layer digest of "nodes' normative canonical JSON projection of the
-whole node", and the exact corpus-state identity digests the sorted
-`(uid, content identity)` pairs. An unimportable, unversioned helper cannot carry that.
+STANDARD §11.1's canonical JSON projection now has a public, versioned value API and a
+public, versioned canonical-text API. The redesign digests the RFC 8785 text: node
+content identity is a science-layer digest of the whole node's normative canonical JSON
+text, and the exact corpus-state identity digests the sorted `(uid, content identity)`
+pairs. Science is the Decimal-preserving consumer of that text and retains ownership of
+both digest constructions; nodes owns the projection, not identity or digest policy.
 
-- `to_canonical` / `toCanonical` move into the public API of both languages.
+- `to_canonical` / `toCanonical` and `to_canonical_json` / `toCanonicalJson` are public
+  APIs of both languages; the latter returns normative RFC 8785 JSON text.
 - The projection gets its own version (`projection.v1`), independent of the spec version;
-  §12 gains a stability clause: any change to the projection is a major bump.
+  §12 gains a stability clause: any change to its value or canonical text is a major
+  projection-version bump.
 - Profiles derive their own bases (semantic identity, per-kind address bases) as subsets
   of the projection's fields; nodes guarantees the projection, not the subsets.
-- The existing parity fixtures continue to pin it — they become tests of shipped API
-  instead of a private helper.
+- `projection.v1.canonical.json` pins the exact shared text; existing value fixtures
+  continue to pin the parsed convenience API.
 
-*(2026-08-17:)* **stands.** Neither public source tree exposes the projection;
-`to_canonical` / `toCanonical` remain test-helper-only, while science's world-addressing
-and epistemic-kernel designs still depend on exact corpus-state identities derived from
-nodes' normative canonical projection.
+*(2026-08-20:)* **landed.** Both public source trees expose `projection.v1` value and
+RFC 8785 text APIs, and `projection.v1.canonical.json` pins the canonical text that
+Science consumes before constructing its own Decimal-aware identities.
 
 ### 2.2 Reserved-path contract
 

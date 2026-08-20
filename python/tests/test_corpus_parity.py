@@ -5,8 +5,7 @@ import shutil
 from pathlib import Path
 
 from nodes.core.corpus import Corpus
-
-from tests._canonical import to_canonical
+from nodes.core.projection import to_canonical
 
 FIXTURES = Path(__file__).parent.parent.parent / "fixtures"
 ORACLE = FIXTURES / "corpus.rename.canonical.json"
