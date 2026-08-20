@@ -37,6 +37,20 @@ describe("cross-language parity (TS side)", () => {
     expect(() => toCanonicalJson(node)).toThrow(ValidationError);
   });
 
+  it("rejects lone surrogate strings", () => {
+    const node = structuredClone(sourceNode());
+    node.facets.invalid = { text: "\ud800" };
+    expect(() => toCanonicalJson(node)).toThrow(ValidationError);
+  });
+
+  it("rejects cyclic values with ValidationError", () => {
+    const node = structuredClone(sourceNode());
+    const cycle: Record<string, unknown> = {};
+    cycle.self = cycle;
+    node.facets.invalid = cycle;
+    expect(() => toCanonicalJson(node)).toThrow(ValidationError);
+  });
+
   it("TS parse of the shared fixture matches the oracle (check 2)", () => {
     expect(toCanonical(sourceNode())).toEqual(oracle());
   });
