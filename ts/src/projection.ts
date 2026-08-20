@@ -49,7 +49,15 @@ function assertJsonValue(value: unknown, active = new Set<object>()): asserts va
       throw new ValidationError("node cannot be represented as projection.v1 canonical JSON: cyclic value");
     }
     active.add(value);
-    for (const member of value) assertJsonValue(member, active);
+    if (Reflect.ownKeys(value).length !== value.length + 1) {
+      throw new ValidationError("node cannot be represented as projection.v1 canonical JSON: invalid array property");
+    }
+    for (let index = 0; index < value.length; index++) {
+      if (!Object.hasOwn(value, index)) {
+        throw new ValidationError("node cannot be represented as projection.v1 canonical JSON: sparse array");
+      }
+      assertJsonValue(value[index], active);
+    }
     active.delete(value);
     return;
   }
@@ -58,9 +66,13 @@ function assertJsonValue(value: unknown, active = new Set<object>()): asserts va
       throw new ValidationError("node cannot be represented as projection.v1 canonical JSON: cyclic value");
     }
     active.add(value);
-    for (const [key, member] of Object.entries(value)) {
+    const keys = Reflect.ownKeys(value);
+    if (keys.some((key) => typeof key !== "string") || keys.length !== Object.keys(value).length) {
+      throw new ValidationError("node cannot be represented as projection.v1 canonical JSON: invalid object property");
+    }
+    for (const key of keys as string[]) {
       assertJsonValue(key, active);
-      assertJsonValue(member, active);
+      assertJsonValue((value as Record<string, unknown>)[key], active);
     }
     active.delete(value);
     return;

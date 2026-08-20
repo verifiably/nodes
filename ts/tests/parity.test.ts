@@ -51,6 +51,14 @@ describe("cross-language parity (TS side)", () => {
     expect(() => toCanonicalJson(node)).toThrow(ValidationError);
   });
 
+  it("rejects symbol-keyed values", () => {
+    const node = structuredClone(sourceNode());
+    const invalid = {} as Record<string | symbol, unknown>;
+    invalid[Symbol("hidden")] = "ignored";
+    node.facets.invalid = invalid;
+    expect(() => toCanonicalJson(node)).toThrow(ValidationError);
+  });
+
   it("TS parse of the shared fixture matches the oracle (check 2)", () => {
     expect(toCanonical(sourceNode())).toEqual(oracle());
   });

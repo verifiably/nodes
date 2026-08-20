@@ -41,6 +41,14 @@ def test_projection_text_rejects_non_finite_numbers():
         to_canonical_json(node)
 
 
+def test_projection_text_rejects_tuple_values():
+    node = _node().model_copy(deep=True)
+    node.facets["invalid"] = {"tuple": (1, 2)}
+
+    with pytest.raises(ValidationError, match="canonical JSON"):
+        to_canonical_json(node)
+
+
 def test_python_parse_matches_oracle():
     assert to_canonical(_node()) == json.loads(ORACLE.read_text(encoding="utf-8"))
 
