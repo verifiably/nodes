@@ -4,7 +4,7 @@
 - **Scope:** The full-text search piece of the substrate's derived index (spec
   §5). Python first; a TypeScript port follows in a later plan, at semantic
   parity.
-- **Status:** Approved design, pending implementation plan.
+- **Status:** Historical design — implemented in Python and TypeScript; the current contract is in `docs/STANDARD.md` §§9–11.
 
 ## 1. Motivation & goals
 

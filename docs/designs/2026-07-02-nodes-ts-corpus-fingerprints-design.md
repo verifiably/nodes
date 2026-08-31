@@ -1,6 +1,6 @@
 # Nodes TypeScript Corpus Fingerprints - Design
 
-**Status:** draft design
+**Status:** Historical design — implemented and exported by `@nodes-dev/core`.
 **Date:** 2026-07-02
 **Scope:** Add domain-free corpus file-listing and stat-fingerprint primitives to the
 TypeScript kernel, so downstream apps can validate resident caches without copying the

@@ -1,6 +1,6 @@
 # nodes — Shared Knowledge Substrate (Design)
 
-- **Status:** Draft (design approved, pending spec review)
+- **Status:** Historical foundation — implemented and superseded by `docs/STANDARD.md` and later boundary designs.
 - **Date:** 2026-06-21
 - **Working name:** `nodes` (revisit before publishing a package — see [Naming](#12-naming))
 - **Scope:** Phase 1 — design the shared data model / substrate. Mindful v6 and any

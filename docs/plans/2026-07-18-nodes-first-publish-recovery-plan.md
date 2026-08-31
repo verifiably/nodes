@@ -8,6 +8,13 @@
 
 **Tech Stack:** GitHub Actions (SHA-pinned actions), uv 0.11.29, Hatchling/Core Metadata 2.5, `pypi-attestations==0.0.29`, npm 11 trusted publishing, PyPI and npm OIDC.
 
+**Outcome verified 2026-08-31:** `core/v0.1.1` is immutable locally and remotely at
+`23773e844b758479c12f195a133c2556ba2cf2e4`; PyPI exposes exactly the 0.1.1 wheel and
+sdist with `nodes-dev/core` / `release.yml` / `release` provenance; npm 0.1.1 carries
+provenance and npm 0.0.0 is deprecated in favor of `>=0.1.1`; `npm whoami` currently
+fails with `ENEEDAUTH`, confirming no npm login remains in this environment. The unchecked
+procedural boxes below are historical instructions, not evidence of unfinished release work.
+
 ## Global Constraints
 
 - The governing design is `~/d/nodes/docs/designs/2026-07-18-nodes-first-publish-recovery-design.md`; `docs/STANDARD.md` remains the normative product contract.

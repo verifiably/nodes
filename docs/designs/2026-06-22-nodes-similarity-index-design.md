@@ -1,6 +1,6 @@
 # nodes — Embedding / Similarity Index (Design)
 
-- **Status:** Draft (design approved, pending spec review)
+- **Status:** Historical design — implemented in Python and TypeScript and retained by the 2026-08-17 review.
 - **Date:** 2026-06-22
 - **Scope:** The fourth derived-index facet of the kernel (substrate §5): an
   **embedding + similarity store**. **Python first**; the TypeScript port is a

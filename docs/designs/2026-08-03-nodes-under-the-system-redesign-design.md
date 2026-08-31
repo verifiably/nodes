@@ -222,6 +222,9 @@ Mechanical; lands with this design's plan:
   ts-corpus-fingerprints says “draft design,” and the substrate and ts-kernel designs still
   say “Draft” without a banner marking their superseded layering, fat-`Store`, and science
   migration sections.
+
+  *(2026-08-31:)* **corrected.** The Tasks migration reconciled all five headers against
+  the shipped Python and TypeScript trees and the current standard.
 - **Path corrections.** `src/nodes/kernel/…` → `python/src/nodes/core/…` in four designs;
   `@nodes/kernel` → `@nodes-dev/core` in the fingerprints design.
 
@@ -240,6 +243,10 @@ Mechanical; lands with this design's plan:
 
   *(2026-08-17:)* **stands.** The README still makes the active-consumer claim, while
   science's Python package has no `nodes-core` dependency and no `nodes.core` import.
+
+  *(2026-08-31:)* **corrected.** The README now names `beliefs` at `~/d/beliefs/`, whose
+  current Python package depends on `nodes-core`, and gives Mindful v6's full
+  `~/d/mindful/v6/` path.
 - **Identity boundary.** One sentence in the standard: the exact corpus-state identity is
   a distinct, science-owned primitive (digest over `corpus_id` plus sorted
   `(uid, content identity)` pairs); neither the `(path, mtime, size)` fingerprint nor the
@@ -254,6 +261,9 @@ Mechanical; lands with this design's plan:
   *(2026-08-17:)* **stands.** The recovery plan specifies all three post-tag checks, but no
   dated status note records whether they happened; plan expectations and unchecked steps
   are not completion evidence.
+
+  *(2026-08-31:)* **corrected.** The recovery plan now records the independently verified
+  registry, tag, provenance, deprecation, and credential-revocation outcomes.
 - **Undecided, added 2026-08-08.** Science's domain-extension-boundary design (D4) requires
   one parity fixture pinning a *namespaced* facet key — `biology/gene-axis` — identically
   through both canonical projections, so that the facet-key freedom stays deliberate rather

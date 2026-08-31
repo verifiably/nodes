@@ -1,6 +1,6 @@
 # nodes — TypeScript Kernel Port (Design)
 
-- **Status:** Draft (design approved, pending spec review)
+- **Status:** Historical design — implemented; later plans expanded the kernel and retired its vocabulary layer.
 - **Date:** 2026-06-21
 - **Plan number:** 4 (substrate roadmap §10 step 2: "Land Python + TS kernel libraries")
 - **Scope:** Port the **Plan-1 Python kernel** to TypeScript at behavioral + on-disk-format

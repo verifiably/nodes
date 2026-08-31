@@ -10,7 +10,7 @@ one shared on-disk format.
 Two layers, strict downward dependency:
 
 ```
-domain profiles   science (Python), mindful v6 (TypeScript), …
+domain profiles   beliefs (Python), mindful v6 (TypeScript), …
 kernel            Node, Relation, shapes, identity, format, Corpus, indexes
 ```
 
@@ -54,5 +54,5 @@ npm run check
 
 ## Consumers
 
-- **mindful v6** (`~/d/mindful/`) — tool-for-thought, builds on the TypeScript kernel.
-- **science** (`~/d/science/`) — research knowledge graphs, builds on the Python kernel.
+- **mindful v6** (`~/d/mindful/v6/`) — tool-for-thought, builds on the TypeScript kernel.
+- **beliefs** (`~/d/beliefs/`) — epistemic kernel and research knowledge graphs, builds on the Python kernel.
