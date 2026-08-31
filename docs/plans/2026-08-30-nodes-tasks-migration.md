@@ -1,10 +1,12 @@
 # Nodes Tasks migration ledger
 
-**Status:** audit complete and initial task migration in progress; integration and portfolio reconciliation are not yet recorded
+**Status:** initial Tasks migration integrated, canonically registered, and complete on 2026-08-31; no deferred reconciliation remains
 
 ## Scope and evidence
 
 - Stable HEAD audited: `5a00bba51df8bb2a06ec8a2fdc3c56ac8959e619` (`main`, three commits ahead of `origin/main`).
+- Integrated documentation commit: `85a326a8830fac9c4428c7c230f4e5de09af0919`.
+- Integrated Tasks commit and stable verification head: `e57a17cbaab5d199d9028b912fa8be8b49706142`.
 - Tasks source commit: `9242ac63f1004bfb682c329af1c9a90f09d714b3`.
 - Audit date: 2026-08-31.
 - Prefix: `nodes`.
@@ -69,7 +71,7 @@
 | `docs/plans/2026-07-13-nodes-python-package-layout-plan.md` | historical/superseded | Python imports and package metadata use `nodes.core`. |
 | `docs/plans/2026-07-16-nodes-first-publish-plan.md` | historical/superseded | Superseded by the 0.1.1 recovery plan. |
 | `docs/plans/2026-07-18-nodes-first-publish-recovery-plan.md` | historical/superseded | The 0.1.1 registry, tag, provenance, and deprecation outcomes are verified. |
-| `docs/plans/2026-08-30-nodes-tasks-migration.md` | active delivery | Migration evidence and deferred-dependency record until integration and reconciliation finish. |
+| `docs/plans/2026-08-30-nodes-tasks-migration.md` | historical/superseded | Initial migration is integrated and canonically registered; there is no deferred dependency to reconcile. |
 | `docs/superpowers/plans/2026-08-17-nodes-detailed-review.md` | historical/superseded | Its planned design and seam commits are ancestors of the audit base. |
 | `docs/superpowers/specs/2026-08-17-nodes-detailed-review-design.md` | historical/superseded | The scoped review is complete and its artifacts landed. |
 
@@ -113,3 +115,5 @@ None. The audit found no Nodes-owned task blocked on a future Mindful v3 or v6 o
 | Tasks CLI creation and field-by-field review | `tasks add` emitted `nodes-ce28b8`; `tasks show` matched every reviewed field, body, and empty dependency set. | `chore(tasks): initialize project task tracking` |
 | `tasks check`, `tasks prime`, and `tasks ready` in the temporary four-project registry | Check returned empty errors and warnings; prime reported prefix `nodes` with one todo; ready returned only `nodes-ce28b8`. | `chore(tasks): initialize project task tracking` |
 | Final Python and TypeScript gates | All 531 Python tests, Ruff, Pyright, all 359 TypeScript tests, typecheck, and Biome passed after Tasks initialization. | `chore(tasks): initialize project task tracking` |
+| Stable repository gate after first fast-forward | At `e57a17cbaab5d199d9028b912fa8be8b49706142`, all 531 Python tests, Ruff, and Pyright passed; all 44 TypeScript files / 359 tests, typecheck, and Biome passed; the stable tree was clean. | Stable `main` at `e57a17cbaab5d199d9028b912fa8be8b49706142` |
+| Canonical registration and stable Tasks gate | From the stable root, `TASKS_FORMAT=json tasks init --prefix nodes` succeeded twice; `tasks check` returned empty errors and warnings; `tasks prime` reported prefix `nodes`, one todo, and zero ideas; `tasks ready` returned only `nodes-ce28b8` with no warnings. | Normal registry and stable `main`, verified 2026-08-31 |
