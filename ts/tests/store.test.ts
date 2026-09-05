@@ -1,8 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RefError } from "../src/errors.js";
+import { nodeToMarkdown } from "../src/frontmatter.js";
 import { type Node, makeNode } from "../src/node.js";
 import { Store } from "../src/store.js";
 
@@ -59,5 +60,44 @@ describe("Store file mechanics", () => {
     mkdirSync(join(root, ".nodes-index"));
     writeFileSync(join(root, ".nodes-index", "cache.md"), "not a node");
     expect(store.allNodes().map((x) => x.id)).toEqual(["topic:a"]);
+  });
+});
+
+describe("Store.allNodes parse memoization", () => {
+  it("returns independent copies: mutating a result does not leak into the next read", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "hi" }));
+    const first = store.allNodes();
+    first[0].title = "mutated";
+    first[0].deprecatedIds.push("topic:old");
+    const second = store.allNodes();
+    expect(second[0].title).toBe("A");
+    expect(second[0].deprecatedIds).toEqual([]);
+    expect(second[0]).not.toBe(first[0]);
+  });
+
+  it("reflects a file edited outside the store between reads", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "hi" }));
+    expect(store.allNodes().map((node) => node.body)).toEqual(["hi"]);
+    const path = store.pathFor("topic:a");
+    writeFileSync(path, nodeToMarkdown(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "changed" })));
+    expect(store.allNodes().map((node) => node.body)).toEqual(["changed"]);
+  });
+
+  it("reflects a file deleted outside the store between reads", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A" }));
+    store.writeFile(makeNode({ id: "topic:b", kind: "topic", title: "B" }));
+    expect(store.allNodes()).toHaveLength(2);
+    rmSync(store.pathFor("topic:a"));
+    expect(store.allNodes().map((node) => node.id)).toEqual(["topic:b"]);
+  });
+
+  it("gives files with identical content their own node copies", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A" }));
+    const [a] = store.allNodes();
+    writeFileSync(store.pathFor("topic:b"), readFileSync(store.pathFor("topic:a")));
+    const nodes = store.allNodes();
+    expect(nodes).toHaveLength(2);
+    expect(nodes[0]).not.toBe(nodes[1]);
+    expect(nodes[0]).toEqual(a);
   });
 });

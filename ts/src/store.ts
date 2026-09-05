@@ -12,6 +12,7 @@ import { iterCorpusFiles } from "./snapshot.js";
  */
 export class Store {
   readonly root: string;
+  private parsed = new Map<string, Node>(); // sha256 -> node, rebuilt by every allNodes()
 
   constructor(root: string) {
     this.root = root;
@@ -45,7 +46,19 @@ export class Store {
     rmSync(path);
   }
 
+  /**
+   * Every node file, read and hashed on each call so files stay the source of truth.
+   * Parsing is skipped for content whose sha256 was parsed by the previous call; each
+   * caller gets its own copy, so the memo is never aliased.
+   */
   allNodes(): Node[] {
-    return iterCorpusFiles(this.root).map((f) => nodeFromMarkdown(f.data.toString("utf-8")));
+    const parsed = new Map<string, Node>();
+    const nodes = iterCorpusFiles(this.root).map((f) => {
+      const node = this.parsed.get(f.sha256) ?? nodeFromMarkdown(f.data.toString("utf-8"));
+      parsed.set(f.sha256, node);
+      return structuredClone(node);
+    });
+    this.parsed = parsed;
+    return nodes;
   }
 }
