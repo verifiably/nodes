@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -99,5 +99,102 @@ describe("Store.allNodes parse memoization", () => {
     expect(nodes).toHaveLength(2);
     expect(nodes[0]).not.toBe(nodes[1]);
     expect(nodes[0]).toEqual(a);
+  });
+});
+
+describe("Store stat-fingerprint cache", () => {
+  const PINNED_SECONDS = 1_700_000_000; // whole seconds round-trip exactly through utimes
+
+  /** Pin a file's mtime to a fixed whole second so a later rewrite can restore it exactly. */
+  function pinMtime(path: string): void {
+    utimesSync(path, PINNED_SECONDS, PINNED_SECONDS);
+  }
+
+  /** Overwrite a node file with same-length content and pin its mtime again, so size and mtime match the cache. */
+  function rewriteKeepingStat(path: string, node: Node): void {
+    const before = statSync(path);
+    const data = nodeToMarkdown(node);
+    if (Buffer.byteLength(data) !== before.size) throw new Error("test needs same-length content");
+    writeFileSync(path, data);
+    pinMtime(path);
+    if (statSync(path).mtimeMs !== before.mtimeMs) throw new Error("test could not restore mtime");
+  }
+
+  it("allNodes serves a file whose size and mtime are unchanged from the cache without reading it", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "one" }));
+    pinMtime(store.pathFor("topic:a"));
+    expect(store.allNodes().map((node) => node.body)).toEqual(["one"]);
+    rewriteKeepingStat(store.pathFor("topic:a"), makeNode({ id: "topic:a", kind: "topic", title: "A", body: "two" }));
+    expect(readFileSync(store.pathFor("topic:a"), "utf-8")).toContain("two");
+    expect(store.allNodes().map((node) => node.body)).toEqual(["one"]);
+  });
+
+  it("readFile serves a file whose size and mtime are unchanged from the cache without reading it", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "one" }));
+    pinMtime(store.pathFor("topic:a"));
+    expect(store.readFile("topic:a").body).toBe("one");
+    rewriteKeepingStat(store.pathFor("topic:a"), makeNode({ id: "topic:a", kind: "topic", title: "A", body: "two" }));
+    expect(store.readFile("topic:a").body).toBe("one");
+  });
+
+  it("allNodes re-reads a same-size external edit whose mtime changed", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "one" }));
+    pinMtime(store.pathFor("topic:a"));
+    expect(store.allNodes().map((node) => node.body)).toEqual(["one"]);
+    writeFileSync(
+      store.pathFor("topic:a"),
+      nodeToMarkdown(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "two" })),
+    );
+    utimesSync(store.pathFor("topic:a"), PINNED_SECONDS + 1, PINNED_SECONDS + 1);
+    expect(store.allNodes().map((node) => node.body)).toEqual(["two"]);
+  });
+
+  it("readFile re-reads a same-size external edit whose mtime changed", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "one" }));
+    pinMtime(store.pathFor("topic:a"));
+    expect(store.readFile("topic:a").body).toBe("one");
+    writeFileSync(
+      store.pathFor("topic:a"),
+      nodeToMarkdown(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "two" })),
+    );
+    utimesSync(store.pathFor("topic:a"), PINNED_SECONDS + 1, PINNED_SECONDS + 1);
+    expect(store.readFile("topic:a").body).toBe("two");
+  });
+
+  it("readFile after writeFile returns the written content without a stale cache entry", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "one" }));
+    expect(store.readFile("topic:a").body).toBe("one");
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A", body: "two" }));
+    expect(store.readFile("topic:a").body).toBe("two");
+    expect(store.allNodes().map((node) => node.body)).toEqual(["two"]);
+  });
+
+  it("readFile returns independent copies", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A" }));
+    const first = store.readFile("topic:a");
+    first.title = "mutated";
+    first.deprecatedIds.push("topic:old");
+    const second = store.readFile("topic:a");
+    expect(second.title).toBe("A");
+    expect(second.deprecatedIds).toEqual([]);
+    expect(store.allNodes()[0].title).toBe("A");
+  });
+
+  it("writeFile keeps its own copy: mutating the written node afterwards does not change later reads", () => {
+    const node = makeNode({ id: "topic:a", kind: "topic", title: "A" });
+    store.writeFile(node);
+    node.title = "mutated";
+    node.deprecatedIds.push("topic:old");
+    expect(store.readFile("topic:a").title).toBe("A");
+    expect(store.allNodes()[0].deprecatedIds).toEqual([]);
+  });
+
+  it("deleteFile then readFile throws and allNodes omits the node", () => {
+    store.writeFile(makeNode({ id: "topic:a", kind: "topic", title: "A" }));
+    store.writeFile(makeNode({ id: "topic:b", kind: "topic", title: "B" }));
+    store.readFile("topic:a");
+    store.deleteFile("topic:a");
+    expect(() => store.readFile("topic:a")).toThrow(RefError);
+    expect(store.allNodes().map((node) => node.id)).toEqual(["topic:b"]);
   });
 });
