@@ -25,10 +25,10 @@ jobs:
         with:
           version: "0.11.29"
           python-version: ${{ matrix.python-version }}
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
       - run: uv sync --frozen
-      - run: uv run --frozen pytest -q
-      - run: uv run --frozen ruff check .
-      - run: uv run --frozen pyright src
+      # The same three commands as before, now through the recipe that records them.
+      - run: just ci-python
 
   typescript:
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
           cache-dependency-path: ts/package-lock.json
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
       - run: npm ci
-      - run: npm test
-      - run: npm run typecheck
-      - run: npm run check
+      # The same three commands as before, now through the recipe that records them.
+      - run: just ci-typescript

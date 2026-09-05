@@ -24,9 +24,17 @@ Decide the tier first — see `docs/STANDARD.md` §1:
 
 ## Gates (run before every commit)
 
-- Python, from `python/`: `uv run --frozen pytest -q`,
-  `uv run --frozen ruff check .`, `uv run --frozen pyright src`.
-- TypeScript, from `ts/`: `npm test`, `npm run typecheck`, `npm run check`.
+- `just gate` — the whole thing: `just check` (ruff, pyright, biome, tsc, `tasks check`)
+  then `just test` (pytest and vitest, both packages). Run it from anywhere in the tree.
+- Every recipe records its run through `tools/tt`, the timing wrapper vendored from the
+  ops repository, so do not call `pytest`, `npm test`, `ruff`, `pyright`, `tsc`, or
+  `biome` directly. `tools/tt` is a copy of ops `bin/tt`; that copy is the source of
+  truth.
+- The git hooks in `.githooks/` run `just hook-pre-commit` (the `check` command) and
+  `just hook-pre-push` (the whole gate). A fresh clone installs them with
+  `git config core.hooksPath .githooks`.
+- Before removing a worktree, run `tt-report` in the ops repository so this checkout's
+  fallback test-timing log is harvested.
 
 ## Conventions
 

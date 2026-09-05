@@ -28,6 +28,10 @@ The portable contract this kernel implements is specified in `../docs/STANDARD.m
 
 ## Scripts
 
+The repository front door is `just` (`just test`, `just check`, `just gate`), which runs
+these through a timing wrapper; call them directly only when working on this package
+alone without the wrapper.
+
 - `npm test` — Vitest suite (includes the cross-language parity checks)
 - `npm run typecheck` — `tsc --noEmit` (the type gate)
 - `npm run check` — Biome lint + format

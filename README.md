@@ -36,21 +36,17 @@ standard, the standard wins.
 
 ## Development
 
-Python (from `python/`):
+One front door for both packages, from anywhere in the tree:
 
 ```sh
-uv run --frozen pytest -q
-uv run --frozen ruff check .
-uv run --frozen pyright src
+just test    # pytest and vitest
+just check   # ruff, pyright, tsc, biome, tasks check
+just gate    # both, and what the pre-push hook runs
 ```
 
-TypeScript (from `ts/`):
-
-```sh
-npm test
-npm run typecheck
-npm run check
-```
+Each recipe runs through `tools/tt`, a timing wrapper that records the run; the recipes
+in `justfile` show the underlying commands. Install the git hooks in a fresh clone with
+`git config core.hooksPath .githooks`.
 
 ## Consumers
 
