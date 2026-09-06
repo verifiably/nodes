@@ -24,7 +24,7 @@ ts_check_cmd := "(cd ts && npm run typecheck && npm run check)"
 
 fast_cmd := py_fast_cmd + " && " + ts_fast_cmd
 test_cmd := py_test_cmd + " && " + ts_test_cmd
-check_cmd := py_check_cmd + " && " + ts_check_cmd + " && tasks check"
+check_cmd := "python3 tools/ops-check && " + py_check_cmd + " && " + ts_check_cmd + " && tasks check"
 
 # Affected-only: the inner loop. An empty selection is a result, not a failure.
 test-fast:
