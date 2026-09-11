@@ -36,11 +36,15 @@ def _seed(root) -> Corpus:
     return c
 
 
+def _dangling_refs(c: Corpus) -> list[tuple[str, str]]:
+    return [(f.ref, f.detail) for f in c.check() if f.code == "dangling-ref"]
+
+
 def _results(c: Corpus) -> dict:
     return {
         "search_gamma": [(h.id, h.uid) for h in c.search("gamma")],
         "outbound_a": [(e.relation.target, e.target_uid) for e in c.outbound("topic:a")],
-        "dangling": len(c.dangling()),
+        "dangling": _dangling_refs(c),
     }
 
 
@@ -104,7 +108,7 @@ def test_delete_flush_writes_usable_manifest_matching_fresh_rebuild(tmp_path):
     loaded = Corpus(tmp_path)
     fresh = _fresh_rebuild(tmp_path)
     assert [(h.id, h.uid) for h in loaded.search("gamma")] == [(h.id, h.uid) for h in fresh.search("gamma")]
-    assert len(loaded.dangling()) == len(fresh.dangling()) == 0
+    assert _dangling_refs(loaded) == _dangling_refs(fresh) == []
 
 
 def test_rename_flush_writes_updated_manifest_matching_fresh_rebuild(tmp_path):
@@ -210,7 +214,6 @@ def test_version_1_snapshot_rebuilds_malformed_membership_without_phantom_refs(t
     rebuilt = Corpus(tmp_path)
 
     assert rebuilt.members("note:weird") == []
-    assert rebuilt.descendants("note:weird") == []
     assert [finding for finding in rebuilt.check() if finding.code == "dangling-member"] == []
 
 

@@ -426,25 +426,6 @@ export class Index {
     return containers;
   }
 
-  /** Transitive membership closure (BFS). The visited set is seeded with the start uid,
-   * which is excluded from the result even when a membership cycle reaches it. */
-  membershipClosure(uid: string, direction: "members" | "containers"): Set<string> {
-    const step = direction === "members" ? this.membersOf.bind(this) : this.containersOf.bind(this);
-    const visited = new Set<string>([uid]);
-    const queue: string[] = [uid];
-    let head = 0;
-    while (head < queue.length) {
-      const current = queue[head++];
-      for (const next of step(current)) {
-        if (visited.has(next)) continue;
-        visited.add(next);
-        queue.push(next);
-      }
-    }
-    visited.delete(uid);
-    return visited;
-  }
-
   /** Every unresolved membership ref, deduped by (container uid, ref). */
   danglingMembers(): Array<{ sourceUid: string; ref: string }> {
     const out: Array<{ sourceUid: string; ref: string }> = [];

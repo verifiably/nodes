@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from collections import deque
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -402,22 +401,6 @@ class Index:
                     continue
                 containers.add(inref.source_uid)
         return containers
-
-    def membership_closure(self, uid: str, direction: Literal["members", "containers"]) -> set[str]:
-        """Transitive membership closure (BFS). The visited set is seeded with the start uid,
-        which is excluded from the result even when a membership cycle reaches it."""
-        step = self.members_of if direction == "members" else self.containers_of
-        visited: set[str] = {uid}
-        queue: deque[str] = deque([uid])
-        while queue:
-            current = queue.popleft()
-            for nxt in step(current):
-                if nxt in visited:
-                    continue
-                visited.add(nxt)
-                queue.append(nxt)
-        visited.discard(uid)
-        return visited
 
     def dangling_members(self) -> list[tuple[str, str]]:
         """Every unresolved membership ref, deduped by (container uid, ref)."""

@@ -243,25 +243,6 @@ def test_containers_of_uncontained_node_is_empty():
     assert idx.containers_of(plain.uid) == set()
 
 
-def test_membership_closure_walks_nesting_both_directions():
-    leaf = Node(id="note:leaf", kind="note", title="L")
-    box = _set_node("set:box", ["note:leaf"])
-    crate = _set_node("set:crate", ["set:box"])
-    idx = Index.build([leaf, box, crate])
-    assert idx.membership_closure(crate.uid, "members") == {box.uid, leaf.uid}
-    assert idx.membership_closure(leaf.uid, "containers") == {box.uid, crate.uid}
-
-
-def test_membership_closure_cycles_terminate_and_exclude_start():
-    a = _set_node("set:a", ["set:b"])
-    b = _set_node("set:b", ["set:a"])
-    selfie = _set_node("set:selfie", ["set:selfie"])
-    idx = Index.build([a, b, selfie])
-    assert idx.membership_closure(a.uid, "members") == {b.uid}
-    assert idx.membership_closure(selfie.uid, "members") == set()
-    assert idx.membership_closure(selfie.uid, "containers") == set()
-
-
 def test_dangling_members_dedupes_per_container():
     box = _set_node("set:box", ["note:ghost", "note:ghost"])
     other = _set_node("set:other", ["note:ghost"])

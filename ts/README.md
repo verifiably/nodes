@@ -9,8 +9,8 @@ Mirrors the current Python kernel: `Node`/`Relation`, ids, errors, frontmatter
 parse/serialize, registry, structural shapes, a slimmed `Store` (pure file mechanics),
 the in-memory structural `Index`, and the `Corpus` coordinator — the primary API for
 mutations (`add`/`get`/`rename`/`delete`), graph queries
-(`outbound`/`inbound`/`neighbors`/`dangling`), membership traversal
-(`members`/`containers`/`descendants`/`ancestors`), BM25F full-text `search`, opt-in
+(`outbound`/`inbound`/`neighbors`), membership queries (`members`/`containers`), BM25F
+full-text `search`, opt-in
 embedding `similar`/`queryVector`/`similarText`, snapshot persistence (`flushIndex`),
 and corpus checking (`check`). TS-only conveniences (tier 3): `idsByKind`/`allByKind`
 and corpus stat fingerprints.

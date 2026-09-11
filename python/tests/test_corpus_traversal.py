@@ -43,28 +43,19 @@ def test_containers_reports_direct_containers_only(tmp_path):
     assert _seeded(tmp_path).containers("set:box") == ["set:crate"]
 
 
-def test_descendants_walks_nesting_and_skips_dangling(tmp_path):
-    assert _seeded(tmp_path).descendants("set:crate") == ["note:renamed", "note:tidy", "set:box"]
-
-
-def test_ancestors_walks_containers_transitively(tmp_path):
-    assert _seeded(tmp_path).ancestors("note:renamed") == ["set:box", "set:crate"]
-
-
-def test_cycles_terminate_and_exclude_start(tmp_path):
+def test_containment_cycles_are_legal_one_hop(tmp_path):
     c = Corpus(tmp_path)
     c.add(_set_node("set:loop-a", ["set:loop-b"]))
     c.add(_set_node("set:loop-b", ["set:loop-a"]))
     c.add(_set_node("set:selfie", ["set:selfie"]))
-    assert c.descendants("set:loop-a") == ["set:loop-b"]
-    assert c.ancestors("set:loop-b") == ["set:loop-a"]
+    assert c.members("set:loop-a") == ["set:loop-b"]
+    assert c.containers("set:loop-a") == ["set:loop-b"]
     assert c.members("set:selfie") == ["set:selfie"]
-    assert c.descendants("set:selfie") == []
-    assert c.ancestors("set:selfie") == []
+    assert c.containers("set:selfie") == ["set:selfie"]
 
 
-def test_all_four_reject_unresolvable_input_ref(tmp_path):
+def test_both_reject_unresolvable_input_ref(tmp_path):
     c = _seeded(tmp_path)
-    for fn in (c.members, c.containers, c.descendants, c.ancestors):
+    for fn in (c.members, c.containers):
         with pytest.raises(RefError):
             fn("note:ghost")

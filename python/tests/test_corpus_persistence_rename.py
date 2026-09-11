@@ -23,7 +23,7 @@ def _manifest_matches_disk(c: Corpus) -> bool:
 def _results(c: Corpus):
     return (
         sorted((h.id, h.uid) for h in c.search("gamma")),
-        sorted((e.relation.source, e.relation.target) for e in c.dangling()),
+        [(f.ref, f.detail) for f in c.check() if f.code == "dangling-ref"],
         sorted(c.index.id_to_uid),
     )
 

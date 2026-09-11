@@ -225,9 +225,6 @@ class Corpus:
     def inbound(self, ref: str) -> list[ResolvedEdge]:
         return self.index.inbound_edges(self._require_uid(ref))
 
-    def dangling(self) -> list[ResolvedEdge]:
-        return self.index.dangling_edges()
-
     def neighbors(self, ref: str) -> list[Node]:
         uid = self._require_uid(ref)
         neighbor_uids: set[str] = set()
@@ -248,12 +245,6 @@ class Corpus:
 
     def containers(self, ref: str) -> list[str]:
         return self._sorted_live_ids(self.index.containers_of(self._require_uid(ref)))
-
-    def descendants(self, ref: str) -> list[str]:
-        return self._sorted_live_ids(self.index.membership_closure(self._require_uid(ref), "members"))
-
-    def ancestors(self, ref: str) -> list[str]:
-        return self._sorted_live_ids(self.index.membership_closure(self._require_uid(ref), "containers"))
 
     def search(self, query: str, limit: int | None = None) -> list[SearchHit]:
         return self.search_index.search(query, limit)

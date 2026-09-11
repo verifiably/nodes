@@ -3,6 +3,8 @@
 - **Spec version:** 1.2
 - **Status:** Living standard — the authoritative definition of the portable `nodes` contract.
 - **Implementations:** Python (`python/src/nodes/`), TypeScript (`ts/src/`).
+- **Pending:** 2.0 amendment in progress on branch `nodes-2.0`; clauses marked *(2.0)*
+  are not yet in force.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are to be interpreted as
 described in RFC 2119. Where a historical document in `docs/designs/` or `docs/plans/`
@@ -220,24 +222,27 @@ and dangling tracking but are not relation-graph edges.
   stale alias never deletes the renamed live node. Inbound refs to a deleted node remain
   on disk and become dangling.
 - `rename(old, new)`: as specified in §3.
-- Graph queries (`outbound`, `inbound`, `neighbors`, `dangling`) are relations-only and
+- *(2.0)* Relation queries (`outbound`, `inbound`, `neighbors`) are relations-only and
   uid-based. A **dangling** target (a relation whose target no longer resolves) is a
-  normal state — surfaced, never raised. `inbound`/`outbound` raise `RefError` only when
+  normal state — surfaced in the edge (`target_uid` null) and reported by `check`
+  (`dangling-ref`, §8.2), never raised. `inbound`/`outbound` raise `RefError` only when
   the *input* ref does not resolve.
-- Membership traversal (`members`, `containers`, `descendants`, `ancestors`) exposes
-  the containment graph over `membership.members` refs. Each method MUST resolve its
-  input ref (live then deprecated; `RefError` when it resolves to no live node — the
-  only raising path) and return a sorted (Unicode code point), uid-deduplicated list
-  of **live ids**. `members` / `containers` read one hop — the literal facet content,
-  resolved, so a container listing itself appears in its own `members`;
-  `descendants` / `ancestors` are the transitive closures over one-or-more hops and
-  MUST exclude the start node, even when a membership cycle makes it reachable from
-  itself. Member refs listed under deprecated ids resolve normally; dangling member
-  refs are silently skipped (`check` reports them, §8.2). Traversal MUST be
-  cycle-safe for every shape: `dag` / `tree` acyclicity constrains only a container's
-  internal `edges` facet, so cross-node membership containment cycles are legal. A
-  node without a membership facet has no members; a node no container lists has no
-  containers — both are empty results, never errors.
+- *(2.0)* Membership queries (`members`, `containers`) expose the containment graph over
+  `membership.members` refs, one hop each. Each method MUST resolve its input ref (live
+  then deprecated; `RefError` when it resolves to no live node — the only raising path)
+  and return a sorted (Unicode code point), uid-deduplicated list of **live ids**. They
+  read the literal facet content, resolved, so a container listing itself appears in its
+  own `members` and its own `containers`. Member refs listed under deprecated ids resolve
+  normally; dangling member refs are silently skipped (`check` reports them, §8.2).
+  Traversal MUST be cycle-safe for every shape: `dag` / `tree` acyclicity constrains only
+  a container's internal `edges` facet, so cross-node membership containment cycles are
+  legal. A node without a membership facet has no members; a node no container lists
+  has no containers — both are empty results, never errors.
+- *(2.0)* These five methods — `outbound`, `inbound`, `neighbors`, `members`,
+  `containers` — are the complete one-hop graph-query surface. Transitive walks
+  (formerly `descendants` / `ancestors`) and the corpus-local dangling-edge list
+  (formerly `dangling()`) are withdrawn: a corpus-local closure truncates at the corpus
+  edge, and the layer that joins corpora owns traversal across it.
 - **Single-writer assumption.** Nothing coordinates concurrent mutation of one corpus
   (by two processes or two languages). Deployments MUST ensure a single writer at a
   time; readers may run concurrently at the cost of possibly-stale derived indexes.
@@ -285,9 +290,9 @@ node the finding anchors to.
 
 - With a registry: every node runs through `Registry.check`; each violation becomes an
   `error` finding.
-- Always (registry or not), the exhaustive list of structural findings: one
-  `dangling-ref` per unresolved top-level relation target — exactly the edges
-  `dangling()` reports — and one `dangling-member` per unresolved
+- *(2.0)* Always (registry or not), the exhaustive list of structural findings: one
+  `dangling-ref` per unresolved top-level relation target — every outbound edge whose
+  `target_uid` is null, over the whole corpus — and one `dangling-member` per unresolved
   `(container, member ref)` pair, deduplicated (a duplicated dangling entry reports
   once). A member listed under a deprecated-but-resolvable id is not dangling.
   Malformed structural facet payloads remain a registry concern (shape invariants).
@@ -389,7 +394,7 @@ projection-version bump.
 | `search-corpus/`, `search.oracle.json` | BM25F ranked ids + 6-dp scores |
 | `similarity-corpus/`, `similarity.vectors.json`, `similarity.oracle.json` | similarity ranking over frozen vectors (model embeddings are not portable) |
 | `check-corpus/`, `check.oracle.json` | corpus-validity findings (severity, code, ref, detail); includes a membership cluster (nesting, a cycle, self-membership, one dangling member) |
-| `traversal.oracle.json` | membership traversal (`members` / `containers` / `descendants` / `ancestors`) over `check-corpus/` |
+| `traversal.oracle.json` | *(2.0)* membership queries (`members` / `containers`) over `check-corpus/`, including the two-node cycle and self-membership |
 
 ## 12. Versioning & change policy
 

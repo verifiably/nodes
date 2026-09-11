@@ -8,7 +8,7 @@ import { Corpus } from "../src/index.js";
 const FIXTURES = fileURLToPath(new URL("../../fixtures", import.meta.url));
 
 interface OracleRow {
-  op: "members" | "containers" | "descendants" | "ancestors";
+  op: "members" | "containers";
   ref: string;
   expect: string[];
 }

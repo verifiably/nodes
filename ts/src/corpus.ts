@@ -264,10 +264,6 @@ export class Corpus {
     return this.index.inboundEdges(this.requireUid(ref));
   }
 
-  dangling(): ResolvedEdge[] {
-    return this.index.danglingEdges();
-  }
-
   neighbors(ref: string): Node[] {
     const uid = this.requireUid(ref);
     const neighborUids = new Set<string>();
@@ -291,14 +287,6 @@ export class Corpus {
 
   containers(ref: string): string[] {
     return this.sortedLiveIds(this.index.containersOf(this.requireUid(ref)));
-  }
-
-  descendants(ref: string): string[] {
-    return this.sortedLiveIds(this.index.membershipClosure(this.requireUid(ref), "members"));
-  }
-
-  ancestors(ref: string): string[] {
-    return this.sortedLiveIds(this.index.membershipClosure(this.requireUid(ref), "containers"));
   }
 
   rename(oldId: string, newId: string): Node {

@@ -75,7 +75,7 @@ def test_delete_leaves_dangling_inbound(tmp_path):
     c.delete("topic:t")
     out = c.outbound("topic:r")
     assert len(out) == 1 and out[0].target_uid is None
-    assert len(c.dangling()) == 1
+    assert [(f.ref, f.detail) for f in c.check() if f.code == "dangling-ref"] == [("topic:r", "topic:t")]
     with pytest.raises(RefError):
         c.inbound("topic:t")  # target no longer resolves → input ref error
 

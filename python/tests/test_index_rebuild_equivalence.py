@@ -46,6 +46,10 @@ def _normalize(index: Index) -> dict:
     }
 
 
+def _dangling_refs(c: Corpus) -> list[tuple[str, str]]:
+    return [(f.ref, f.detail) for f in c.check() if f.code == "dangling-ref"]
+
+
 def _assert_equivalent(corpus: Corpus) -> None:
     fresh = Index.build(corpus.store.all_nodes())
     assert _normalize(corpus.index) == _normalize(fresh)
@@ -69,12 +73,12 @@ def test_rebuild_equivalence_through_mutation_sequence(tmp_path):
 
     c.delete("topic:a")  # strands inbound refs from topic:c and graph:g → must stay as dangling
     _assert_equivalent(c)
-    assert len(c.dangling()) >= 1  # topic:c still points at the deleted topic:a
+    assert ("topic:c", "topic:a") in _dangling_refs(c)  # topic:c still points at the deleted topic:a
 
     # re-adding the deleted id reconverges the previously-dangling refs
     c.add(Node(id="topic:a", kind="topic", title="A again"))
     _assert_equivalent(c)
-    assert c.dangling() == []  # topic:c's relation to topic:a now resolves
+    assert _dangling_refs(c) == []  # topic:c's relation to topic:a now resolves
     assert all(e.target_uid is not None for e in c.outbound("topic:c"))
 
 
