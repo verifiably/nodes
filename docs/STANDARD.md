@@ -94,7 +94,8 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   candidate whose collision key another live uid already claims (`CollisionError`),
   while construction — cold build and snapshot reconciliation — admits otherwise legal
   path-collided claimants and `check` reports them (`path-collision`, §8.2). A
-  same-`(uid, id)` add replaces its own claim and is always admitted.
+  same-`(uid, id)` add replaces its own claim and always passes mapped-path admission;
+  it remains subject to the identity checks above and to registry validation (§6).
 - **Rename** is a library operation. Given `old_id` → `new_id`: `old_id` MUST be live
   (`RefError` otherwise); `new_id` MUST NOT resolve (`CollisionError` otherwise).
   *(2.0)* Then, before referrer preparation, embedding or cache work, or executor
@@ -272,8 +273,8 @@ and dangling tracking but are not relation-graph edges.
   vector preparation (when configured) → file write → index upserts. Any failure MUST
   precede the disk write. *(2.0)* The collision check is identity claims then
   mapped-path admission (§3), both before vector preparation or any effect; a
-  same-`(uid, id)` replacement stays admitted even when the corpus already carries a
-  `path-collision` warning. `DefaultExecutor` preflights every operation's
+  same-`(uid, id)` replacement still passes mapped-path admission when the corpus
+  already carries a `path-collision` warning. `DefaultExecutor` preflights every operation's
   containment (§4.1) over the whole plan before any effect, refusing with
   `ExecutionError` whose `index` is the offending operation and `applied = 0`; a durable
   executor keeps its own pre-effect refusal contract (`ExecutionError(index=None,

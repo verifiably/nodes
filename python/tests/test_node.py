@@ -9,7 +9,7 @@ from nodes.core.errors import ValidationError
 from nodes.core.frontmatter import node_from_markdown, node_to_markdown
 from nodes.core.node import Node, new_uid
 
-UID_ORACLE = json.loads((Path(__file__).parents[2] / "fixtures/uid.oracle.json").read_text())
+UID_ORACLE = json.loads((Path(__file__).parents[2] / "fixtures/uid.oracle.json").read_text(encoding="utf-8"))
 
 
 def test_node_minimal_defaults():
