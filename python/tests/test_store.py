@@ -1,11 +1,34 @@
 from __future__ import annotations
 
+import os
+import shutil
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from nodes.core.corpus import Corpus
-from nodes.core.errors import RefError
+from nodes.core.errors import ContainmentError, RefError
 from nodes.core.node import Node
 from nodes.core.store import Store
+
+
+def _symlinks_supported() -> bool:
+    """Probe once. Only a recognized unsupported-platform failure disables the symlink
+    tests (an explicit skip); any other failure is a real error and propagates."""
+    probe = Path(tempfile.mkdtemp(prefix="nodes-symlink-probe-"))
+    try:
+        (probe / "link").symlink_to(probe / "target")
+        return True
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            return False
+        raise
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
+
+
+needs_symlinks = pytest.mark.skipif(not _symlinks_supported(), reason="symlinks unsupported on this platform")
 
 
 def test_write_file_read_file_roundtrip(tmp_path):
@@ -73,3 +96,50 @@ def test_corpus_construction_ignores_private_nodes_index_tree(tmp_path):
     corpus = Corpus(tmp_path)
 
     assert [n.id for n in corpus.all()] == ["topic:a"]
+
+
+@needs_symlinks
+def test_read_file_refuses_symlinked_path(tmp_path):
+    store = Store(tmp_path)
+    store.write_file(Node(id="topic:real", kind="topic", title="R"))
+    (tmp_path / "topic" / "a.md").symlink_to(tmp_path / "topic" / "real.md")
+    with pytest.raises(ContainmentError):
+        store.read_file("topic:a")
+
+
+@needs_symlinks
+def test_write_file_refuses_symlinked_path_and_leaves_target(tmp_path):
+    store = Store(tmp_path)
+    (tmp_path / "topic").mkdir()
+    target = tmp_path / "protected.txt"
+    target.write_bytes(b"keep")
+    (tmp_path / "topic" / "a.md").symlink_to(target)
+    with pytest.raises(ContainmentError):
+        store.write_file(Node(id="topic:a", kind="topic", title="A"))
+    assert target.read_bytes() == b"keep"
+
+
+@needs_symlinks
+def test_delete_file_refuses_symlinked_path_and_leaves_link(tmp_path):
+    store = Store(tmp_path)
+    (tmp_path / "topic").mkdir()
+    target = tmp_path / "protected.txt"
+    target.write_bytes(b"keep")
+    (tmp_path / "topic" / "a.md").symlink_to(target)
+    with pytest.raises(ContainmentError):
+        store.delete_file("topic:a")
+    assert (tmp_path / "topic" / "a.md").is_symlink()
+    assert target.read_bytes() == b"keep"
+
+
+@needs_symlinks
+def test_store_works_through_symlinked_root(tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link-root"
+    link.symlink_to(real)
+    store = Store(link)
+    store.write_file(Node(id="topic:a", kind="topic", title="A"))
+    assert store.read_file("topic:a").title == "A"
+    store.delete_file("topic:a")
+    assert not (real / "topic" / "a.md").exists()

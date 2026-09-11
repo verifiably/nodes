@@ -6,6 +6,7 @@ from nodes.core.errors import RefError
 from nodes.core.frontmatter import node_from_markdown, node_to_markdown
 from nodes.core.ids import NodeId
 from nodes.core.node import Node
+from nodes.core.paths import assert_contained
 from nodes.core.snapshot import iter_corpus_files
 
 
@@ -18,24 +19,33 @@ class Store:
     def __init__(self, root: Path) -> None:
         self.root = Path(root)
 
-    def path_for(self, node_id: str) -> Path:
+    def rel_path(self, node_id: str) -> str:
         nid = NodeId.parse(node_id)
-        return self.root / nid.kind / f"{nid.slug.replace(':', '__')}.md"
+        return f"{nid.kind}/{nid.slug.replace(':', '__')}.md"
+
+    def path_for(self, node_id: str) -> Path:
+        return self.root / self.rel_path(node_id)
 
     def write_file(self, node: Node) -> Path:
-        path = self.path_for(node.id)
+        rel = self.rel_path(node.id)
+        assert_contained(self.root, rel)
+        path = self.root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(node_to_markdown(node), encoding="utf-8")
         return path
 
     def read_file(self, node_id: str) -> Node:
-        path = self.path_for(node_id)
+        rel = self.rel_path(node_id)
+        assert_contained(self.root, rel)
+        path = self.root / rel
         if not path.is_file():
             raise RefError(f"no node at {node_id!r}")
         return node_from_markdown(path.read_text(encoding="utf-8"))
 
     def delete_file(self, node_id: str) -> None:
-        path = self.path_for(node_id)
+        rel = self.rel_path(node_id)
+        assert_contained(self.root, rel)
+        path = self.root / rel
         if not path.is_file():
             raise RefError(f"no node at {node_id!r}")
         path.unlink()

@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { RefError } from "./errors.js";
 import { nodeFromMarkdown, nodeToMarkdown } from "./frontmatter.js";
 import type { Node } from "./node.js";
+import { assertContained } from "./paths.js";
 import { hashBytes, listCorpusFileStats, pathForNodeId } from "./snapshot.js";
 
 interface CachedFile {
@@ -36,6 +37,7 @@ export class Store {
 
   writeFile(node: Node): string {
     const rel = pathForNodeId(node.id);
+    assertContained(this.root, rel);
     const path = join(this.root, rel);
     mkdirSync(dirname(path), { recursive: true });
     const data = Buffer.from(nodeToMarkdown(node), "utf-8");
@@ -52,6 +54,7 @@ export class Store {
 
   readFile(nodeId: string): Node {
     const rel = pathForNodeId(nodeId);
+    assertContained(this.root, rel);
     const path = join(this.root, rel);
     let stat: Stats;
     try {
@@ -67,6 +70,7 @@ export class Store {
 
   deleteFile(nodeId: string): void {
     const rel = pathForNodeId(nodeId);
+    assertContained(this.root, rel);
     const path = join(this.root, rel);
     let stat: Stats;
     try {

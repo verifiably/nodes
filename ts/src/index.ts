@@ -1,5 +1,6 @@
 export {
   CollisionError,
+  ContainmentError,
   EmbedderRequiredError,
   ExecutionError,
   FacetError,
@@ -72,6 +73,7 @@ export {
   RESERVED_NAMESPACE,
   validatePlan,
 } from "./write-plan.js";
+export { assertCachePath, assertContained, isPortableRelativePath } from "./paths.js";
 export { Corpus, type Finding } from "./corpus.js";
 export {
   type CorpusFile,
@@ -80,6 +82,7 @@ export {
   type ManifestEntry,
   type Snapshot,
   SNAPSHOT_LANG,
+  SNAPSHOT_REL_PATH,
   SNAPSHOT_SCHEMA_VERSION,
   hashBytes,
   iterCorpusFiles,

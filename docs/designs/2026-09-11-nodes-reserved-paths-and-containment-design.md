@@ -1,7 +1,7 @@
 # Reserved paths and containment — design
 
 **Date:** 2026-09-11
-**Status:** approved; sub-task A of `2026-09-11-nodes-2.0-remainder-design.md`
+**Status:** implemented on branch `nodes-2.0` (2026-09-11); Science sign-off on the seam amendment pending
 **Task:** `nodes-01111b`
 **Source:** `2026-08-03-nodes-under-the-system-redesign-design.md` §2.2 (as amended
 2026-08-17); seam design §5.
@@ -88,10 +88,15 @@ membership. TypeScript's walk today catches and ignores `readdirSync` failures f
 same silent outcome, and its `existsSync(root)` guard turns a missing root into an empty
 corpus. Both walks now:
 
-- skip any entry whose `lstat` says symlink, at any depth, without following it;
+- inspect directory entries without following symlinks and skip links at any depth;
 - exclude `.nodes-index` as the root's direct child only;
-- yield regular `*.md` files, sorted by root-relative POSIX path in code-point order;
-- propagate every filesystem failure — unreadable directory, missing root, `lstat`
+- yield regular `*.md` files, sorted by root-relative POSIX path in code-point order
+  (TypeScript's sort moved to `compareCodepoints` with this sub-task; sub-task C's
+  collation item is thereby done for the walk and is struck from its scope);
+- keep the literal filename when deriving the root-relative path — TypeScript's
+  `relPosix` splits on the platform separator only, so a POSIX filename containing `\`
+  is reported verbatim and later reads address exactly the path the walk inspected;
+- propagate every filesystem failure — unreadable directory, missing root, entry inspection
   failure — as an exception. A filesystem failure is never a content finding and never
   absence (sub-task B keeps that line for construction findings).
 
@@ -115,11 +120,10 @@ cause; nothing has been written. Per-op existence checks and writes then run as 
 A plan that passes preflight and then fails an existence check still leaves an applied
 prefix, as seam §3 specifies.
 
-**`Store.read_file` / `readFile`** and **`all_nodes` / `allNodes`** — the read paths
-`Corpus.get`, `neighbors`, `rename`, and `check` use — call `assert_contained` before
-opening. This is not redundant with the walk: until sub-task B lands, a misplaced member
-makes `get()` reconstruct a path the walk never yielded, and after it the guard is what
-makes the read guarantee enforced rather than inferred.
+**`Store.read_file` / `readFile`** — the read path `Corpus.get`, `neighbors`, and
+`rename` use — calls `assert_contained` before opening; `all_nodes` / `allNodes` (which
+`check` uses) is contained by the walk, which inspects every component on the way down
+without following symlinks.
 
 **Cache I/O.** Snapshot load runs before the walk (`Corpus.__init__`), and the snapshot
 writer and `VectorCache` read and write `.nodes-index/...` directly, writing a `.tmp`
@@ -134,8 +138,9 @@ rule) **strictly beneath** the reserved namespace: first segment `.nodes-index` 
 least one further segment. The single-segment `.nodes-index` is refused because its
 temporary sibling would be `.nodes-index.tmp` — outside the reserved directory, where it
 could overwrite a protected artifact. Anything else is a `ValueError` / `TypeError`
-programming error, not a containment refusal. `snapshot_path` returns that relative
-path. `VectorCache` builds its entry paths the same way and calls the helpers.
+programming error, not a containment refusal. `snapshot_path` keeps returning the rooted
+path (tests use it for filesystem assertions); a relative constant `SNAPSHOT_REL_PATH`
+feeds the helpers. `VectorCache` builds its entry paths the same way and calls the helpers.
 
 The helpers live below both consumers: `snapshot.py` already imports `VectorIndex` from
 `similarity.py`, so `VectorCache` importing the helpers back from `snapshot.py` would be
@@ -180,11 +185,11 @@ a temporary directory and asserts the outcome. Cases:
 | delete onto a file symlink | refused, `applied=0`; link and target intact |
 | create under a symlinked parent directory | refused, `applied=0` |
 | two-op plan, symlink at op 1 | `index=1, applied=0`; op 0's path still absent |
+| two-op plan, native NUL inspection error at op 1 | `index=1, applied=0`; op 0's path still absent |
 | segment rule: plan paths `/a.md`, `a//b.md`, `./a.md`, `a/../b.md` | `PlanRefusedError` (each already carries the `.md` suffix, so only the segment rule can be what refuses it) |
 | reserved rule: `.nodes-index/a.md`, `./.nodes-index/a.md`, `a/../.nodes-index/a.md` | `PlanRefusedError` |
 | portability rule: `C:/outside/x.md`, `..\outside\x.md`, `a\b.md`, `kind/a:b.md` | `PlanRefusedError`; `outside/` untouched |
 | suffix rule: `kind/a.txt`, `kind/a.md/` | `PlanRefusedError` |
-| snapshot manifest row with `a\b.md` or `kind/a:b.md` | snapshot rejected as malformed (rebuild), matching the plan rule |
 | `.nodes-index/snapshot.<lang>.json.tmp` is a stray symlink | construction reads the snapshot normally; `flush_index` raises `ContainmentError` and the target is unchanged |
 | `write_json_atomic(root, ".nodes-index", obj)` with a protected `.nodes-index.tmp` present | refused as a programming error; `.nodes-index.tmp` byte-identical |
 | direct plan creating `corpus.yaml`, replacing `<kind>/notes.txt` | `PlanRefusedError`; both untouched |
@@ -195,6 +200,9 @@ a temporary directory and asserts the outcome. Cases:
 | `Store.write_file` of a node whose mapped path is a file symlink | `ContainmentError`; target bytes unchanged |
 | `Store.delete_file` of an id whose mapped path is a file symlink | `ContainmentError`; link and target intact |
 | root does not exist | construction raises (the language's filesystem error), not an empty corpus |
+
+The manifest-row arm of the portable-path rule is pinned per language in the
+snapshot-load tests, since a snapshot document is language-specific.
 
 Permission-failure cases (an unreadable directory under the root) stay in each language's
 own tests, skipped when running as root, since their materialization is not portable to

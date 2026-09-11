@@ -2,15 +2,36 @@ from __future__ import annotations
 
 import dataclasses
 import hashlib
+import os
+import shutil
+import tempfile
+from pathlib import Path
 
 import pytest
 
-from nodes.core.errors import ExecutionError, NodesError, PlanRefusedError
+from nodes.core.errors import ContainmentError, ExecutionError, NodesError, PlanRefusedError
 from nodes.core.write_plan import CreateOp, DefaultExecutor, DeleteOp, ReplaceOp
 
 
 def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _symlinks_supported() -> bool:
+    """Probe once. Only a recognized unsupported-platform failure disables these tests."""
+    probe = Path(tempfile.mkdtemp(prefix="nodes-symlink-probe-"))
+    try:
+        (probe / "link").symlink_to(probe / "target")
+        return True
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            return False
+        raise
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
+
+
+needs_symlinks = pytest.mark.skipif(not _symlinks_supported(), reason="symlinks unsupported on this platform")
 
 
 def test_ops_are_discriminated():
@@ -144,7 +165,98 @@ def test_unknown_operation_kind_refused_before_any_effect(tmp_path):
     assert not (tmp_path / "fine.md").exists()
 
 
-def test_interior_dotdot_that_stays_inside_root_is_allowed(tmp_path):
-    # Lexical normalization of "k/../a.md" is "a.md": no ".." survives, no escape.
-    DefaultExecutor(tmp_path).execute([CreateOp(path="k/../a.md", content=b"x")])
-    assert (tmp_path / "a.md").read_bytes() == b"x"
+@pytest.mark.parametrize("path", ["/a.md", "a//b.md", "./a.md", "a/../b.md"])
+def test_validate_refuses_segment_violations(tmp_path, path):
+    with pytest.raises(PlanRefusedError):
+        DefaultExecutor(tmp_path).execute([CreateOp(path=path, content=b"x")])
+
+
+@pytest.mark.parametrize("path", [".nodes-index/a.md", "./.nodes-index/a.md", "a/../.nodes-index/a.md"])
+def test_validate_refuses_reserved_spellings(tmp_path, path):
+    with pytest.raises(PlanRefusedError):
+        DefaultExecutor(tmp_path).execute([CreateOp(path=path, content=b"x")])
+
+
+@pytest.mark.parametrize("path", ["C:/outside/x.md", "..\\outside\\x.md", "a\\b.md", "kind/a:b.md"])
+def test_validate_refuses_windows_spellings(tmp_path, path):
+    with pytest.raises(PlanRefusedError):
+        DefaultExecutor(tmp_path).execute([CreateOp(path=path, content=b"x")])
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("path", ["kind/a.txt", "kind/a.md/", "corpus.yaml"])
+def test_validate_refuses_non_md_targets(tmp_path, path):
+    with pytest.raises(PlanRefusedError):
+        DefaultExecutor(tmp_path).execute([CreateOp(path=path, content=b"x")])
+
+
+def test_direct_plan_cannot_replace_protected_artifact(tmp_path):
+    (tmp_path / "corpus.yaml").write_bytes(b"manifest")
+    with pytest.raises(PlanRefusedError):
+        DefaultExecutor(tmp_path).execute([ReplaceOp(path="corpus.yaml", content=b"x", expected_digest=sha(b"manifest"))])
+    assert (tmp_path / "corpus.yaml").read_bytes() == b"manifest"
+
+
+@needs_symlinks
+def test_preflight_refuses_create_onto_dangling_symlink(tmp_path):
+    (tmp_path / "kind").mkdir()
+    outside = Path(tempfile.mkdtemp(prefix="nodes-write-plan-outside-"))
+    try:
+        (tmp_path / "kind" / "a.md").symlink_to(outside / "a.md")
+        with pytest.raises(ExecutionError) as info:
+            DefaultExecutor(tmp_path).execute([CreateOp(path="kind/a.md", content=b"x")])
+        assert (info.value.index, info.value.applied) == (0, 0)
+        assert isinstance(info.value.__cause__, ContainmentError)
+        assert not (outside / "a.md").exists()
+    finally:
+        shutil.rmtree(outside)
+
+
+@needs_symlinks
+def test_preflight_refuses_replace_and_delete_onto_symlink(tmp_path):
+    (tmp_path / "kind").mkdir()
+    target = tmp_path / "protected.txt"
+    target.write_bytes(b"keep")
+    (tmp_path / "kind" / "a.md").symlink_to(target)
+    ex = DefaultExecutor(tmp_path)
+    with pytest.raises(ExecutionError) as info:
+        ex.execute([ReplaceOp(path="kind/a.md", content=b"x", expected_digest=sha(b"keep"))])
+    assert (info.value.index, info.value.applied) == (0, 0)
+    with pytest.raises(ExecutionError) as info:
+        ex.execute([DeleteOp(path="kind/a.md", expected_digest=sha(b"keep"))])
+    assert (info.value.index, info.value.applied) == (0, 0)
+    assert target.read_bytes() == b"keep"
+    assert (tmp_path / "kind" / "a.md").is_symlink()
+
+
+@needs_symlinks
+def test_preflight_refuses_create_under_symlinked_parent(tmp_path):
+    outside = Path(tempfile.mkdtemp(prefix="nodes-write-plan-outside-"))
+    try:
+        (tmp_path / "kind").symlink_to(outside)
+        with pytest.raises(ExecutionError) as info:
+            DefaultExecutor(tmp_path).execute([CreateOp(path="kind/a.md", content=b"x")])
+        assert (info.value.index, info.value.applied) == (0, 0)
+        assert list(outside.iterdir()) == []
+    finally:
+        shutil.rmtree(outside)
+
+
+@needs_symlinks
+def test_preflight_covers_whole_plan_before_any_effect(tmp_path):
+    (tmp_path / "kind").mkdir()
+    (tmp_path / "kind" / "b.md").symlink_to(tmp_path / "kind" / "missing.md")
+    with pytest.raises(ExecutionError) as info:
+        DefaultExecutor(tmp_path).execute([CreateOp(path="kind/a.md", content=b"a"), CreateOp(path="kind/b.md", content=b"b")])
+    assert (info.value.index, info.value.applied) == (1, 0)
+    assert not (tmp_path / "kind" / "a.md").exists()
+
+
+@needs_symlinks
+def test_execute_succeeds_through_symlinked_root(tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link-root"
+    link.symlink_to(real)
+    DefaultExecutor(link).execute([CreateOp(path="kind/a.md", content=b"x")])
+    assert (real / "kind" / "a.md").read_bytes() == b"x"

@@ -117,17 +117,18 @@ applies a plan all-or-nothing; `nodes` depends on `atoms` in neither language.
 
 | Executor | Atomicity and preconditions | Serialization |
 | --- | --- | --- |
-| `DefaultExecutor` | Checks each operation's existence precondition when it reaches that operation and stops at the first failure, leaving the applied prefix. It carries but does not enforce `expected_digest`. | Provides no serialization; the deployment retains the standard §7 single-writer obligation. |
+| `DefaultExecutor` | *(amended 2026-09-11)* Preflights every operation's containment over the whole plan before any effect, refusing with `ExecutionError(index=i, applied=0)`; then checks each operation's existence precondition when it reaches that operation and stops at the first failure, leaving the applied prefix. It carries but does not enforce `expected_digest`. | Provides no serialization; the deployment retains the standard §7 single-writer obligation. |
 | Durable executor | Refuses a failed precondition before any effect: the transaction aborts and nothing applies. | Owns serialization. |
 
 The kernel never coordinates concurrency. Each executor declares whether it
 serializes or passes the single-writer obligation through to the deployment.
 
 The plan builder never emits a path outside the corpus root or in a reserved
-namespace. Both executor classes additionally reject, before any effect, a
-malformed plan containing a lexically escaping path (absolute, or containing
-`..` after lexical normalization), a reserved-namespace path, or an unknown
-operation kind. They raise `PlanRefusedError` for that lexically decidable
+namespace. *(amended 2026-09-11)* Both executor classes additionally reject, before
+any effect, a malformed plan containing a path that is not a portable root-relative
+`.md` path (standard §4.1: no leading `/`, no empty/`.`/`..` segment, no `\` or `:`,
+`.md` suffix — no normalization), a reserved-namespace path, or an unknown operation
+kind. They raise `PlanRefusedError` for that lexically decidable
 refusal. A durable executor's authoritative rooted resolution can additionally
 refuse path or deployment topology; that is an execution failure, not malformed
 plan syntax, and raises `ExecutionError(index=None, applied=0)`.
@@ -294,6 +295,8 @@ unexercised.
 | 2026-08-18 | §§3–4 | Made `ExecutionError.index` and `.applied` optional, with `applied=None` meaning restoration unproved; narrowed `PlanRefusedError` to lexically decidable malformedness and made durable resolution-time refusals `ExecutionError(None, 0)`; replaced the blanket durable crash claim with the persistent, evidence-preserving halt carve-out. | `nodes`-side review | n/a — no landed consumer exercises these parts |
 | 2026-08-18 | §1 | Recorded the implementation landing and the fixture-pinned uid order of referrer replaces; status note only, no contract change. | `nodes`-side review | n/a — status note only |
 | 2026-08-18 | §6 | Consumer-note addendum: science's landed adapter derives `CreateDirectory` effects for missing parents inside the same transaction; the note's derivability claim stands and no contract part changed. | `nodes`-side review | n/a — status note only |
+| 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` applies the portable root-relative path rule (canonical segments, no `\` or `:`, `.md` suffix) instead of normalizing. | `nodes`-side review | Science: **pending** |
+| 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record

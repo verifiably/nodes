@@ -142,4 +142,15 @@ describe("snapshot writeSnapshot/loadSnapshot", () => {
     writeSnapshot(root, manifest, Index.build(ns), SearchIndex.build(ns), undefined);
     expect(loadSnapshot(root, null)).toBeNull();
   });
+
+  it.each(["a\\b.md", "kind/a:b.md", "a/../b.md", "./topic/a.md"])(
+    "returns null on the non-portable manifest path %s",
+    (path) => {
+      const ns = nodes();
+      const manifest = manifestFor(ns);
+      manifest[0] = { ...manifest[0], path };
+      writeSnapshot(root, manifest, Index.build(ns), SearchIndex.build(ns), undefined);
+      expect(loadSnapshot(root, null)).toBeNull();
+    },
+  );
 });

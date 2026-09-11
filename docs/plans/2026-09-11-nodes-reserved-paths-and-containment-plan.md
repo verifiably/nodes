@@ -1,5 +1,7 @@
 # Reserved Paths and Containment Implementation Plan
 
+**Status:** implemented on branch `nodes-2.0` (2026-09-11)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Nodes never touches non-Markdown content outside `.nodes-index/`, and never follows a symlink below the corpus root on any path it walks, reads, writes, or deletes — in both kernels, pinned by one shared fixture.
@@ -25,8 +27,9 @@
 - Cache paths are strictly beneath the namespace: first segment `.nodes-index` and at least one more segment.
 - `assert_contained`: absent prefix tolerated; symlink refuses; any other inspection failure refuses. Refusal is `ContainmentError`.
 - Executor preflight runs over the whole plan before any effect and raises `ExecutionError(index=i, applied=0)`.
+- Implementation note: the shared oracle includes a valid op 0 followed by a NUL-containing `.md` path at op 1; Python maps `lstat`'s native `ValueError` through `ContainmentError`, while the separate upfront lexical programming-error check remains `ValueError`.
 - Reads check the final path only; writes check the final path and its `.tmp` sibling.
-- Spec adjustments made by this plan (recorded in Task 7): `snapshot_path(root)` / `snapshotPath(root)` keep returning the absolute path — tests use it for filesystem assertions — and a relative constant `SNAPSHOT_REL_PATH` feeds the helpers; `all_nodes` / `allNodes` are contained by the walk (every component `lstat`ed on the way down) rather than by a second `assert_contained` pass.
+- Spec adjustments made by this plan (recorded in Task 7): `snapshot_path(root)` / `snapshotPath(root)` keep returning the rooted path — tests use it for filesystem assertions — and a relative constant `SNAPSHOT_REL_PATH` feeds the helpers; `all_nodes` / `allNodes` are contained by the walk's no-follow directory-entry inspection rather than by a second `assert_contained` pass.
 
 ---
 
@@ -46,11 +49,11 @@
 - Produces (Python): `nodes.core.errors.ContainmentError(NodesError)`; `nodes.core.paths.RESERVED_NAMESPACE = ".nodes-index"`; `is_portable_relative_path(path: str, *, suffix: str | None = ".md") -> bool`; `assert_contained(root: Path | str, rel_path: str) -> None` (raises `ValueError` for a non-portable `rel_path`, `ContainmentError` for a refusal).
 - Produces (TypeScript): `ContainmentError extends NodesError`; `RESERVED_NAMESPACE`; `isPortableRelativePath(path: string, suffix: string | null = ".md"): boolean`; `assertContained(root: string, relPath: string): void` (throws `TypeError` for a non-portable `relPath`, `ContainmentError` for a refusal).
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-e48507`
 
-- [ ] **Step 1: Write the failing Python tests**
+- [x] **Step 1: Write the failing Python tests**
 
 `python/tests/test_paths.py`:
 
@@ -195,12 +198,12 @@ def test_assert_contained_refuses_on_permission_failure(tmp_path):
         locked.chmod(stat.S_IRWXU)
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: collection error — `ImportError: cannot import name 'ContainmentError'`.
 
-- [ ] **Step 3: Add the error and the module (Python)**
+- [x] **Step 3: Add the error and the module (Python)**
 
 Append to `python/src/nodes/core/errors.py`, directly after the `PlanRefusedError` class:
 
@@ -239,7 +242,7 @@ RESERVED_NAMESPACE = ".nodes-index"
 
 
 def is_portable_relative_path(path: str, *, suffix: str | None = ".md") -> bool:
-    """The one lexical rule for every root-relative path nodes accepts: split on `/`
+    """The lexical rule for instruction and cache paths: split on `/`
     only, no empty/`.`/`..` segment, no segment carrying `\\` or `:` (a canonical
     segment never does — `path_for` maps `:` to `__`), and the required suffix."""
     if not path or path.startswith("/"):
@@ -280,12 +283,12 @@ from nodes.core.paths import RESERVED_NAMESPACE as RESERVED_NAMESPACE
 
 (Place it with the other imports, after `from nodes.core.errors import ...`.)
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 5: Write the failing TypeScript tests**
+- [x] **Step 5: Write the failing TypeScript tests**
 
 `ts/tests/paths.test.ts`:
 
@@ -416,12 +419,12 @@ describe("assertContained", () => {
 });
 ```
 
-- [ ] **Step 6: Run to verify they fail**
+- [x] **Step 6: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: FAIL — `Cannot find module '../src/paths.js'`.
 
-- [ ] **Step 7: Add the error and the module (TypeScript)**
+- [x] **Step 7: Add the error and the module (TypeScript)**
 
 In `ts/src/errors.ts`, after `export class PlanRefusedError extends NodesError {}` (and update its doc comment to: "Write plan is lexically malformed: unknown operation kind, a path that is not a portable root-relative `.md` path, or a reserved-namespace path. Refused before any effect."), add:
 
@@ -442,7 +445,7 @@ import { ContainmentError } from "./errors.js";
 
 export const RESERVED_NAMESPACE = ".nodes-index";
 
-/** The one lexical rule for every root-relative path nodes accepts: split on `/` only,
+/** The lexical rule for instruction and cache paths: split on `/` only,
  * no empty/`.`/`..` segment, no segment carrying `\` or `:` (a canonical segment never
  * does — `pathForNodeId` maps `:` to `__`), and the required suffix. */
 export function isPortableRelativePath(path: string, suffix: string | null = ".md"): boolean {
@@ -496,12 +499,12 @@ export { assertContained, isPortableRelativePath } from "./paths.js";
 
 (`RESERVED_NAMESPACE` stays exported from `./write-plan.js`.)
 
-- [ ] **Step 8: Run to verify they pass**
+- [x] **Step 8: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 9: Gate and close the child record**
+- [x] **Step 9: Gate and close the child record**
 
 Run: `just gate`
 Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
@@ -528,14 +531,14 @@ tasks done nodes-e48507 "ContainmentError, the portable path predicate, and asse
 
 **Interfaces:**
 - Consumes: Task 1's `assert_contained` / `assertContained`, `is_portable_relative_path` / `isPortableRelativePath`, `RESERVED_NAMESPACE`.
-- Produces (Python, in `nodes.core.paths`): `assert_cache_path(rel_path: str) -> None` (raises `ValueError` unless portable with suffix `.json` and strictly beneath the namespace); `read_json(root: Path | str, rel_path: str) -> dict | None`; `write_json_atomic(root: Path | str, rel_path: str, obj: dict) -> None`. In `nodes.core.snapshot`: `SNAPSHOT_REL_PATH = ".nodes-index/snapshot.py.json"`; `snapshot_path(root)` unchanged (absolute); `read_json` and `write_json_atomic` still importable from `nodes.core.snapshot` (re-exported).
+- Produces (Python, in `nodes.core.paths`): `assert_cache_path(rel_path: str) -> None` (raises `ValueError` unless portable with suffix `.json` and strictly beneath the namespace); `read_json(root: Path | str, rel_path: str) -> object | None`; `write_json_atomic(root: Path | str, rel_path: str, obj: dict) -> None`. In `nodes.core.snapshot`: `SNAPSHOT_REL_PATH = ".nodes-index/snapshot.py.json"`; `snapshot_path(root)` unchanged (rooted); `read_json` and `write_json_atomic` still importable from `nodes.core.snapshot` (re-exported). `read_json` rejects JSON `null`; consumers validate non-null document structure.
 - Produces (TypeScript, in `paths.ts`): `assertCachePath(relPath: string): void` (throws `TypeError`); `readJson(root: string, relPath: string): unknown`; `writeJsonAtomic(root: string, relPath: string, obj: unknown): void`. In `snapshot.ts`: `SNAPSHOT_REL_PATH = ".nodes-index/snapshot.ts.json"`; `snapshotPath(root)` unchanged; `readJson`/`writeJsonAtomic` re-exported from `snapshot.ts` and `index.ts`.
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-904ecf`
 
-- [ ] **Step 1: Write the failing Python tests**
+- [x] **Step 1: Write the failing Python tests**
 
 Append to `python/tests/test_paths.py`:
 
@@ -636,12 +639,12 @@ def test_cache_read_refuses_symlinked_file(tmp_path):
         read_json(tmp_path, ".nodes-index/a.json")
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: `ImportError: cannot import name 'assert_cache_path'`.
 
-- [ ] **Step 3: Implement the Python helpers and move the callers**
+- [x] **Step 3: Implement the Python helpers and move the callers**
 
 Append to `python/src/nodes/core/paths.py` (add `import json` at the top):
 
@@ -661,7 +664,7 @@ def _reject_json_constant(value: str) -> None:
     raise ValueError(f"invalid JSON constant {value}")
 
 
-def read_json(root: Path | str, rel_path: str) -> dict | None:
+def read_json(root: Path | str, rel_path: str) -> object | None:
     """Read a cache document. `None` only for a genuinely absent file; a document whose
     JSON is `null` is corruption and raises `ValueError`. Checks the final path only — a
     read never touches the `.tmp` sibling."""
@@ -748,12 +751,12 @@ Then add `SNAPSHOT_REL_PATH` to each file's `from nodes.core.snapshot import (..
 - `test_read_json_broken_symlink_raises`: rename to `test_read_json_symlink_refused` and expect `ContainmentError` (import it from `nodes.core.errors`).
 - `test_read_json_invalid_json_raises` and `test_read_json_rejects_non_finite_constants`: `read_json(tmp_path, SNAPSHOT_REL_PATH)`.
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 5: Write the failing TypeScript tests**
+- [x] **Step 5: Write the failing TypeScript tests**
 
 Append to `ts/tests/paths.test.ts` (add `readFileSync` to the `node:fs` import and `assertCachePath, readJson, writeJsonAtomic` to the `../src/paths.js` import):
 
@@ -846,12 +849,12 @@ describe("cache helpers", () => {
 
 Add `existsSync, readdirSync` to the `node:fs` import and `import { VectorCache } from "../src/similarity.js";`.
 
-- [ ] **Step 6: Run to verify they fail**
+- [x] **Step 6: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: FAIL — `assertCachePath` is not exported.
 
-- [ ] **Step 7: Implement the TypeScript helpers and move the callers**
+- [x] **Step 7: Implement the TypeScript helpers and move the callers**
 
 Append to `ts/src/paths.ts` (extend the `node:fs` import to `{ type Stats, lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync }` and add `import { dirname } from "node:path"` alongside `join`):
 
@@ -973,12 +976,12 @@ Migrate `ts/tests/snapshot-io.test.ts`: add `SNAPSHOT_REL_PATH` to the `../src/s
 - "readJson throws for a broken symlink" → rename to "readJson refuses a symlink" and `expect(() => readJson(root, SNAPSHOT_REL_PATH)).toThrow(ContainmentError)`.
 - Every other `readJson(p)` / `writeJsonAtomic(p, …)` in that file: `readJson(root, SNAPSHOT_REL_PATH)` / `writeJsonAtomic(root, SNAPSHOT_REL_PATH, …)`; keep `p = snapshotPath(root)` wherever it is used for `writeFileSync`/`mkdirSync`/`existsSync`.
 
-- [ ] **Step 8: Run to verify they pass**
+- [x] **Step 8: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 9: Gate and close the child record**
+- [x] **Step 9: Gate and close the child record**
 
 Run: `just gate`
 Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
@@ -1000,11 +1003,11 @@ tasks done nodes-904ecf "read_json/write_json_atomic take (root, rel_path) stric
 - Consumes: `RESERVED_NAMESPACE` from `paths`.
 - Produces: unchanged signatures — `iter_corpus_files(root) -> list[CorpusFile]`, `listCorpusFileStats(root)`, `iterCorpusFiles(root)` — now raising on a missing root or an unreadable directory, and skipping every symlink at every depth without following it.
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-989525`
 
-- [ ] **Step 1: Write the failing Python tests**
+- [x] **Step 1: Write the failing Python tests**
 
 Append to `python/tests/test_snapshot_io.py` (add `import os`, `import shutil`, `import stat`, `import tempfile`, `from pathlib import Path`, the `_symlinks_supported` probe and `needs_symlinks` marker exactly as in `python/tests/test_paths.py`, and `from nodes.core.snapshot import iter_corpus_files` if missing):
 
@@ -1052,12 +1055,12 @@ def test_iter_corpus_files_unreadable_directory_raises(tmp_path):
         locked.chmod(stat.S_IRWXU)
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: `test_iter_corpus_files_missing_root_raises` and `test_iter_corpus_files_unreadable_directory_raises` FAIL (no exception raised); the two others PASS already (they pin behaviour the rewrite must keep).
 
-- [ ] **Step 3: Rewrite the Python walk**
+- [x] **Step 3: Rewrite the Python walk**
 
 Replace `iter_corpus_files` in `python/src/nodes/core/snapshot.py`:
 
@@ -1089,12 +1092,12 @@ def iter_corpus_files(root: Path | str) -> list[CorpusFile]:
     return files
 ```
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 5: Write the failing TypeScript tests**
+- [x] **Step 5: Write the failing TypeScript tests**
 
 Append to `ts/tests/snapshot-io.test.ts` (add `chmodSync` to the `node:fs` import, and the `SYMLINKS` probe exactly as in `ts/tests/paths.test.ts`):
 
@@ -1165,12 +1168,12 @@ describe("Store reads address the walked path", () => {
 
 Before the `relPosix` fix this test reads `topic:leak` through the symlink; after it, `kind:a`.
 
-- [ ] **Step 6: Run to verify they fail**
+- [x] **Step 6: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: "a missing root throws", "an unreadable directory throws", and the `allNodes` backslash test FAIL; the others PASS.
 
-- [ ] **Step 7: Rewrite the TypeScript walk**
+- [x] **Step 7: Rewrite the TypeScript walk**
 
 Replace `relPosix` and `listCorpusMarkdownPaths` in `ts/src/snapshot.ts`. `relPosix` must split on the platform separator only: today's `split(/[\\/]/)` turns a literal backslash in a POSIX filename into a separator, so the walk reports `kind\a.md` as `kind/a.md` and a later `Store.load` reconstructs a path the walk never inspected — through a symlinked `kind/` if one exists. On Windows `sep` is `\` and no filename can contain it, so the mapping stays lossless there.
 
@@ -1213,12 +1216,12 @@ function listCorpusMarkdownPaths(root: string): WalkedCorpusPath[] {
 
 Remove `existsSync` from the `node:fs` import if now unused.
 
-- [ ] **Step 8: Run to verify they pass**
+- [x] **Step 8: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS, including the `allNodes` backslash test in `store.test.ts`.
 
-- [ ] **Step 9: Gate and close the child record**
+- [x] **Step 9: Gate and close the child record**
 
 Run: `just gate`
 Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
@@ -1242,11 +1245,11 @@ tasks done nodes-989525 "Both walks are explicit recursions that skip every syml
 - Consumes: `is_portable_relative_path`, `assert_contained`, `ContainmentError`, `RESERVED_NAMESPACE`.
 - Produces: `validate_plan` / `validatePlan` refusing non-portable and non-`.md` paths; `DefaultExecutor.execute` raising `ExecutionError(index=i, applied=0)` from preflight before any effect.
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-f072a8`
 
-- [ ] **Step 1: Write the failing Python tests**
+- [x] **Step 1: Write the failing Python tests**
 
 Append to `python/tests/test_write_plan.py` (add `import os`, `import shutil`, `import tempfile`, `from pathlib import Path`, and `from nodes.core.errors import ContainmentError`; `import pytest` is present):
 
@@ -1377,12 +1380,12 @@ def test_non_portable_manifest_path_returns_none(tmp_path, path):
     assert load_snapshot(tmp_path, None) is None
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: the Windows-spelling, non-`.md`, reserved-spelling (dotted forms), protected-artifact, and preflight tests FAIL; the others may already pass.
 
-- [ ] **Step 3: Implement (Python)**
+- [x] **Step 3: Implement (Python)**
 
 In `python/src/nodes/core/write_plan.py`, delete `_path_escapes` and rewrite `validate_plan` and `DefaultExecutor.execute`:
 
@@ -1452,12 +1455,12 @@ def _validate_manifest_path(path: str) -> None:
 
 (add `is_portable_relative_path` to the `paths` import).
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS. If an existing `test_write_plan.py` test asserted that `a/../b.md` is *accepted* as `b.md`, change its expectation to `PlanRefusedError` — the rule changed deliberately (spec §2).
 
-- [ ] **Step 5: Write the failing TypeScript tests**
+- [x] **Step 5: Write the failing TypeScript tests**
 
 Append to `ts/tests/write-plan.test.ts` (add `ContainmentError` to the errors import; add `mkdirSync, readdirSync, symlinkSync, lstatSync` to `node:fs`; the `SYMLINKS` probe below replaces any helper):
 
@@ -1588,12 +1591,12 @@ And append inside the existing `describe` in `ts/tests/snapshot-load.test.ts`, a
   });
 ```
 
-- [ ] **Step 6: Run to verify they fail**
+- [x] **Step 6: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: the same categories fail as in Python.
 
-- [ ] **Step 7: Implement (TypeScript)**
+- [x] **Step 7: Implement (TypeScript)**
 
 In `ts/src/write-plan.ts`, delete `pathEscapes`, rewrite `validatePlan` and `DefaultExecutor.execute`:
 
@@ -1694,12 +1697,12 @@ function validateManifestPath(path: string): void {
 
 (add `isPortableRelativePath` to the `./paths.js` import).
 
-- [ ] **Step 8: Run to verify they pass**
+- [x] **Step 8: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS (same note as Python about any test that asserted `a/../b.md` was accepted).
 
-- [ ] **Step 9: Gate and close the child record**
+- [x] **Step 9: Gate and close the child record**
 
 Run: `just gate`
 Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
@@ -1721,11 +1724,11 @@ tasks done nodes-f072a8 "validate_plan applies the portable .md path rule in bot
 - Consumes: `assert_contained` / `assertContained`; `pathForNodeId` (TS) and the inline mapping (Python).
 - Produces: `Store.read_file`, `write_file`, `delete_file` (and TS forms) raising `ContainmentError` when the mapped path has a symlink component; a new `Store.rel_path(node_id) -> str` in Python (the root-relative POSIX form `path_for` derives from).
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-b72b50`
 
-- [ ] **Step 1: Write the failing Python tests**
+- [x] **Step 1: Write the failing Python tests**
 
 Append to `python/tests/test_store.py` (add `import os`, `import shutil`, `import tempfile`, `from pathlib import Path`, and `from nodes.core.errors import ContainmentError`):
 
@@ -1795,12 +1798,12 @@ def test_store_works_through_symlinked_root(tmp_path):
     assert not (real / "topic" / "a.md").exists()
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: the three refusal tests FAIL (`RefError` or success instead of `ContainmentError`); the root test passes.
 
-- [ ] **Step 3: Implement (Python)**
+- [x] **Step 3: Implement (Python)**
 
 Rewrite the `Store` methods in `python/src/nodes/core/store.py`:
 
@@ -1839,12 +1842,12 @@ Rewrite the `Store` methods in `python/src/nodes/core/store.py`:
 
 Add `from nodes.core.paths import assert_contained`. `all_nodes` is unchanged: the walk contains it.
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 5: Write the failing TypeScript tests**
+- [x] **Step 5: Write the failing TypeScript tests**
 
 Append to `ts/tests/store.test.ts` (add `ContainmentError` to the errors import; `existsSync, lstatSync` to `node:fs` — `symlinkSync`, `mkdtempSync`, `tmpdir`, and the `SYMLINKS` probe are already there from Task 3; do **not** declare `SYMLINKS` again):
 
@@ -1889,21 +1892,21 @@ describe("Store containment", () => {
 });
 ```
 
-- [ ] **Step 6: Run to verify they fail**
+- [x] **Step 6: Run to verify they fail**
 
 Run: `just test-fast`
 Expected: the three refusal tests FAIL.
 
-- [ ] **Step 7: Implement (TypeScript)**
+- [x] **Step 7: Implement (TypeScript)**
 
 In `ts/src/store.ts`, add `import { assertContained } from "./paths.js";` and insert `assertContained(this.root, rel);` as the first statement after `const rel = pathForNodeId(...)` in `writeFile`, `readFile`, and `deleteFile`. `allNodes` is unchanged: the walk contains it.
 
-- [ ] **Step 8: Run to verify they pass**
+- [x] **Step 8: Run to verify they pass**
 
 Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 9: Gate and close the child record**
+- [x] **Step 9: Gate and close the child record**
 
 Run: `just gate`
 Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
@@ -1943,11 +1946,11 @@ Fixture schema (documented in the file's `$comment`):
 
 Node markdown used in `files` is the minimal valid document: `---\nid: <id>\nuid: "<32 hex>"\nkind: <kind>\ntitle: <title>\n---\n`.
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-ceccb8`
 
-- [ ] **Step 1: Write the fixture**
+- [x] **Step 1: Write the fixture**
 
 `fixtures/containment.oracle.json`:
 
@@ -2288,7 +2291,7 @@ Run: `tasks start nodes-ceccb8`
 
 Notes for the harness author: `"$node_a"` / `"$node_b"` in any content string are replaced by the top-level `node_a` / `node_b` values; `"root": "missing"` means the harness passes a path that does not exist and creates nothing. The `flush` action constructs then calls `flush_index` inside the error assertion (used where construction itself must refuse); `construct-then-flush` asserts construction separately so a refusal in the wrong phase fails the case. Because both language snapshot names appear in symlink maps and `untouched` lists, each harness creates every listed symlink and skips an `untouched` entry whose file does not exist (the other language's snapshot). In the stray-`.tmp` case `setup_flush` guarantees a valid snapshot exists, so a successful construction is a construction that read past the stray sibling; the per-language unit test in Task 2 pins the read tolerance directly. Two `.md` symlinks that would collide with real files are never listed in the same case.
 
-- [ ] **Step 2: Write the Python harness**
+- [x] **Step 2: Write the Python harness**
 
 `python/tests/test_containment_parity.py`:
 
@@ -2473,12 +2476,12 @@ def test_containment_matches_committed_oracle(case, tmp_path):
         assert os.path.lexists(_resolve(spec, real_root, outside)), spec
 ```
 
-- [ ] **Step 3: Run the Python harness**
+- [x] **Step 3: Run the Python harness**
 
 Run: `just test-fast` (the new file is the affected selection)
 Expected: all cases PASS. A failing case means Tasks 1–5 missed something the oracle pins — fix the implementation, not the oracle, unless the oracle contradicts the spec.
 
-- [ ] **Step 4: Write the TypeScript harness**
+- [x] **Step 4: Write the TypeScript harness**
 
 `ts/tests/containment_parity.test.ts`:
 
@@ -2711,12 +2714,12 @@ describe("containment parity", () => {
 });
 ```
 
-- [ ] **Step 5: Run the TypeScript harness**
+- [x] **Step 5: Run the TypeScript harness**
 
 Run: `just test-fast`
 Expected: all cases PASS.
 
-- [ ] **Step 6: Gate and close the child record**
+- [x] **Step 6: Gate and close the child record**
 
 Run: `just gate`
 Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
@@ -2737,11 +2740,11 @@ tasks done nodes-ceccb8 "containment.oracle.json with its Python and TypeScript 
 
 **Interfaces:** none — documentation and task records.
 
-- [ ] **Step 0: Claim the child record**
+- [x] **Step 0: Claim the child record**
 
 Run: `tasks start nodes-c1fde3`
 
-- [ ] **Step 1: STANDARD §4.1**
+- [x] **Step 1: STANDARD §4.1**
 
 Replace the membership bullet (lines 106–110) with:
 
@@ -2783,7 +2786,7 @@ Replace the membership bullet (lines 106–110) with:
   contain `\`), and cache paths follow §10's own rule.
 ```
 
-- [ ] **Step 2: STANDARD §6 error table, §7, §10, §11.2**
+- [x] **Step 2: STANDARD §6 error table, §7, §10, §11.2**
 
 §6: add a row after `| Shape or registry invariant violation | \`InvariantError\` |`:
 
@@ -2811,7 +2814,7 @@ Replace the membership bullet (lines 106–110) with:
 | `containment.oracle.json` | *(2.0)* reserved namespace, non-Markdown preservation, symlink containment across the walk, executor, store, and caches, and the portable-path rule; describes filesystems for each language's harness to materialize |
 ```
 
-- [ ] **Step 3: Seam design §3 and §8**
+- [x] **Step 3: Seam design §3 and §8**
 
 In `docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md` §3, replace the `DefaultExecutor` table row's middle cell with:
 
@@ -2828,12 +2831,12 @@ Append two rows to the §8 amendments log:
 | 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
 ```
 
-- [ ] **Step 4: Reconcile the spec with the two implementation choices**
+- [x] **Step 4: Reconcile the spec with the two implementation choices**
 
 In `docs/designs/2026-09-11-nodes-reserved-paths-and-containment-design.md` §4:
 
-- Replace "`snapshot_path` returns that relative path." with "`snapshot_path` keeps returning the absolute path (tests use it for filesystem assertions); a relative constant `SNAPSHOT_REL_PATH` feeds the helpers."
-- Replace the `Store.read_file` / `all_nodes` paragraph's first sentence with: "**`Store.read_file` / `readFile`** — the read path `Corpus.get`, `neighbors`, and `rename` use — calls `assert_contained` before opening; `all_nodes` / `allNodes` (which `check` uses) is contained by the walk, which `lstat`s every component on the way down and follows none."
+- Replace "`snapshot_path` returns that relative path." with "`snapshot_path` keeps returning the rooted path (tests use it for filesystem assertions); a relative constant `SNAPSHOT_REL_PATH` feeds the helpers."
+- Replace the `Store.read_file` / `all_nodes` paragraph's first sentence with: "**`Store.read_file` / `readFile`** — the read path `Corpus.get`, `neighbors`, and `rename` use — calls `assert_contained` before opening; `all_nodes` / `allNodes` (which `check` uses) is contained by the walk's no-follow directory-entry inspection."
 
 - In §5's table, replace the row "snapshot manifest row with `a\b.md` or `kind/a:b.md` | snapshot rejected as malformed (rebuild), matching the plan rule" with a sentence under the table: "The manifest-row arm of the portable-path rule is pinned per language in the snapshot-load tests, since a snapshot document is language-specific."
 
@@ -2844,7 +2847,7 @@ Also run `tasks note nodes-cd59f0 "A landed the code-point walk sort in TypeScri
 
 Update the spec's status line to `**Status:** implemented on branch \`nodes-2.0\` (2026-09-11); Science sign-off on the seam amendment pending`.
 
-- [ ] **Step 5: Verify the standard's marker set and gate**
+- [x] **Step 5: Verify the standard's marker set and gate**
 
 Run: `grep -n '(2.0)\|Pending:' docs/STANDARD.md`
 Expected: the pending line plus the D markers (§7 ×3, §8.2, §11.2) plus the new A markers (§4.1 ×4, §6, §7, §10, §11.2) — no others.
@@ -2852,7 +2855,7 @@ Expected: the pending line plus the D markers (§7 ×3, §8.2, §11.2) plus the 
 Run: `just gate`
 Expected: green (docs changes do not alter tests; the gate also runs `tasks check`).
 
-- [ ] **Step 6: Close the records and make A's single commit**
+- [x] **Step 6: Close the records and make A's single commit**
 
 Every child (Tasks 1–6) is already `done` in the working tree. Close this one and the parent, then commit everything A touched — code, tests, fixture, STANDARD, both design docs, and the task records — as one commit, so the branch never holds a commit where code and standard disagree.
 

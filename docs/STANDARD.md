@@ -106,10 +106,42 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
 
 - One file per node: `<root>/<kind>/<slug>.md`, with any `:` in the slug mapped to `__`.
 - Files are canonical and git-versioned; everything else is rebuildable from them.
-- Corpus membership (the files a corpus walk considers): regular `*.md` files under the
-  root, recursively; `.nodes-index/` is a reserved private cache directory and MUST be
-  skipped; symlinks and non-regular files MUST be skipped; walk order is sorted by
-  root-relative POSIX path.
+- *(2.0)* Corpus membership (the files a corpus walk considers): regular `*.md` files
+  under the root, recursively; walk order is sorted by root-relative POSIX path in
+  Unicode code-point order (cf. §8.2, §9.1). The root-relative path is the literal
+  filename with the platform separator mapped to `/`; no other character is rewritten.
+  `.nodes-index/` is the **reserved namespace** — nodes' private cache directory, as the
+  root's direct child only — and MUST be skipped; a nested `<kind>/.nodes-index/` is not
+  reserved and is walked. The reserved list is exactly `[".nodes-index/"]`; changes to it
+  follow §12's compatibility rules and are not automatically minor. Symlinks and
+  non-regular files MUST be skipped at every depth, without being followed. A filesystem
+  failure during the walk — a missing root, an unreadable directory — MUST propagate; it
+  is never a finding and never absence.
+- *(2.0)* **Non-Markdown content.** Nodes never reads, writes, or deletes content under
+  the root other than `*.md` files, with one exception: its own reserved namespace.
+  Consumers may place non-Markdown artifacts at any other path under the root with the
+  guarantee they are untouched. Nodes creates kind directories and its cache directories
+  on write and never removes a directory. Hard links are a precondition, not a check: a
+  deployment MUST NOT hard-link a managed file — a node document, a cache entry, or a
+  cache temporary — to a protected artifact, since rewriting the managed file would
+  rewrite the artifact through the shared inode.
+- *(2.0)* **Containment.** No path nodes yields, reads, writes, or deletes — node
+  documents, snapshots, cache entries, and their temporary siblings alike — has a symlink
+  component below the root. Walks inspect directory entries without following symlinks
+  and skip links; direct I/O inspects every path prefix with `lstat` and refuses
+  (`ContainmentError`) if any prefix is a symlink or cannot be inspected; an absent prefix
+  is tolerated. The root itself MAY be a symlink. Checks hold for the filesystem as nodes
+  observes it at the moment of the operation; substitution between inspection and
+  effect, and retargeting of the root, are excluded by the single-writer rule (§7),
+  which binds every actor that edits the tree, including actors outside nodes.
+- *(2.0)* **Portable root-relative path.** A write-plan operation path and a snapshot
+  manifest row path MUST be non-empty, have no leading `/`, split on `/` only into
+  segments that are non-empty and neither `.` nor `..`, contain no `\` or `:` in any
+  segment, and end in `.md`. Reserved-namespace paths are refused separately. There is
+  no normalization: a spelling that would normalize to a legal path is malformed. The
+  rule binds what nodes *accepts as an instruction*, not what it observes: the walk
+  reports any regular `*.md` file it finds by its literal name (a POSIX filename may
+  contain `\`), and cache paths follow §10's own rule.
 
 ### 4.2 Frontmatter
 
@@ -198,6 +230,7 @@ and dangling tracking but are not relation-graph edges.
 | Unregistered kind | `UnknownKindError` |
 | Missing, unexpected, or malformed facet payload | `FacetError` |
 | Shape or registry invariant violation | `InvariantError` |
+| *(2.0)* Symlink component below the root, or a direct-I/O path that cannot be inspected | `ContainmentError` |
 | Structural node/frontmatter failure (missing required field, id/kind mismatch) | `ValidationError` |
 | Similarity API on a corpus without an embedder | `EmbedderRequiredError` |
 
@@ -215,7 +248,13 @@ and dangling tracking but are not relation-graph edges.
 
 - `add(node)`: registry validation (when configured) → collision check → similarity
   vector preparation (when configured) → file write → index upserts. Any failure MUST
-  precede the disk write.
+  precede the disk write. *(2.0)* `DefaultExecutor` preflights every operation's
+  containment (§4.1) over the whole plan before any effect, refusing with
+  `ExecutionError` whose `index` is the offending operation and `applied = 0`; a durable
+  executor keeps its own pre-effect refusal contract (`ExecutionError(index=None,
+  applied=0)` for a topology or resolution refusal, per the seam design §3). Any
+  executor refuses a plan naming a non-portable or non-`.md` path as malformed
+  (`PlanRefusedError`).
 - `get(ref)` / `resolve(ref)`: resolve via the index (live then deprecated), read the
   file; `RefError` when the ref does not resolve.
 - `delete(id)`: **live-id-only** — a stale/deprecated id MUST raise `RefError` so a
@@ -342,6 +381,13 @@ The cross-language ranking contract is the 6-decimal, round-half-up score key
 - The derived indexes persist to a **private, disposable, per-language** snapshot:
   `<root>/.nodes-index/snapshot.py.json` (Python) / `snapshot.ts.json` (TypeScript).
   A language MUST NOT read the other's snapshot.
+- *(2.0)* Snapshot and vector-cache paths are portable root-relative paths in §4.1's
+  sense with `.json` in place of `.md`, strictly beneath `.nodes-index/` (first segment
+  `.nodes-index` and at least one more), and are subject to the same containment rule
+  as node documents (§4.1): a read inspects the final path; a write inspects the final
+  path and its `.tmp` sibling before any directory creation, write, or rename. A
+  containment refusal propagates from construction and from `flush_index` — it is never
+  a rebuild trigger.
 - **Writing is explicit** (`flush_index` / `flushIndex`); construction never writes.
 - **Loading reconciles by content hash:** construction hashes current file bytes
   (sha256) against the snapshot manifest — unchanged files skip parsing; changed/added
@@ -395,6 +441,7 @@ projection-version bump.
 | `similarity-corpus/`, `similarity.vectors.json`, `similarity.oracle.json` | similarity ranking over frozen vectors (model embeddings are not portable) |
 | `check-corpus/`, `check.oracle.json` | corpus-validity findings (severity, code, ref, detail); includes a membership cluster (nesting, a cycle, self-membership, one dangling member) |
 | `traversal.oracle.json` | *(2.0)* membership queries (`members` / `containers`) over `check-corpus/`, including the two-node cycle and self-membership |
+| `containment.oracle.json` | *(2.0)* reserved namespace, non-Markdown preservation, symlink containment across the walk, executor, store, and caches, and the portable-path rule; describes filesystems for each language's harness to materialize |
 
 ## 12. Versioning & change policy
 

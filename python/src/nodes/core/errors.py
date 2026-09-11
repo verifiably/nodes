@@ -39,8 +39,13 @@ class EmbedderRequiredError(NodesError):
 
 class PlanRefusedError(NodesError):
     """Raised when a write plan is lexically malformed: an unknown operation kind,
-    an escaping path (absolute, or containing `..` after lexical normalization),
-    or a reserved-namespace path. Refused before any effect."""
+    a path that is not a portable root-relative `.md` path, or a reserved-namespace
+    path. Refused before any effect."""
+
+
+class ContainmentError(NodesError):
+    """Raised when a path under the corpus root has a symlink component below the
+    root, or cannot be inspected. Refused before any effect."""
 
 
 class ExecutionError(NodesError):

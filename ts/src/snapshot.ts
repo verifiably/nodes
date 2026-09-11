@@ -1,30 +1,24 @@
 import { createHash } from "node:crypto";
-import {
-  type Dirent,
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { type Dirent, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import { ContainmentError } from "./errors.js";
 import { NodeId } from "./ids.js";
-import { SearchIndex } from "./search.js";
+import { RESERVED_NAMESPACE, isPortableRelativePath, readJson, writeJsonAtomic } from "./paths.js";
+import { SearchIndex, compareCodepoints } from "./search.js";
 import { VectorIndex } from "./similarity.js";
 import { Index } from "./structural-index.js";
 
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 export const SNAPSHOT_LANG = "ts";
+export const SNAPSHOT_REL_PATH = `${RESERVED_NAMESPACE}/snapshot.ts.json`;
+export { readJson, writeJsonAtomic };
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const SNAPSHOT_KEYS = ["version", "lang", "manifest", "structural", "search", "vectors"];
 const MANIFEST_ROW_KEYS = ["path", "sha256", "uid"];
 
 export function snapshotPath(root: string): string {
-  return join(root, ".nodes-index", "snapshot.ts.json");
+  return join(root, SNAPSHOT_REL_PATH);
 }
 
 export function hashBytes(data: Buffer | Uint8Array): string {
@@ -54,32 +48,26 @@ interface WalkedCorpusPath {
 
 /** Root-relative POSIX path (forward slashes on every platform), the cross-language form. */
 function relPosix(root: string, full: string): string {
-  return relative(root, full).split(/[\\/]/).join("/");
+  return relative(root, full).split(sep).join("/");
 }
 
 function listCorpusMarkdownPaths(root: string): WalkedCorpusPath[] {
   const files: WalkedCorpusPath[] = [];
-  const walk = (dir: string): void => {
-    if (!existsSync(dir)) return;
-    let entries: Dirent[];
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
+  const walk = (dir: string, atRoot: boolean): void => {
+    const entries: Dirent[] = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       const full = join(dir, entry.name);
       if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) {
-        if (relPosix(root, full) === ".nodes-index") continue;
-        walk(full);
+        if (atRoot && entry.name === RESERVED_NAMESPACE) continue;
+        walk(full, false);
       } else if (entry.isFile() && entry.name.endsWith(".md")) {
         files.push({ path: relPosix(root, full), fullPath: full });
       }
     }
   };
-  walk(root);
-  files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  walk(root, true);
+  files.sort((a, b) => compareCodepoints(a.path, b.path));
   return files;
 }
 
@@ -122,44 +110,6 @@ export interface ManifestEntry {
   readonly uid: string;
 }
 
-/** Write JSON atomically (tmp + rename). Rejects any non-finite number — JS `JSON.stringify`
- * silently emits `null` for NaN/Infinity, so a replacer enforces the rejection (parity with
- * Python's `json.dumps(..., allow_nan=False)`). Throws before any write, so no partial file. */
-export function writeJsonAtomic(path: string, obj: unknown): void {
-  const payload = JSON.stringify(obj, (_key, value) => {
-    if (typeof value === "number" && !Number.isFinite(value)) {
-      throw new RangeError("cannot serialize non-finite number to JSON");
-    }
-    return value;
-  });
-  mkdirSync(dirname(path), { recursive: true });
-  const tmp = `${path}.tmp`;
-  writeFileSync(tmp, payload, "utf-8");
-  renameSync(tmp, path);
-}
-
-/** Read + parse JSON. Returns `null` only for a genuinely-absent path. A directory, a broken
- * symlink, or invalid JSON throws (JS `JSON.parse` already rejects the `NaN`/`Infinity`
- * constants, so Python's explicit `parse_constant` guard is free here). */
-export function readJson(path: string): unknown {
-  let raw: string;
-  try {
-    raw = readFileSync(path, "utf-8");
-  } catch (e) {
-    const err = e as NodeJS.ErrnoException;
-    if (err.code === "ENOENT") {
-      try {
-        lstatSync(path); // a broken symlink reads ENOENT but lstats fine
-      } catch {
-        return null; // genuinely absent
-      }
-      throw err; // path exists as a (broken) symlink
-    }
-    throw err; // EISDIR and anything else
-  }
-  return JSON.parse(raw);
-}
-
 export interface Snapshot {
   manifest: ManifestEntry[];
   index: Index;
@@ -187,21 +137,12 @@ export function writeSnapshot(
     search: searchIndex.toDict(),
     vectors: vectorIndex !== undefined ? vectorIndex.toDict() : null,
   };
-  writeJsonAtomic(snapshotPath(root), doc);
+  writeJsonAtomic(root, SNAPSHOT_REL_PATH, doc);
 }
 
 function validateManifestPath(path: string): void {
-  const parts = path.split("/");
-  if (
-    !path ||
-    path.startsWith("/") ||
-    path.includes("\\") ||
-    path.endsWith("/") ||
-    !path.endsWith(".md") ||
-    parts[0] === ".nodes-index" ||
-    parts.some((part) => part === "" || part === "." || part === "..")
-  ) {
-    throw new Error("snapshot manifest row path must be a root-relative POSIX .md path");
+  if (!isPortableRelativePath(path) || path.split("/", 1)[0] === RESERVED_NAMESPACE) {
+    throw new Error("snapshot manifest row path must be a portable root-relative .md path");
   }
 }
 
@@ -243,7 +184,7 @@ function mapsEqual(a: Map<string, string>, b: Map<string, string>): boolean {
  * problem and resolves to a silent full rebuild upstream. */
 export function loadSnapshot(root: string, embedderNamespace: string | null): Snapshot | null {
   try {
-    const doc = readJson(snapshotPath(root));
+    const doc = readJson(root, SNAPSHOT_REL_PATH);
     if (doc === null) return null;
     if (typeof doc !== "object") return null;
     const d = doc as Record<string, unknown>;
@@ -281,6 +222,7 @@ export function loadSnapshot(root: string, embedderNamespace: string | null): Sn
 
     return { manifest, index, searchIndex, vectorIndex };
   } catch (e) {
+    if (e instanceof ContainmentError) throw e;
     // loadSnapshot only ever reads the cache file, so any thrown Error is a cache problem
     // (absent/locked file, malformed JSON, failed integrity check) -> rebuild. This is the
     // closest faithful mirror of Python's `except (OSError, ValueError)`: every cache-unusable

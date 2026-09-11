@@ -1,26 +1,27 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from nodes.core.ids import NodeId
+from nodes.core.paths import RESERVED_NAMESPACE, is_portable_relative_path, read_json as read_json, write_json_atomic as write_json_atomic
 from nodes.core.structural_index import Index
 from nodes.core.search import SearchIndex
 from nodes.core.similarity import VectorIndex
 
 SNAPSHOT_SCHEMA_VERSION = 2
 SNAPSHOT_LANG = "py"
+SNAPSHOT_REL_PATH = f"{RESERVED_NAMESPACE}/snapshot.py.json"
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
 _SNAPSHOT_KEYS = frozenset({"version", "lang", "manifest", "structural", "search", "vectors"})
 _MANIFEST_ROW_KEYS = frozenset({"path", "sha256", "uid"})
 
 
 def snapshot_path(root: Path | str) -> Path:
-    return Path(root) / ".nodes-index" / "snapshot.py.json"
+    return Path(root) / SNAPSHOT_REL_PATH
 
 
 def hash_bytes(data: bytes) -> str:
@@ -35,14 +36,25 @@ class CorpusFile:
 
 
 def iter_corpus_files(root: Path | str) -> list[CorpusFile]:
+    """Walk regular Markdown files without following symlinks or hiding failures."""
     root = Path(root)
     files: list[CorpusFile] = []
-    for p in sorted(root.rglob("*.md")):
-        rel = p.relative_to(root)
-        if rel.parts[0] == ".nodes-index" or p.is_symlink() or not p.is_file():
-            continue
-        data = p.read_bytes()
-        files.append(CorpusFile(path=rel.as_posix(), data=data, sha256=hash_bytes(data)))
+
+    def walk(directory: Path, rel_parts: tuple[str, ...]) -> None:
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if entry.is_symlink():
+                    continue
+                if entry.is_dir(follow_symlinks=False):
+                    if not rel_parts and entry.name == RESERVED_NAMESPACE:
+                        continue
+                    walk(Path(entry.path), (*rel_parts, entry.name))
+                elif entry.is_file(follow_symlinks=False) and entry.name.endswith(".md"):
+                    data = Path(entry.path).read_bytes()
+                    files.append(CorpusFile(path="/".join((*rel_parts, entry.name)), data=data, sha256=hash_bytes(data)))
+
+    walk(root, ())
+    files.sort(key=lambda f: f.path)
     return files
 
 
@@ -51,27 +63,6 @@ class ManifestEntry:
     path: str
     sha256: str
     uid: str
-
-
-def write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(obj, allow_nan=False)
-    tmp = path.parent / f"{path.name}.tmp"
-    tmp.write_text(payload, encoding="utf-8")
-    os.replace(tmp, path)
-
-
-def _reject_json_constant(value: str) -> None:
-    raise ValueError(f"invalid JSON constant {value}")
-
-
-def read_json(path: Path) -> dict | None:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_json_constant)
-    except FileNotFoundError:
-        if path.is_symlink():
-            raise
-        return None
 
 
 @dataclass
@@ -97,7 +88,7 @@ def write_snapshot(
         "search": search_index.to_dict(),
         "vectors": vector_index.to_dict() if vector_index is not None else None,
     }
-    write_json_atomic(snapshot_path(root), doc)
+    write_json_atomic(root, SNAPSHOT_REL_PATH, doc)
 
 
 def _parse_manifest(raw: object) -> list[ManifestEntry]:
@@ -133,16 +124,8 @@ def _parse_manifest(raw: object) -> list[ManifestEntry]:
 
 
 def _validate_manifest_path(path: str) -> None:
-    if (
-        not path
-        or path.startswith("/")
-        or "\\" in path
-        or path.endswith("/")
-        or not path.endswith(".md")
-        or path.split("/", 1)[0] == ".nodes-index"
-        or any(part in ("", ".", "..") for part in path.split("/"))
-    ):
-        raise ValueError("snapshot manifest row path must be a root-relative POSIX .md path")
+    if not is_portable_relative_path(path) or path.split("/", 1)[0] == RESERVED_NAMESPACE:
+        raise ValueError("snapshot manifest row path must be a portable root-relative .md path")
 
 
 def _path_for_node_id(node_id: str) -> str:
@@ -152,7 +135,7 @@ def _path_for_node_id(node_id: str) -> str:
 
 def load_snapshot(root: Path | str, embedder_namespace: str | None) -> Snapshot | None:
     try:
-        doc = read_json(snapshot_path(root))
+        doc = read_json(root, SNAPSHOT_REL_PATH)
         if doc is None:
             return None
         if not isinstance(doc, dict):
