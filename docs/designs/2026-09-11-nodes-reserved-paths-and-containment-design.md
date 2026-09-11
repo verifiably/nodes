@@ -13,12 +13,20 @@ Two guarantees, stated separately in STANDARD §4.1 and marked *(2.0)*:
 **Non-Markdown content.** Nodes never reads, writes, or deletes content under the corpus
 root other than `*.md` files, with one exception: its own reserved namespace. The reserved
 list is closed and versioned here — exactly `.nodes-index/`, as the root's direct child.
-Consumers may place artifacts at any other path under the root (a manifest, a hash chain,
-a nested `.nodes-index/` of their own) with the guarantee they are untouched. Nodes creates
-kind directories on write; it never removes a directory.
+Consumers may place **non-Markdown** artifacts at any other path under the root (a
+manifest, a hash chain, a nested `.nodes-index/` of their own) with the guarantee they
+are untouched; nested `.md` files are walked (§2). Nodes creates kind directories and its
+cache directories on write; it never removes a directory. The reserved namespace is an
+exception to this rule only — containment (next) applies inside it exactly as outside.
 
-**Containment.** No path nodes yields, reads, writes, or deletes has a symlink component
-below the root. The root itself may be a symlink (`~/d/nodes` is one); containment is
+The guarantee is over nodes as a whole, not `Corpus` alone: `DefaultExecutor` is public,
+so a plan is refused when any operation targets a path not ending in `.md`
+(`PlanRefusedError`, lexical). Plans are sequences of node-document operations by
+definition (seam §2); a caller wanting to write `corpus.yaml` is not using nodes to do it.
+
+**Containment.** No path nodes yields, reads, writes, or deletes — node documents,
+snapshots, vector cache entries, and their temporary siblings alike — has a symlink
+component below the root. The root itself may be a symlink (`~/d/nodes` is one); containment is
 stated relative to the root as given, so every touched path resolves inside the root's
 own resolution. The walk never follows a symlink — file or directory, at any depth — and
 skips it as a non-member.
@@ -36,12 +44,15 @@ nodes. No locking is introduced.
 three existing sites already read it that way (both walks and `validate_plan`). A nested
 `<kind>/.nodes-index/x.md` is a foreign directory: the walk yields its `.md` files, and
 the well-placed rule (sub-task B) then excludes them as misplaced. The reserved list is
-a versioned constant in the standard; adding to it is a minor amendment.
+a versioned constant in the standard; changes to it follow STANDARD §12's compatibility
+rules — reserving a further root directory can hide existing nodes or take ownership of
+artifacts a consumer relied on being protected, so it is not automatically minor.
 
 Reserved-path validation must survive spelling. Today `validate_plan` checks the raw first
 component, so `./.nodes-index/x` and `a/../.nodes-index/x` evade it. Rather than normalize,
-`validate_plan` refuses any plan path containing an empty, `.`, or `..` segment, or a
-leading `/`, as lexically malformed (`PlanRefusedError`). Plan paths come from `path_for`
+`validate_plan` refuses any plan path containing an empty, `.`, or `..` segment, a
+leading `/`, or a final segment not ending in `.md`, as lexically malformed
+(`PlanRefusedError`). Plan paths come from `path_for`
 and are canonical by construction; nothing legitimate is lost, and the rule also closes
 `link/../kind/x.md`, where the operating system resolves `..` through the link *target's*
 parent — a hole lexical normalization would erase rather than catch. The physical
@@ -64,7 +75,7 @@ corpus. Both walks now:
   failure — as an exception. A filesystem failure is never a content finding and never
   absence (sub-task B keeps that line for construction findings).
 
-## 4. Physical containment: the shared check and its three callers
+## 4. Physical containment: the shared check and its callers
 
 One helper per language — `assert_contained(root, rel_path)` /
 `assertContained(root, relPath)` — inspects every prefix of a canonical root-relative
@@ -75,7 +86,7 @@ path below the root (`a`, `a/b`, `a/b/c.md`) with `lstat`:
 - a permission failure or any other inspection error refuses — it is not absence.
 
 Refusal raises `ContainmentError`, a new kernel error under `NodesError`, so that the
-condition is named rather than folded into "no node here". Three callers:
+condition is named rather than folded into "no node here". Callers:
 
 **`DefaultExecutor.execute`** runs `validate_plan`, then a **whole-plan preflight**:
 `assert_contained` over every operation's path before any effect. A refusal at
@@ -86,9 +97,18 @@ prefix, as seam §3 specifies.
 
 **`Store.read_file` / `readFile`** and **`all_nodes` / `allNodes`** — the read paths
 `Corpus.get`, `neighbors`, `rename`, and `check` use — call `assert_contained` before
-opening. `Corpus` never asks for a path the walk did not yield, so under the
-single-writer rule this never fires; it exists so that the read guarantee is enforced,
-not inferred.
+opening. This is not redundant with the walk: until sub-task B lands, a misplaced member
+makes `get()` reconstruct a path the walk never yielded, and after it the guard is what
+makes the read guarantee enforced rather than inferred.
+
+**Cache I/O.** Snapshot load runs before the walk (`Corpus.__init__`), and the snapshot
+writer and `VectorCache` read and write `.nodes-index/...` directly, writing a `.tmp`
+sibling and renaming, with `mkdir(parents=True)` on the way. A symlinked `.nodes-index`
+therefore reaches outside the root today through every one of these. `read_json`,
+`write_json_atomic`, `VectorCache.get`, and `VectorCache.put` (and their TypeScript
+forms) call `assert_contained` on the final path *and* its `.tmp` sibling before any
+`mkdir`, read, write, or rename. `ContainmentError` propagates from construction and
+from `flush_index`; it is a filesystem failure, never a finding.
 
 **`Store.write_file` / `delete_file`** and their TypeScript forms are public tier-3
 conveniences that bypass the executor. They call `assert_contained` too; the contract
@@ -117,6 +137,14 @@ a temporary directory and asserts the outcome. Cases:
 | create under a symlinked parent directory | refused, `applied=0` |
 | two-op plan, symlink at op 1 | `index=1, applied=0`; op 0's path still absent |
 | plan paths `./.nodes-index/x`, `a/../.nodes-index/x`, `a//b`, `/a` | `PlanRefusedError` |
+| direct plan creating `corpus.yaml`, replacing `<kind>/notes.txt` | `PlanRefusedError`; both untouched |
+| `.nodes-index` is a symlink to an outside directory | construction and `flush_index` raise `ContainmentError`; nothing written outside |
+| `.nodes-index/snapshot.<lang>.json` is a file symlink | construction raises `ContainmentError`; target unread and unchanged |
+| `.nodes-index/vectors/<ns>` is a directory symlink | vector cache put raises `ContainmentError`; target directory empty |
+| `Store.read_file` of an id whose mapped path is a file symlink | `ContainmentError` |
+| `Store.write_file` of a node whose mapped path is a file symlink | `ContainmentError`; target bytes unchanged |
+| `Store.delete_file` of an id whose mapped path is a file symlink | `ContainmentError`; link and target intact |
+| root does not exist | construction raises (the language's filesystem error), not an empty corpus |
 
 Permission-failure cases (an unreadable directory under the root) stay in each language's
 own tests, skipped when running as root, since their materialization is not portable to
@@ -135,12 +163,13 @@ exercises (create), so seam §8 requires Science sign-off. Two rows go in the lo
 
 | date | part | change | reviewer | consumer sign-off |
 | --- | --- | --- | --- | --- |
-| 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` refuses non-canonical segments instead of normalizing them. | `nodes`-side review | Science: **pending** |
-| 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: no plan the cut-4 adapter produces today targets a symlink or contains a non-canonical segment, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
+| 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` refuses non-canonical segments instead of normalizing them, and refuses any target not ending in `.md`. | `nodes`-side review | Science: **pending** |
+| 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
 
 ## 7. Files
 
-`python/src/nodes/core/snapshot.py` (walk), `store.py`, `write_plan.py`, `errors.py`;
-`ts/src/snapshot.ts`, `store.ts`, `write-plan.ts`, `errors.ts`, `index.ts` (export);
+`python/src/nodes/core/snapshot.py` (walk, cache I/O), `similarity.py` (`VectorCache`),
+`store.py`, `write_plan.py`, `errors.py`; `ts/src/snapshot.ts`, `similarity.ts`,
+`store.ts`, `write-plan.ts`, `errors.ts`, `index.ts` (export);
 `fixtures/containment.oracle.json`; one parity test per language plus permission cases;
 `docs/STANDARD.md` §§4.1, 7, 11.2, and the error list; the seam design §§3, 8.
