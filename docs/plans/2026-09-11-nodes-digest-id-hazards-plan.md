@@ -2,12 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** ready for review; implementation has not started.
+**Status:** reviewed, corrections incorporated; ready to execute. Implementation has not started.
 **Goal:** Refuse new mapped-path collisions, report existing collisions, and make uid presence and ordering agree between Python and TypeScript.
 **Architecture:** Share the existing id-to-path mapping through `paths`; keep a derived collision-key-to-live-uids map in the structural Index. Separate construction's identity checks from mutation admission, then use the index for rename refusal and findings. Preserve snapshot format and executor interfaces.
 **Tech Stack:** Python 3.11+, Pydantic, pytest; TypeScript, Zod, Vitest; existing `just` recipes and JSON parity fixtures. No new dependencies.
 **Spec:** `.worktrees/nodes-2.0/docs/designs/2026-09-11-nodes-digest-id-hazards-design.md`.
-**Baseline:** `103e31d` plus the review corrections committed with this plan; A is implemented at ancestor `22e3a2a`.
+**Baseline:** `ef5a487` on `nodes-2.0`; the reviewed design and initial plan are present, and A is implemented at ancestor `22e3a2a`.
 
 ## Global Constraints
 
@@ -324,6 +324,7 @@ def test_mutation(case, tmp_path, monkeypatch):
         assert c.vector_index is not None
         monkeypatch.setattr(c.vector_index, "prepare", forbidden_prepare)
     before = c.index.to_dict()
+    before_collisions = c.index.path_collisions()
     before_files = {p.relative_to(tmp_path): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
     def mutate():
         if case["action"] == "add":
@@ -335,6 +336,7 @@ def test_mutation(case, tmp_path, monkeypatch):
         assert ex.plans == []
         assert embedder.calls == []
         assert c.index.to_dict() == before
+        assert c.index.path_collisions() == before_collisions
         assert {p.relative_to(tmp_path): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()} == before_files
     else:
         result = mutate()
@@ -383,6 +385,7 @@ for (const row of oracle.mutations) {
     }
     const beforeFiles = filesAt(root);
     const before = c.index.toDict();
+    const beforeCollisions = c.index.pathCollisions();
     const sourcePath = c.store.pathFor(row.source);
     const beforeBytes = readFileSync(sourcePath);
     const mutate = () => row.action === "add"
@@ -394,6 +397,7 @@ for (const row of oracle.mutations) {
       expect(calls).toEqual([]);
       expect(filesAt(root)).toEqual(beforeFiles);
       expect(c.index.toDict()).toEqual(before);
+      expect(c.index.pathCollisions()).toEqual(beforeCollisions);
       expect(readFileSync(sourcePath)).toEqual(beforeBytes);
       expect(c.all().map(n => n.id)).toEqual([row.source]);
     } else {
@@ -649,10 +653,10 @@ exactly the same two findings; it must not suppress or duplicate them.
 - [ ] **Step 1: Add the uid-only oracle and schema/parsing tests.**
 
 ```json
-{"accepted":["not-a-digest"," ","é","é","","𐀀"],"rejected":[""]}
+{"accepted":["not-a-digest"," ","\u00e9","e\u0301","\ue000","\ud800\udc00"],"rejected":[""]}
 ```
 
-The fourth accepted string is `e` + U+0301, distinct from U+00E9. Load the JSON in both node test files; for every accepted uid construct a node, serialize and parse Markdown, and assert exact uid equality. For each rejected uid assert kernel ValidationError from both direct construction and Markdown parsing with a quoted uid. Code:
+Accepted entries 3–6 are U+00E9 (precomposed é), `e` + U+0301 (decomposed é), U+E000 (a BMP private-use character), and U+10000 (a supplementary-plane character encoded by a JSON surrogate pair). Keep these JSON escapes in the fixture so the distinct strings remain visible; the rejected entry is the empty string. Load the JSON in both node test files; for every accepted uid construct a node, serialize and parse Markdown, and assert exact uid equality. For each rejected uid assert kernel ValidationError from both direct construction and Markdown parsing with a quoted uid. Code:
 
 ```python
 import json
@@ -898,7 +902,7 @@ Neighbors continues returning Node objects; only their ordering comparator chang
 
 **Files:**
 - Modify: `.worktrees/nodes-2.0/docs/STANDARD.md`.
-- Modify: `.worktrees/nodes-2.0/docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md` (§2 and §8 only; preserve E's broad status transition).
+- Modify: `.worktrees/nodes-2.0/docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md` (§2, §7 item 2, and §8; preserve E's broad status transition).
 - Modify: `.worktrees/nodes-2.0/docs/designs/2026-09-11-nodes-2.0-remainder-design.md`, `2026-09-11-nodes-digest-id-hazards-design.md`, and this plan's verified status/checklists.
 - Mutate task records only through CLI.
 
@@ -924,7 +928,13 @@ Neighbors continues returning Node objects; only their ordering comparator chang
 | §8.2 exhaustive structural list | Preserve dangling-ref and dangling-member counts/dedup; add one path-collision per live claimant, registry-independent. Three claimants produce three findings. Existing final (ref,code,detail) code-point sort remains. |
 | §11.2 | Add path-collision.oracle.json for mapped-path collision admission/reporting; uid.oracle.json for non-empty opaque uid acceptance; include write-plan.rename.canonical.json alongside corpus/ and corpus.rename.canonical.json, naming code-point referrer ordering and semantic plan parity. |
 
-- [ ] **Step 2: Update seam and design records.** Seam §2's rename plan description must distinguish exact-path in-place replacement from create/delete and specify code-point uid referrer order. Add §8 row: `2026-09-11 | §2 | exact-path rename replacement and code-point referrer order | nodes-side review | rename unexercised by recorded Science add-only slice`. Preserve A's pending Science sign-off and other rows verbatim. No consumer notification.
+- [ ] **Step 2: Update seam and design records.** Seam §2's rename plan description must distinguish exact-path in-place replacement from create/delete and specify code-point uid referrer order. Also replace the opening sentence of the **quoted pending amendment in §7 item 2**, which E copies into STANDARD, with:
+
+> Execution replaces the renamed document in place when the exact mapped paths match; otherwise it creates the new document and deletes the old document, then in either case replaces referrers in ascending uid Unicode code-point order.
+
+Retain the rest of the quoted crash-state amendment, whose after-create/before-delete prefix applies to the create/delete branch. E must copy this corrected text so its amendment preserves C's exact-path branch and referrer ordering.
+
+Add §8 row: `2026-09-11 | §2; §7 item 2 | exact-path rename replacement and code-point referrer order, including the pending STANDARD amendment | nodes-side review | rename unexercised by recorded Science add-only slice`. Preserve A's pending Science sign-off and other rows verbatim. No consumer notification.
 
 Replace umbrella §C's “one helper for add and reconcile” with the identity-only construction/reconcile versus mutation-admission split. Record reviewed policy: warning, exact-path replace, case-only refusal, temporary-id workaround, non-empty opaque uid; shared collision oracle and existing rename collation fixtures. Mention snapshot manifest placement validation already exists but its cold fallback and changed-file reconciliation still require B's admission checks. Mark C's own design implemented on nodes-2.0 only after verifying the implementation exists; mark this plan completed on the branch with verification evidence. Do not fabricate a future commit hash in either status.
 

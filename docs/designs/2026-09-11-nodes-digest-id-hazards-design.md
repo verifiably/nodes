@@ -239,9 +239,11 @@ tests, oracle and STANDARD amendments land together in one commit on `nodes-2.0`
 - §11.2: collision and uid oracles, plus the existing rename plan/corpus ordering fixture.
 
 Mark edited clauses `*(2.0)*`, retaining header 1.2 and the pending note for E. Amend the
-seam's rename description and amendment log to record the existing exact-path replace
-branch and code-point referrer order; the recorded exercise map leaves rename unexercised
-by Science's add-only slice. Keep A's existing pending Science sign-off row unchanged.
+seam's §2 rename description, §7 item 2 quoted pending STANDARD amendment, and §8
+amendment log to record the existing exact-path replace branch and code-point referrer
+order. E must copy the corrected pending text so its amendment preserves both clauses.
+The recorded exercise map leaves rename unexercised by Science's add-only slice.
+Keep A's existing pending Science sign-off row unchanged.
 Do not infer new consumer sign-off or send notifications on consumers' behalf.
 
 At implementation closeout, reconcile the umbrella's C caller wording and scope, mark
