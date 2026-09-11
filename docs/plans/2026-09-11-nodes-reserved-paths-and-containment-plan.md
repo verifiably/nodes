@@ -1846,24 +1846,9 @@ Expected: all PASS.
 
 - [ ] **Step 5: Write the failing TypeScript tests**
 
-Append to `ts/tests/store.test.ts` (add `ContainmentError` to the errors import; `existsSync, lstatSync, symlinkSync` to `node:fs`; `tmpdir` is imported already):
+Append to `ts/tests/store.test.ts` (add `ContainmentError` to the errors import; `existsSync, lstatSync` to `node:fs` — `symlinkSync`, `mkdtempSync`, `tmpdir`, and the `SYMLINKS` probe are already there from Task 3; do **not** declare `SYMLINKS` again):
 
 ```ts
-/** Probe once. Only a recognized unsupported platform disables the symlink tests (an
- * explicit skip); any other failure is a real error and propagates. */
-const SYMLINKS = (() => {
-  const probe = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
-  try {
-    symlinkSync(join(probe, "target"), join(probe, "link"));
-    return true;
-  } catch (e) {
-    if (process.platform === "win32" && (e as NodeJS.ErrnoException).code === "EPERM") return false;
-    throw e;
-  } finally {
-    rmSync(probe, { recursive: true, force: true });
-  }
-})();
-
 describe("Store containment", () => {
   it.skipIf(!SYMLINKS)("readFile refuses a symlinked path", () => {
     store.writeFile(n("topic:real", "topic"));
@@ -2777,8 +2762,9 @@ Replace the membership bullet (lines 106–110) with:
   Consumers may place non-Markdown artifacts at any other path under the root with the
   guarantee they are untouched. Nodes creates kind directories and its cache directories
   on write and never removes a directory. Hard links are a precondition, not a check: a
-  deployment MUST NOT hard-link a managed `.md` file to a protected artifact, since
-  replacing the node would rewrite the artifact through the shared inode.
+  deployment MUST NOT hard-link a managed file — a node document, a cache entry, or a
+  cache temporary — to a protected artifact, since rewriting the managed file would
+  rewrite the artifact through the shared inode.
 - *(2.0)* **Containment.** No path nodes yields, reads, writes, or deletes — node
   documents, snapshots, cache entries, and their temporary siblings alike — has a symlink
   component below the root; every such path is inspected with `lstat` and refused
@@ -2787,12 +2773,14 @@ Replace the membership bullet (lines 106–110) with:
   observes it at the moment of the operation; substitution between inspection and
   effect, and retargeting of the root, are excluded by the single-writer rule (§7),
   which binds every actor that edits the tree, including actors outside nodes.
-- *(2.0)* **Portable root-relative path.** Every root-relative path nodes accepts — a
-  write-plan operation, a snapshot manifest row — MUST be non-empty, have no leading `/`,
-  split on `/` only into segments that are non-empty and neither `.` nor `..`, contain
-  no `\` or `:` in any segment, and end in `.md`. Reserved-namespace paths are refused
-  separately. There is no normalization: a spelling that would normalize to a legal path
-  is malformed.
+- *(2.0)* **Portable root-relative path.** A write-plan operation path and a snapshot
+  manifest row path MUST be non-empty, have no leading `/`, split on `/` only into
+  segments that are non-empty and neither `.` nor `..`, contain no `\` or `:` in any
+  segment, and end in `.md`. Reserved-namespace paths are refused separately. There is
+  no normalization: a spelling that would normalize to a legal path is malformed. The
+  rule binds what nodes *accepts as an instruction*, not what it observes: the walk
+  reports any regular `*.md` file it finds by its literal name (a POSIX filename may
+  contain `\`), and cache paths follow §10's own rule.
 ```
 
 - [ ] **Step 2: STANDARD §6 error table, §7, §10, §11.2**
@@ -2803,13 +2791,15 @@ Replace the membership bullet (lines 106–110) with:
 | *(2.0)* Symlink component below the root, or a path that cannot be inspected | `ContainmentError` |
 ```
 
-§7 `add` bullet: after "Any failure MUST precede the disk write." append ` *(2.0)* The executor preflights every operation's containment (§4.1) over the whole plan before any effect (`ExecutionError` with `index` = the offending operation and `applied = 0`); a plan naming a non-portable or non-`.md` path is refused as malformed (`PlanRefusedError`).`
+§7 `add` bullet: after "Any failure MUST precede the disk write." append ` *(2.0)* `DefaultExecutor` preflights every operation's containment (§4.1) over the whole plan before any effect, refusing with `ExecutionError` whose `index` is the offending operation and `applied = 0`; a durable executor keeps its own pre-effect refusal contract (`ExecutionError(index=None, applied=0)` for a topology or resolution refusal, per the seam design §3). Any executor refuses a plan naming a non-portable or non-`.md` path as malformed (`PlanRefusedError`).`
 
 §10: after the first bullet (snapshot location) add:
 
 ```markdown
-- *(2.0)* Snapshot and vector-cache paths are strictly beneath `.nodes-index/` and are
-  subject to the same containment rule as node documents (§4.1): a read inspects the
+- *(2.0)* Snapshot and vector-cache paths are portable root-relative paths in §4.1's
+  sense with `.json` in place of `.md`, strictly beneath `.nodes-index/` (first segment
+  `.nodes-index` and at least one more), and are subject to the same containment rule
+  as node documents (§4.1): a read inspects the
   final path; a write inspects the final path and its `.tmp` sibling before any
   directory creation, write, or rename. A containment refusal propagates from
   construction and from `flush_index` — it is never a rebuild trigger.
