@@ -13,7 +13,11 @@
 ## Global Constraints
 
 - Work happens in the worktree `.worktrees/nodes-2.0` on branch `nodes-2.0`; every path below is relative to that worktree root.
-- Every gate runs through `just`: `just test-fast` for the inner loop, `just gate` before each commit. Never call `pytest`, `npm test`, `ruff`, `pyright`, `tsc`, or `biome` directly except as shown for a single test file during a TDD step (`cd python && uv run --frozen pytest tests/<file> -q`; `cd ts && npx vitest run tests/<file>`).
+- Every test run goes through `just` so `tools/tt` records it: `just test-fast` is the TDD inner loop (affected-only: pytest-testmon and `vitest --changed`, so a new or edited test file is exactly what runs), `just gate` is the checkpoint at the end of every task. Never call `pytest`, `vitest`, `npm test`, `ruff`, `pyright`, `tsc`, or `biome` directly.
+- **One commit for A.** The umbrella's same-commit rule (code, STANDARD clauses, fixtures together) is met by committing sub-task A once, in Task 7. Tasks 1–6 end with a green `just gate` and a `tasks done` on their child record in the working tree, not a commit. Never commit mid-plan.
+- **Child records.** Task N starts with `tasks start <child>` and ends with `tasks done <child> "<result>"`; the ids are Task 1 `nodes-e48507`, 2 `nodes-904ecf`, 3 `nodes-989525`, 4 `nodes-f072a8`, 5 `nodes-b72b50`, 6 `nodes-ceccb8`, 7 `nodes-c1fde3`. Task 7 closes the parent `nodes-01111b` and makes the single commit.
+- **Symlink tests never pass vacuously.** Each test file that creates symlinks probes once at module load; the probe disables those tests (an explicit skip) only on a recognized unsupported platform — Windows without the symlink privilege (`EPERM` / `WinError 1314`) — and re-raises any other failure. On Linux and macOS CI every symlink case executes.
+- Walk order is Unicode code-point order in both languages (spec §3); TypeScript's walk sort uses `compareCodepoints` from this plan on, so sub-task C inherits it done.
 - STANDARD edits in this plan are marked `*(2.0)*` per the umbrella design §2; the header's `1.2` and the pending line stay as they are.
 - No AI-attribution trailer in commit messages. Conventional commits.
 - Reserved namespace: exactly `.nodes-index`, root-relative first segment only.
@@ -42,6 +46,10 @@
 - Produces (Python): `nodes.core.errors.ContainmentError(NodesError)`; `nodes.core.paths.RESERVED_NAMESPACE = ".nodes-index"`; `is_portable_relative_path(path: str, *, suffix: str | None = ".md") -> bool`; `assert_contained(root: Path | str, rel_path: str) -> None` (raises `ValueError` for a non-portable `rel_path`, `ContainmentError` for a refusal).
 - Produces (TypeScript): `ContainmentError extends NodesError`; `RESERVED_NAMESPACE`; `isPortableRelativePath(path: string, suffix: string | null = ".md"): boolean`; `assertContained(root: string, relPath: string): void` (throws `TypeError` for a non-portable `relPath`, `ContainmentError` for a refusal).
 
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-e48507`
+
 - [ ] **Step 1: Write the failing Python tests**
 
 `python/tests/test_paths.py`:
@@ -50,7 +58,10 @@
 from __future__ import annotations
 
 import os
+import shutil
 import stat
+import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -58,11 +69,22 @@ from nodes.core.errors import ContainmentError, NodesError
 from nodes.core.paths import RESERVED_NAMESPACE, assert_contained, is_portable_relative_path
 
 
-def _symlink(link, target):
+def _symlinks_supported() -> bool:
+    """Probe once. Only a recognized unsupported-platform failure disables the symlink
+    tests (an explicit skip); any other failure is a real error and propagates."""
+    probe = Path(tempfile.mkdtemp(prefix="nodes-symlink-probe-"))
     try:
-        link.symlink_to(target)
-    except (NotImplementedError, OSError) as exc:
-        pytest.skip(f"symlink creation unsupported: {exc}")
+        (probe / "link").symlink_to(probe / "target")
+        return True
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            return False
+        raise
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
+
+
+needs_symlinks = pytest.mark.skipif(not _symlinks_supported(), reason="symlinks unsupported on this platform")
 
 
 def test_reserved_namespace_constant():
@@ -117,36 +139,40 @@ def test_assert_contained_accepts_regular_path(tmp_path):
     assert_contained(tmp_path, "kind/a.md")
 
 
+@needs_symlinks
 def test_assert_contained_refuses_symlink_at_final_segment(tmp_path):
     (tmp_path / "kind").mkdir()
     target = tmp_path / "kind" / "real.md"
     target.write_text("x", encoding="utf-8")
-    _symlink(tmp_path / "kind" / "a.md", target)
+    (tmp_path / "kind" / "a.md").symlink_to(target)
     with pytest.raises(ContainmentError):
         assert_contained(tmp_path, "kind/a.md")
 
 
+@needs_symlinks
 def test_assert_contained_refuses_dangling_symlink(tmp_path):
     (tmp_path / "kind").mkdir()
-    _symlink(tmp_path / "kind" / "a.md", tmp_path / "kind" / "missing.md")
+    (tmp_path / "kind" / "a.md").symlink_to(tmp_path / "kind" / "missing.md")
     with pytest.raises(ContainmentError):
         assert_contained(tmp_path, "kind/a.md")
 
 
+@needs_symlinks
 def test_assert_contained_refuses_symlinked_parent(tmp_path):
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
-    _symlink(tmp_path / "kind", outside)
+    (tmp_path / "kind").symlink_to(outside)
     with pytest.raises(ContainmentError):
         assert_contained(tmp_path, "kind/a.md")
 
 
+@needs_symlinks
 def test_assert_contained_allows_symlinked_root(tmp_path):
     real = tmp_path / "real"
     (real / "kind").mkdir(parents=True)
     (real / "kind" / "a.md").write_text("x", encoding="utf-8")
     link = tmp_path / "link-root"
-    _symlink(link, real)
+    link.symlink_to(real)
     assert_contained(link, "kind/a.md")
 
 
@@ -171,7 +197,7 @@ def test_assert_contained_refuses_on_permission_failure(tmp_path):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `cd python && uv run --frozen pytest tests/test_paths.py -q`
+Run: `just test-fast`
 Expected: collection error — `ImportError: cannot import name 'ContainmentError'`.
 
 - [ ] **Step 3: Add the error and the module (Python)**
@@ -256,7 +282,7 @@ from nodes.core.paths import RESERVED_NAMESPACE as RESERVED_NAMESPACE
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `cd python && uv run --frozen pytest tests/test_paths.py tests/test_write_plan.py -q`
+Run: `just test-fast`
 Expected: all PASS.
 
 - [ ] **Step 5: Write the failing TypeScript tests**
@@ -277,14 +303,20 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-function symlink(link: string, target: string): boolean {
+/** Probe once. Only a recognized unsupported platform disables the symlink tests (an
+ * explicit skip); any other failure is a real error and propagates. */
+const SYMLINKS = (() => {
+  const probe = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
   try {
-    symlinkSync(target, link);
+    symlinkSync(join(probe, "target"), join(probe, "link"));
     return true;
-  } catch {
-    return false; // symlink unsupported on this platform
+  } catch (e) {
+    if (process.platform === "win32" && (e as NodeJS.ErrnoException).code === "EPERM") return false;
+    throw e;
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
   }
-}
+})();
 
 describe("portable root-relative paths", () => {
   it("names the reserved namespace", () => {
@@ -333,35 +365,35 @@ describe("assertContained", () => {
     expect(() => assertContained(root, "kind/a.md")).not.toThrow();
   });
 
-  it("refuses a symlink at the final segment", () => {
+  it.skipIf(!SYMLINKS)("refuses a symlink at the final segment", () => {
     mkdirSync(join(root, "kind"));
     writeFileSync(join(root, "kind", "real.md"), "x");
-    if (!symlink(join(root, "kind", "a.md"), join(root, "kind", "real.md"))) return;
+    symlinkSync(join(root, "kind", "real.md"), join(root, "kind", "a.md"));
     expect(() => assertContained(root, "kind/a.md")).toThrow(ContainmentError);
   });
 
-  it("refuses a dangling symlink", () => {
+  it.skipIf(!SYMLINKS)("refuses a dangling symlink", () => {
     mkdirSync(join(root, "kind"));
-    if (!symlink(join(root, "kind", "a.md"), join(root, "kind", "missing.md"))) return;
+    symlinkSync(join(root, "kind", "missing.md"), join(root, "kind", "a.md"));
     expect(() => assertContained(root, "kind/a.md")).toThrow(ContainmentError);
   });
 
-  it("refuses a symlinked parent", () => {
+  it.skipIf(!SYMLINKS)("refuses a symlinked parent", () => {
     const outside = mkdtempSync(join(tmpdir(), "nodes-paths-outside-"));
     try {
-      if (!symlink(join(root, "kind"), outside)) return;
+      symlinkSync(outside, join(root, "kind"));
       expect(() => assertContained(root, "kind/a.md")).toThrow(ContainmentError);
     } finally {
       rmSync(outside, { recursive: true, force: true });
     }
   });
 
-  it("allows a symlinked root", () => {
+  it.skipIf(!SYMLINKS)("allows a symlinked root", () => {
     const real = join(root, "real");
     mkdirSync(join(real, "kind"), { recursive: true });
     writeFileSync(join(real, "kind", "a.md"), "x");
     const link = join(root, "link-root");
-    if (!symlink(link, real)) return;
+    symlinkSync(real, link);
     expect(() => assertContained(link, "kind/a.md")).not.toThrow();
   });
 
@@ -386,7 +418,7 @@ describe("assertContained", () => {
 
 - [ ] **Step 6: Run to verify they fail**
 
-Run: `cd ts && npx vitest run tests/paths.test.ts`
+Run: `just test-fast`
 Expected: FAIL — `Cannot find module '../src/paths.js'`.
 
 - [ ] **Step 7: Add the error and the module (TypeScript)**
@@ -466,22 +498,16 @@ export { assertContained, isPortableRelativePath } from "./paths.js";
 
 - [ ] **Step 8: Run to verify they pass**
 
-Run: `cd ts && npx vitest run tests/paths.test.ts tests/write-plan.test.ts`
+Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 9: Gate and commit**
+- [ ] **Step 9: Gate and close the child record**
 
 Run: `just gate`
-Expected: check green, Python and TypeScript suites green.
+Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
 
 ```bash
-git add python/src/nodes/core/errors.py python/src/nodes/core/paths.py python/src/nodes/core/write_plan.py python/tests/test_paths.py ts/src/errors.ts ts/src/paths.ts ts/src/write-plan.ts ts/src/index.ts ts/tests/paths.test.ts
-git commit -m "feat(paths): ContainmentError, the portable path rule, and assert_contained
-
-A dependency-neutral module per language, below snapshot and similarity,
-holding the one lexical rule for root-relative paths and the lstat
-containment check with its absent-tolerated, symlink-refused,
-otherwise-refused policy."
+tasks done nodes-e48507 "ContainmentError, the portable path predicate, and assert_contained in nodes.core.paths and ts/src/paths.ts with unit tests in both languages"
 ```
 
 ---
@@ -504,6 +530,10 @@ otherwise-refused policy."
 - Consumes: Task 1's `assert_contained` / `assertContained`, `is_portable_relative_path` / `isPortableRelativePath`, `RESERVED_NAMESPACE`.
 - Produces (Python, in `nodes.core.paths`): `assert_cache_path(rel_path: str) -> None` (raises `ValueError` unless portable with suffix `.json` and strictly beneath the namespace); `read_json(root: Path | str, rel_path: str) -> dict | None`; `write_json_atomic(root: Path | str, rel_path: str, obj: dict) -> None`. In `nodes.core.snapshot`: `SNAPSHOT_REL_PATH = ".nodes-index/snapshot.py.json"`; `snapshot_path(root)` unchanged (absolute); `read_json` and `write_json_atomic` still importable from `nodes.core.snapshot` (re-exported).
 - Produces (TypeScript, in `paths.ts`): `assertCachePath(relPath: string): void` (throws `TypeError`); `readJson(root: string, relPath: string): unknown`; `writeJsonAtomic(root: string, relPath: string, obj: unknown): void`. In `snapshot.ts`: `SNAPSHOT_REL_PATH = ".nodes-index/snapshot.ts.json"`; `snapshotPath(root)` unchanged; `readJson`/`writeJsonAtomic` re-exported from `snapshot.ts` and `index.ts`.
+
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-904ecf`
 
 - [ ] **Step 1: Write the failing Python tests**
 
@@ -537,6 +567,23 @@ def test_cache_read_missing_returns_none(tmp_path):
     assert read_json(tmp_path, ".nodes-index/a.json") is None
 
 
+def test_cache_read_rejects_null_document(tmp_path):
+    (tmp_path / ".nodes-index").mkdir()
+    (tmp_path / ".nodes-index" / "a.json").write_text("null", encoding="utf-8")
+    with pytest.raises(ValueError):
+        read_json(tmp_path, ".nodes-index/a.json")
+
+
+def test_vector_cache_null_document_is_corruption_not_a_miss(tmp_path):
+    from nodes.core.similarity import VectorCache
+
+    digest = "0" * 64
+    (tmp_path / ".nodes-index" / "vectors" / "ns").mkdir(parents=True)
+    (tmp_path / ".nodes-index" / "vectors" / "ns" / f"{digest}.json").write_text("null", encoding="utf-8")
+    with pytest.raises(ValueError):
+        VectorCache(tmp_path).get("ns", digest)
+
+
 def test_cache_write_refuses_single_segment_namespace_and_leaves_tmp_sibling_alone(tmp_path):
     protected = tmp_path / ".nodes-index.tmp"
     protected.write_bytes(b"consumer artifact")
@@ -545,30 +592,33 @@ def test_cache_write_refuses_single_segment_namespace_and_leaves_tmp_sibling_alo
     assert protected.read_bytes() == b"consumer artifact"
 
 
+@needs_symlinks
 def test_cache_read_refuses_symlinked_namespace(tmp_path):
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
     (outside / "a.json").write_text('{"x": 1}', encoding="utf-8")
-    _symlink(tmp_path / ".nodes-index", outside)
+    (tmp_path / ".nodes-index").symlink_to(outside)
     with pytest.raises(ContainmentError):
         read_json(tmp_path, ".nodes-index/a.json")
 
 
+@needs_symlinks
 def test_cache_write_refuses_symlinked_namespace_without_touching_target(tmp_path):
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
-    _symlink(tmp_path / ".nodes-index", outside)
+    (tmp_path / ".nodes-index").symlink_to(outside)
     with pytest.raises(ContainmentError):
         write_json_atomic(tmp_path, ".nodes-index/a.json", {"x": 1})
     assert list(outside.iterdir()) == []
 
 
+@needs_symlinks
 def test_cache_read_ignores_stray_tmp_symlink_but_write_refuses_it(tmp_path):
     (tmp_path / ".nodes-index").mkdir()
     (tmp_path / ".nodes-index" / "a.json").write_text('{"x": 1}', encoding="utf-8")
     target = tmp_path / "protected.txt"
     target.write_bytes(b"keep")
-    _symlink(tmp_path / ".nodes-index" / "a.json.tmp", target)
+    (tmp_path / ".nodes-index" / "a.json.tmp").symlink_to(target)
     assert read_json(tmp_path, ".nodes-index/a.json") == {"x": 1}
     with pytest.raises(ContainmentError):
         write_json_atomic(tmp_path, ".nodes-index/a.json", {"x": 2})
@@ -576,18 +626,19 @@ def test_cache_read_ignores_stray_tmp_symlink_but_write_refuses_it(tmp_path):
     assert read_json(tmp_path, ".nodes-index/a.json") == {"x": 1}
 
 
+@needs_symlinks
 def test_cache_read_refuses_symlinked_file(tmp_path):
     (tmp_path / ".nodes-index").mkdir()
     target = tmp_path / "elsewhere.json"
     target.write_text('{"x": 1}', encoding="utf-8")
-    _symlink(tmp_path / ".nodes-index" / "a.json", target)
+    (tmp_path / ".nodes-index" / "a.json").symlink_to(target)
     with pytest.raises(ContainmentError):
         read_json(tmp_path, ".nodes-index/a.json")
 ```
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `cd python && uv run --frozen pytest tests/test_paths.py -q`
+Run: `just test-fast`
 Expected: `ImportError: cannot import name 'assert_cache_path'`.
 
 - [ ] **Step 3: Implement the Python helpers and move the callers**
@@ -611,15 +662,19 @@ def _reject_json_constant(value: str) -> None:
 
 
 def read_json(root: Path | str, rel_path: str) -> dict | None:
-    """Read a cache document. `None` only for a genuinely absent file. Checks the final
-    path only — a read never touches the `.tmp` sibling."""
+    """Read a cache document. `None` only for a genuinely absent file; a document whose
+    JSON is `null` is corruption and raises `ValueError`. Checks the final path only — a
+    read never touches the `.tmp` sibling."""
     assert_cache_path(rel_path)
     assert_contained(root, rel_path)
     path = Path(root) / rel_path
     try:
-        return json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_json_constant)
+        doc = json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_json_constant)
     except FileNotFoundError:
         return None
+    if doc is None:
+        raise ValueError(f"cache document {rel_path!r} is null")  # absence is None; a null document is corruption
+    return doc
 
 
 def write_json_atomic(root: Path | str, rel_path: str, obj: dict) -> None:
@@ -695,7 +750,7 @@ Then add `SNAPSHOT_REL_PATH` to each file's `from nodes.core.snapshot import (..
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `cd python && uv run --frozen pytest tests/test_paths.py tests/test_snapshot_io.py tests/test_snapshot_load.py tests/test_corpus_persistence.py tests/test_corpus_persistence_rename.py tests/test_vector_snapshot.py tests/test_similarity_parity.py -q`
+Run: `just test-fast`
 Expected: all PASS.
 
 - [ ] **Step 5: Write the failing TypeScript tests**
@@ -725,6 +780,19 @@ describe("cache helpers", () => {
     expect(readJson(root, ".nodes-index/a.json")).toBeNull();
   });
 
+  it("read rejects a null document", () => {
+    mkdirSync(join(root, ".nodes-index"));
+    writeFileSync(join(root, ".nodes-index", "a.json"), "null");
+    expect(() => readJson(root, ".nodes-index/a.json")).toThrow(TypeError);
+  });
+
+  it("VectorCache treats a null document as corruption, not a miss", () => {
+    const digest = "0".repeat(64);
+    mkdirSync(join(root, ".nodes-index", "vectors", "ns"), { recursive: true });
+    writeFileSync(join(root, ".nodes-index", "vectors", "ns", `${digest}.json`), "null");
+    expect(() => new VectorCache(root).get("ns", digest)).toThrow(TypeError);
+  });
+
   it("refuses the single-segment namespace and leaves .nodes-index.tmp alone", () => {
     const protectedPath = join(root, ".nodes-index.tmp");
     writeFileSync(protectedPath, "consumer artifact");
@@ -732,21 +800,21 @@ describe("cache helpers", () => {
     expect(readFileSync(protectedPath, "utf-8")).toBe("consumer artifact");
   });
 
-  it("read refuses a symlinked namespace", () => {
+  it.skipIf(!SYMLINKS)("read refuses a symlinked namespace", () => {
     const outside = mkdtempSync(join(tmpdir(), "nodes-paths-outside-"));
     try {
       writeFileSync(join(outside, "a.json"), '{"x": 1}');
-      if (!symlink(join(root, ".nodes-index"), outside)) return;
+      symlinkSync(outside, join(root, ".nodes-index"));
       expect(() => readJson(root, ".nodes-index/a.json")).toThrow(ContainmentError);
     } finally {
       rmSync(outside, { recursive: true, force: true });
     }
   });
 
-  it("write refuses a symlinked namespace without touching the target", () => {
+  it.skipIf(!SYMLINKS)("write refuses a symlinked namespace without touching the target", () => {
     const outside = mkdtempSync(join(tmpdir(), "nodes-paths-outside-"));
     try {
-      if (!symlink(join(root, ".nodes-index"), outside)) return;
+      symlinkSync(outside, join(root, ".nodes-index"));
       expect(() => writeJsonAtomic(root, ".nodes-index/a.json", { x: 1 })).toThrow(ContainmentError);
       expect(readdirSync(outside)).toEqual([]);
     } finally {
@@ -754,33 +822,33 @@ describe("cache helpers", () => {
     }
   });
 
-  it("read ignores a stray tmp symlink but write refuses it", () => {
+  it.skipIf(!SYMLINKS)("read ignores a stray tmp symlink but write refuses it", () => {
     mkdirSync(join(root, ".nodes-index"));
     writeFileSync(join(root, ".nodes-index", "a.json"), '{"x": 1}');
     const target = join(root, "protected.txt");
     writeFileSync(target, "keep");
-    if (!symlink(join(root, ".nodes-index", "a.json.tmp"), target)) return;
+    symlinkSync(target, join(root, ".nodes-index", "a.json.tmp"));
     expect(readJson(root, ".nodes-index/a.json")).toEqual({ x: 1 });
     expect(() => writeJsonAtomic(root, ".nodes-index/a.json", { x: 2 })).toThrow(ContainmentError);
     expect(readFileSync(target, "utf-8")).toBe("keep");
     expect(readJson(root, ".nodes-index/a.json")).toEqual({ x: 1 });
   });
 
-  it("read refuses a symlinked file", () => {
+  it.skipIf(!SYMLINKS)("read refuses a symlinked file", () => {
     mkdirSync(join(root, ".nodes-index"));
     const target = join(root, "elsewhere.json");
     writeFileSync(target, '{"x": 1}');
-    if (!symlink(join(root, ".nodes-index", "a.json"), target)) return;
+    symlinkSync(target, join(root, ".nodes-index", "a.json"));
     expect(() => readJson(root, ".nodes-index/a.json")).toThrow(ContainmentError);
   });
 });
 ```
 
-Add `existsSync, readdirSync` to the `node:fs` import.
+Add `existsSync, readdirSync` to the `node:fs` import and `import { VectorCache } from "../src/similarity.js";`.
 
 - [ ] **Step 6: Run to verify they fail**
 
-Run: `cd ts && npx vitest run tests/paths.test.ts`
+Run: `just test-fast`
 Expected: FAIL — `assertCachePath` is not exported.
 
 - [ ] **Step 7: Implement the TypeScript helpers and move the callers**
@@ -801,9 +869,10 @@ export function assertCachePath(relPath: string): void {
   }
 }
 
-/** Read a cache document. `null` only for a genuinely absent file. Checks the final path
- * only — a read never touches the `.tmp` sibling. JS `JSON.parse` already rejects the
- * `NaN`/`Infinity` constants. */
+/** Read a cache document. `null` only for a genuinely absent file; a document whose JSON
+ * is `null` is corruption and throws `TypeError`. Checks the final path only — a read never
+ * touches the `.tmp` sibling. JS `JSON.parse` already rejects the `NaN`/`Infinity`
+ * constants. */
 export function readJson(root: string, relPath: string): unknown {
   assertCachePath(relPath);
   assertContained(root, relPath);
@@ -815,7 +884,9 @@ export function readJson(root: string, relPath: string): unknown {
     if (err.code === "ENOENT") return null;
     throw err; // EISDIR and anything else
   }
-  return JSON.parse(raw);
+  const doc: unknown = JSON.parse(raw);
+  if (doc === null) throw new TypeError(`cache document ${JSON.stringify(relPath)} is null`); // absence is null; a null document is corruption
+  return doc;
 }
 
 /** Write a cache document via a `.tmp` sibling and rename. Checks the final path and the
@@ -904,23 +975,16 @@ Migrate `ts/tests/snapshot-io.test.ts`: add `SNAPSHOT_REL_PATH` to the `../src/s
 
 - [ ] **Step 8: Run to verify they pass**
 
-Run: `cd ts && npx vitest run tests/paths.test.ts tests/snapshot-io.test.ts tests/snapshot-load.test.ts tests/corpus-persistence.test.ts tests/corpus-persistence-rename.test.ts tests/vector-snapshot.test.ts tests/similarity-parity.test.ts`
+Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 9: Gate and commit**
+- [ ] **Step 9: Gate and close the child record**
 
 Run: `just gate`
-Expected: green.
+Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
 
 ```bash
-git add python/src/nodes/core/paths.py python/src/nodes/core/snapshot.py python/src/nodes/core/similarity.py python/tests ts/src/paths.ts ts/src/snapshot.ts ts/src/similarity.ts ts/src/index.ts ts/tests
-git commit -m "feat(paths): root-aware cache helpers contained inside the reserved namespace
-
-read_json and write_json_atomic take (root, rel_path) strictly beneath
-.nodes-index/, check the final path on read and the .tmp sibling too on
-write, and serve both the snapshot and the vector cache. A containment
-refusal propagates out of snapshot loading instead of triggering a
-rebuild."
+tasks done nodes-904ecf "read_json/write_json_atomic take (root, rel_path) strictly beneath .nodes-index, reject null documents, check final path on read and .tmp sibling on write; snapshot and VectorCache route through them; TS loadSnapshot rethrows ContainmentError"
 ```
 
 ---
@@ -936,9 +1000,13 @@ rebuild."
 - Consumes: `RESERVED_NAMESPACE` from `paths`.
 - Produces: unchanged signatures — `iter_corpus_files(root) -> list[CorpusFile]`, `listCorpusFileStats(root)`, `iterCorpusFiles(root)` — now raising on a missing root or an unreadable directory, and skipping every symlink at every depth without following it.
 
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-989525`
+
 - [ ] **Step 1: Write the failing Python tests**
 
-Append to `python/tests/test_snapshot_io.py` (add `import os`, `import stat` and `from nodes.core.snapshot import iter_corpus_files` if missing):
+Append to `python/tests/test_snapshot_io.py` (add `import os`, `import shutil`, `import stat`, `import tempfile`, `from pathlib import Path`, the `_symlinks_supported` probe and `needs_symlinks` marker exactly as in `python/tests/test_paths.py`, and `from nodes.core.snapshot import iter_corpus_files` if missing):
 
 ```python
 def test_iter_corpus_files_missing_root_raises(tmp_path):
@@ -946,16 +1014,14 @@ def test_iter_corpus_files_missing_root_raises(tmp_path):
         iter_corpus_files(tmp_path / "absent")
 
 
+@needs_symlinks
 def test_iter_corpus_files_does_not_follow_directory_symlink(tmp_path):
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     (outside / "tree").mkdir(parents=True)
     (outside / "tree" / "a.md").write_text("---\nid: kind:a\nkind: kind\ntitle: A\n---\n", encoding="utf-8")
     (tmp_path / "kind").mkdir()
     (tmp_path / "kind" / "b.md").write_text("---\nid: kind:b\nkind: kind\ntitle: B\n---\n", encoding="utf-8")
-    try:
-        (tmp_path / "linked").symlink_to(outside / "tree")
-    except (NotImplementedError, OSError) as exc:
-        pytest.skip(f"symlink creation unsupported: {exc}")
+    (tmp_path / "linked").symlink_to(outside / "tree")
     assert [f.path for f in iter_corpus_files(tmp_path)] == ["kind/b.md"]
 
 
@@ -965,6 +1031,12 @@ def test_iter_corpus_files_skips_nested_reserved_name_only_at_root(tmp_path):
     (tmp_path / "kind" / ".nodes-index").mkdir(parents=True)
     (tmp_path / "kind" / ".nodes-index" / "y.md").write_text("y", encoding="utf-8")
     assert [f.path for f in iter_corpus_files(tmp_path)] == ["kind/.nodes-index/y.md"]
+
+
+@pytest.mark.skipif(os.name != "posix", reason="a backslash is a separator on Windows")
+def test_iter_corpus_files_keeps_literal_backslash(tmp_path):
+    (tmp_path / "kind\\a.md").write_text("x", encoding="utf-8")
+    assert [f.path for f in iter_corpus_files(tmp_path)] == ["kind\\a.md"]
 
 
 @pytest.mark.skipif(os.name != "posix" or os.geteuid() == 0, reason="needs an unprivileged POSIX user")
@@ -982,7 +1054,7 @@ def test_iter_corpus_files_unreadable_directory_raises(tmp_path):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `cd python && uv run --frozen pytest tests/test_snapshot_io.py -q`
+Run: `just test-fast`
 Expected: `test_iter_corpus_files_missing_root_raises` and `test_iter_corpus_files_unreadable_directory_raises` FAIL (no exception raised); the two others PASS already (they pin behaviour the rewrite must keep).
 
 - [ ] **Step 3: Rewrite the Python walk**
@@ -1019,12 +1091,12 @@ def iter_corpus_files(root: Path | str) -> list[CorpusFile]:
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `cd python && uv run --frozen pytest tests/test_snapshot_io.py tests/test_corpus.py tests/test_corpus_persistence.py -q`
+Run: `just test-fast`
 Expected: all PASS.
 
 - [ ] **Step 5: Write the failing TypeScript tests**
 
-Append to `ts/tests/snapshot-io.test.ts` (add `chmodSync` to the `node:fs` import):
+Append to `ts/tests/snapshot-io.test.ts` (add `chmodSync` to the `node:fs` import, and the `SYMLINKS` probe exactly as in `ts/tests/paths.test.ts`):
 
 ```ts
 describe("walk failure propagation", () => {
@@ -1032,18 +1104,14 @@ describe("walk failure propagation", () => {
     expect(() => iterCorpusFiles(join(root, "absent"))).toThrow();
   });
 
-  it("does not follow a directory symlink", () => {
+  it.skipIf(!SYMLINKS)("does not follow a directory symlink", () => {
     const outside = mkdtempSync(join(tmpdir(), "nodes-snap-io-outside-"));
     try {
       mkdirSync(join(outside, "tree"));
       writeFileSync(join(outside, "tree", "a.md"), "---\nid: kind:a\nkind: kind\ntitle: A\n---\n");
       mkdirSync(join(root, "kind"));
       writeFileSync(join(root, "kind", "b.md"), "---\nid: kind:b\nkind: kind\ntitle: B\n---\n");
-      try {
-        symlinkSync(join(outside, "tree"), join(root, "linked"));
-      } catch {
-        return; // symlink unsupported on this platform
-      }
+      symlinkSync(join(outside, "tree"), join(root, "linked"));
       expect(iterCorpusFiles(root).map((f) => f.path)).toEqual(["kind/b.md"]);
     } finally {
       rmSync(outside, { recursive: true, force: true });
@@ -1069,20 +1137,56 @@ describe("walk failure propagation", () => {
       chmodSync(locked, 0o700);
     }
   });
+
+  it.skipIf(process.platform === "win32")("keeps a literal backslash in a POSIX filename", () => {
+    writeFileSync(join(root, "kind\\a.md"), "x");
+    expect(iterCorpusFiles(root).map((f) => f.path)).toEqual(["kind\\a.md"]);
+  });
 });
 ```
 
+And append to `ts/tests/store.test.ts` (this file gets the `SYMLINKS` probe in Task 5; add it now, exactly as in `ts/tests/paths.test.ts`, with `symlinkSync` and `mkdtempSync` imported) — the test that pins the escape the `relPosix` fix closes:
+
+```ts
+describe("Store reads address the walked path", () => {
+  it.skipIf(process.platform === "win32" || !SYMLINKS)("allNodes reads a backslash-named file, not a separator-substituted path", () => {
+    const outside = mkdtempSync(join(tmpdir(), "nodes-store-outside-"));
+    try {
+      writeFileSync(join(outside, "a.md"), nodeToMarkdown(n("topic:leak", "topic")));
+      symlinkSync(outside, join(root, "kind")); // root/kind -> outside: the walk skips it
+      writeFileSync(join(root, "kind\\a.md"), nodeToMarkdown(n("kind:a", "kind"))); // one file, literal backslash
+      expect(store.allNodes().map((x) => x.id)).toEqual(["kind:a"]);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+});
+```
+
+Before the `relPosix` fix this test reads `topic:leak` through the symlink; after it, `kind:a`.
+
 - [ ] **Step 6: Run to verify they fail**
 
-Run: `cd ts && npx vitest run tests/snapshot-io.test.ts`
-Expected: "a missing root throws" and "an unreadable directory throws" FAIL; the other two PASS.
+Run: `just test-fast`
+Expected: "a missing root throws", "an unreadable directory throws", and the `allNodes` backslash test FAIL; the others PASS.
 
 - [ ] **Step 7: Rewrite the TypeScript walk**
 
-Replace `listCorpusMarkdownPaths` in `ts/src/snapshot.ts`:
+Replace `relPosix` and `listCorpusMarkdownPaths` in `ts/src/snapshot.ts`. `relPosix` must split on the platform separator only: today's `split(/[\\/]/)` turns a literal backslash in a POSIX filename into a separator, so the walk reports `kind\a.md` as `kind/a.md` and a later `Store.load` reconstructs a path the walk never inspected — through a symlinked `kind/` if one exists. On Windows `sep` is `\` and no filename can contain it, so the mapping stays lossless there.
 
 ```ts
-/** Every regular `*.md` path under the root, sorted by root-relative POSIX path. Never
+/** Root-relative POSIX path (forward slashes on every platform), the cross-language form.
+ * Splits on the platform separator only, so a literal backslash in a POSIX filename is
+ * preserved and later reads address exactly the path the walk inspected. */
+function relPosix(root: string, full: string): string {
+  return relative(root, full).split(sep).join("/");
+}
+```
+
+(add `sep` to the `node:path` import, and `import { compareCodepoints } from "./search.js";` — `SearchIndex` is already imported from there.)
+
+```ts
+/** Every regular `*.md` path under the root, sorted by root-relative POSIX path in code-point order. Never
  * follows a symlink at any depth; `.nodes-index` is skipped as the root's direct child
  * only. Filesystem failures — a missing root, an unreadable directory — propagate: a
  * walk that silently drops a subtree is not a walk. */
@@ -1102,31 +1206,25 @@ function listCorpusMarkdownPaths(root: string): WalkedCorpusPath[] {
     }
   };
   walk(root, true);
-  files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  files.sort((a, b) => compareCodepoints(a.path, b.path)); // code-point order, matching Python's str sort
   return files;
 }
 ```
 
-Remove `existsSync` from the `node:fs` import if now unused. (The sort's collation is sub-task C's concern; leave it.)
+Remove `existsSync` from the `node:fs` import if now unused.
 
 - [ ] **Step 8: Run to verify they pass**
 
-Run: `cd ts && npx vitest run tests/snapshot-io.test.ts tests/corpus.test.ts tests/corpus-persistence.test.ts tests/store.test.ts`
-Expected: all PASS.
+Run: `just test-fast`
+Expected: all PASS, including the `allNodes` backslash test in `store.test.ts`.
 
-- [ ] **Step 9: Gate and commit**
+- [ ] **Step 9: Gate and close the child record**
 
 Run: `just gate`
-Expected: green.
+Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
 
 ```bash
-git add python/src/nodes/core/snapshot.py python/tests/test_snapshot_io.py ts/src/snapshot.ts ts/tests/snapshot-io.test.ts
-git commit -m "fix(walk): propagate filesystem failures instead of dropping subtrees
-
-Python moves from rglob (which suppresses PermissionError) to an explicit
-scandir recursion; TypeScript stops catching readdir errors and stops
-turning a missing root into an empty corpus. Both skip every symlink at
-every depth and reserve .nodes-index at the root only."
+tasks done nodes-989525 "Both walks are explicit recursions that skip every symlink, reserve .nodes-index at the root only, keep literal filenames, sort by code point, and propagate filesystem failures"
 ```
 
 ---
@@ -1144,16 +1242,31 @@ every depth and reserve .nodes-index at the root only."
 - Consumes: `is_portable_relative_path`, `assert_contained`, `ContainmentError`, `RESERVED_NAMESPACE`.
 - Produces: `validate_plan` / `validatePlan` refusing non-portable and non-`.md` paths; `DefaultExecutor.execute` raising `ExecutionError(index=i, applied=0)` from preflight before any effect.
 
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-f072a8`
+
 - [ ] **Step 1: Write the failing Python tests**
 
-Append to `python/tests/test_write_plan.py` (add `from nodes.core.errors import ContainmentError` and `import pytest` is present):
+Append to `python/tests/test_write_plan.py` (add `import os`, `import shutil`, `import tempfile`, `from pathlib import Path`, and `from nodes.core.errors import ContainmentError`; `import pytest` is present):
 
 ```python
-def _symlink(link, target):
+def _symlinks_supported() -> bool:
+    """Probe once. Only a recognized unsupported-platform failure disables the symlink
+    tests (an explicit skip); any other failure is a real error and propagates."""
+    probe = Path(tempfile.mkdtemp(prefix="nodes-symlink-probe-"))
     try:
-        link.symlink_to(target)
-    except (NotImplementedError, OSError) as exc:
-        pytest.skip(f"symlink creation unsupported: {exc}")
+        (probe / "link").symlink_to(probe / "target")
+        return True
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            return False
+        raise
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
+
+
+needs_symlinks = pytest.mark.skipif(not _symlinks_supported(), reason="symlinks unsupported on this platform")
 
 
 @pytest.mark.parametrize("path", ["/a.md", "a//b.md", "./a.md", "a/../b.md"])
@@ -1188,11 +1301,12 @@ def test_direct_plan_cannot_replace_protected_artifact(tmp_path):
     assert (tmp_path / "corpus.yaml").read_bytes() == b"manifest"
 
 
+@needs_symlinks
 def test_preflight_refuses_create_onto_dangling_symlink(tmp_path):
     (tmp_path / "kind").mkdir()
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
-    _symlink(tmp_path / "kind" / "a.md", outside / "a.md")
+    (tmp_path / "kind" / "a.md").symlink_to(outside / "a.md")
     with pytest.raises(ExecutionError) as info:
         DefaultExecutor(tmp_path).execute([CreateOp(path="kind/a.md", content=b"x")])
     assert (info.value.index, info.value.applied) == (0, 0)
@@ -1200,11 +1314,12 @@ def test_preflight_refuses_create_onto_dangling_symlink(tmp_path):
     assert not (outside / "a.md").exists()
 
 
+@needs_symlinks
 def test_preflight_refuses_replace_and_delete_onto_symlink(tmp_path):
     (tmp_path / "kind").mkdir()
     target = tmp_path / "protected.txt"
     target.write_bytes(b"keep")
-    _symlink(tmp_path / "kind" / "a.md", target)
+    (tmp_path / "kind" / "a.md").symlink_to(target)
     ex = DefaultExecutor(tmp_path)
     with pytest.raises(ExecutionError) as info:
         ex.execute([ReplaceOp(path="kind/a.md", content=b"x", expected_digest=sha(b"keep"))])
@@ -1216,19 +1331,21 @@ def test_preflight_refuses_replace_and_delete_onto_symlink(tmp_path):
     assert (tmp_path / "kind" / "a.md").is_symlink()
 
 
+@needs_symlinks
 def test_preflight_refuses_create_under_symlinked_parent(tmp_path):
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
-    _symlink(tmp_path / "kind", outside)
+    (tmp_path / "kind").symlink_to(outside)
     with pytest.raises(ExecutionError) as info:
         DefaultExecutor(tmp_path).execute([CreateOp(path="kind/a.md", content=b"x")])
     assert (info.value.index, info.value.applied) == (0, 0)
     assert list(outside.iterdir()) == []
 
 
+@needs_symlinks
 def test_preflight_covers_whole_plan_before_any_effect(tmp_path):
     (tmp_path / "kind").mkdir()
-    _symlink(tmp_path / "kind" / "b.md", tmp_path / "kind" / "missing.md")
+    (tmp_path / "kind" / "b.md").symlink_to(tmp_path / "kind" / "missing.md")
     with pytest.raises(ExecutionError) as info:
         DefaultExecutor(tmp_path).execute(
             [CreateOp(path="kind/a.md", content=b"a"), CreateOp(path="kind/b.md", content=b"b")]
@@ -1237,11 +1354,12 @@ def test_preflight_covers_whole_plan_before_any_effect(tmp_path):
     assert not (tmp_path / "kind" / "a.md").exists()
 
 
+@needs_symlinks
 def test_execute_succeeds_through_symlinked_root(tmp_path):
     real = tmp_path / "real"
     real.mkdir()
     link = tmp_path / "link-root"
-    _symlink(link, real)
+    link.symlink_to(real)
     DefaultExecutor(link).execute([CreateOp(path="kind/a.md", content=b"x")])
     assert (real / "kind" / "a.md").read_bytes() == b"x"
 ```
@@ -1261,7 +1379,7 @@ def test_non_portable_manifest_path_returns_none(tmp_path, path):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `cd python && uv run --frozen pytest tests/test_write_plan.py tests/test_snapshot_load.py -q`
+Run: `just test-fast`
 Expected: the Windows-spelling, non-`.md`, reserved-spelling (dotted forms), protected-artifact, and preflight tests FAIL; the others may already pass.
 
 - [ ] **Step 3: Implement (Python)**
@@ -1336,22 +1454,28 @@ def _validate_manifest_path(path: str) -> None:
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `cd python && uv run --frozen pytest tests/test_write_plan.py tests/test_write_plan_parity.py tests/test_corpus_executor.py tests/test_snapshot_load.py -q`
+Run: `just test-fast`
 Expected: all PASS. If an existing `test_write_plan.py` test asserted that `a/../b.md` is *accepted* as `b.md`, change its expectation to `PlanRefusedError` — the rule changed deliberately (spec §2).
 
 - [ ] **Step 5: Write the failing TypeScript tests**
 
-Append to `ts/tests/write-plan.test.ts` (add `ContainmentError` to the errors import; add `mkdirSync, readdirSync, symlinkSync, lstatSync` to `node:fs`):
+Append to `ts/tests/write-plan.test.ts` (add `ContainmentError` to the errors import; add `mkdirSync, readdirSync, symlinkSync, lstatSync` to `node:fs`; the `SYMLINKS` probe below replaces any helper):
 
 ```ts
-function symlink(link: string, target: string): boolean {
+/** Probe once. Only a recognized unsupported platform disables the symlink tests (an
+ * explicit skip); any other failure is a real error and propagates. */
+const SYMLINKS = (() => {
+  const probe = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
   try {
-    symlinkSync(target, link);
+    symlinkSync(join(probe, "target"), join(probe, "link"));
     return true;
-  } catch {
-    return false;
+  } catch (e) {
+    if (process.platform === "win32" && (e as NodeJS.ErrnoException).code === "EPERM") return false;
+    throw e;
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
   }
-}
+})();
 
 describe("plan path rules", () => {
   it.each(["/a.md", "a//b.md", "./a.md", "a/../b.md"])("refuses segment violation %s", (path) => {
@@ -1380,11 +1504,11 @@ describe("plan path rules", () => {
 });
 
 describe("executor preflight", () => {
-  it("refuses a create onto a dangling symlink before any effect", () => {
+  it.skipIf(!SYMLINKS)("refuses a create onto a dangling symlink before any effect", () => {
     mkdirSync(join(root, "kind"));
     const outside = mkdtempSync(join(tmpdir(), "nodes-write-plan-outside-"));
     try {
-      if (!symlink(join(root, "kind", "a.md"), join(outside, "a.md"))) return;
+      symlinkSync(join(outside, "a.md"), join(root, "kind", "a.md"));
       let caught: unknown;
       try {
         new DefaultExecutor(root).execute([{ op: "create", path: "kind/a.md", content: bytes("x") }]);
@@ -1401,11 +1525,11 @@ describe("executor preflight", () => {
     }
   });
 
-  it("refuses replace and delete onto a symlink", () => {
+  it.skipIf(!SYMLINKS)("refuses replace and delete onto a symlink", () => {
     mkdirSync(join(root, "kind"));
     const target = join(root, "protected.txt");
     writeFileSync(target, "keep");
-    if (!symlink(join(root, "kind", "a.md"), target)) return;
+    symlinkSync(target, join(root, "kind", "a.md"));
     const ex = new DefaultExecutor(root);
     expect(() => ex.execute([{ op: "replace", path: "kind/a.md", content: bytes("x"), expectedDigest: sha("keep") }])).toThrow(ExecutionError);
     expect(() => ex.execute([{ op: "delete", path: "kind/a.md", expectedDigest: sha("keep") }])).toThrow(ExecutionError);
@@ -1413,10 +1537,10 @@ describe("executor preflight", () => {
     expect(lstatSync(join(root, "kind", "a.md")).isSymbolicLink()).toBe(true);
   });
 
-  it("refuses a create under a symlinked parent", () => {
+  it.skipIf(!SYMLINKS)("refuses a create under a symlinked parent", () => {
     const outside = mkdtempSync(join(tmpdir(), "nodes-write-plan-outside-"));
     try {
-      if (!symlink(join(root, "kind"), outside)) return;
+      symlinkSync(outside, join(root, "kind"));
       expect(() => new DefaultExecutor(root).execute([{ op: "create", path: "kind/a.md", content: bytes("x") }])).toThrow(ExecutionError);
       expect(readdirSync(outside)).toEqual([]);
     } finally {
@@ -1424,9 +1548,9 @@ describe("executor preflight", () => {
     }
   });
 
-  it("covers the whole plan before any effect", () => {
+  it.skipIf(!SYMLINKS)("covers the whole plan before any effect", () => {
     mkdirSync(join(root, "kind"));
-    if (!symlink(join(root, "kind", "b.md"), join(root, "kind", "missing.md"))) return;
+    symlinkSync(join(root, "kind", "missing.md"), join(root, "kind", "b.md"));
     let caught: unknown;
     try {
       new DefaultExecutor(root).execute([
@@ -1441,11 +1565,11 @@ describe("executor preflight", () => {
     expect(existsSync(join(root, "kind", "a.md"))).toBe(false);
   });
 
-  it("succeeds through a symlinked root", () => {
+  it.skipIf(!SYMLINKS)("succeeds through a symlinked root", () => {
     const real = join(root, "real");
     mkdirSync(real);
     const link = join(root, "link-root");
-    if (!symlink(link, real)) return;
+    symlinkSync(real, link);
     new DefaultExecutor(link).execute([{ op: "create", path: "kind/a.md", content: bytes("x") }]);
     expect(readFileSync(join(real, "kind", "a.md"), "utf-8")).toBe("x");
   });
@@ -1466,7 +1590,7 @@ And append inside the existing `describe` in `ts/tests/snapshot-load.test.ts`, a
 
 - [ ] **Step 6: Run to verify they fail**
 
-Run: `cd ts && npx vitest run tests/write-plan.test.ts tests/snapshot-load.test.ts`
+Run: `just test-fast`
 Expected: the same categories fail as in Python.
 
 - [ ] **Step 7: Implement (TypeScript)**
@@ -1572,23 +1696,16 @@ function validateManifestPath(path: string): void {
 
 - [ ] **Step 8: Run to verify they pass**
 
-Run: `cd ts && npx vitest run tests/write-plan.test.ts tests/write_plan_parity.test.ts tests/corpus-executor.test.ts tests/snapshot-load.test.ts`
+Run: `just test-fast`
 Expected: all PASS (same note as Python about any test that asserted `a/../b.md` was accepted).
 
-- [ ] **Step 9: Gate and commit**
+- [ ] **Step 9: Gate and close the child record**
 
 Run: `just gate`
-Expected: green.
+Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
 
 ```bash
-git add python/src/nodes/core/write_plan.py python/src/nodes/core/snapshot.py python/tests/test_write_plan.py python/tests/test_snapshot_load.py ts/src/write-plan.ts ts/src/errors.ts ts/src/snapshot.ts ts/tests/write-plan.test.ts ts/tests/snapshot-load.test.ts
-git commit -m "feat(write-plan): portable path rule and whole-plan containment preflight
-
-validate_plan refuses any path that is not a portable root-relative .md
-path — no normalization, no backslash or colon segments, no non-Markdown
-target — and the snapshot manifest validator applies the same rule.
-DefaultExecutor preflights every operation with assert_contained before
-any effect, refusing with ExecutionError(index=i, applied=0)."
+tasks done nodes-f072a8 "validate_plan applies the portable .md path rule in both languages (manifest validator aligned); DefaultExecutor preflights the whole plan with assert_contained and refuses ExecutionError(index=i, applied=0) before any effect"
 ```
 
 ---
@@ -1604,54 +1721,73 @@ any effect, refusing with ExecutionError(index=i, applied=0)."
 - Consumes: `assert_contained` / `assertContained`; `pathForNodeId` (TS) and the inline mapping (Python).
 - Produces: `Store.read_file`, `write_file`, `delete_file` (and TS forms) raising `ContainmentError` when the mapped path has a symlink component; a new `Store.rel_path(node_id) -> str` in Python (the root-relative POSIX form `path_for` derives from).
 
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-b72b50`
+
 - [ ] **Step 1: Write the failing Python tests**
 
-Append to `python/tests/test_store.py` (add `from nodes.core.errors import ContainmentError`):
+Append to `python/tests/test_store.py` (add `import os`, `import shutil`, `import tempfile`, `from pathlib import Path`, and `from nodes.core.errors import ContainmentError`):
 
 ```python
-def _symlink(link, target):
+def _symlinks_supported() -> bool:
+    """Probe once. Only a recognized unsupported-platform failure disables the symlink
+    tests (an explicit skip); any other failure is a real error and propagates."""
+    probe = Path(tempfile.mkdtemp(prefix="nodes-symlink-probe-"))
     try:
-        link.symlink_to(target)
-    except (NotImplementedError, OSError) as exc:
-        pytest.skip(f"symlink creation unsupported: {exc}")
+        (probe / "link").symlink_to(probe / "target")
+        return True
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            return False
+        raise
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
 
 
+needs_symlinks = pytest.mark.skipif(not _symlinks_supported(), reason="symlinks unsupported on this platform")
+
+
+@needs_symlinks
 def test_read_file_refuses_symlinked_path(tmp_path):
     store = Store(tmp_path)
     store.write_file(Node(id="topic:real", kind="topic", title="R"))
-    _symlink(tmp_path / "topic" / "a.md", tmp_path / "topic" / "real.md")
+    (tmp_path / "topic" / "a.md").symlink_to(tmp_path / "topic" / "real.md")
     with pytest.raises(ContainmentError):
         store.read_file("topic:a")
 
 
+@needs_symlinks
 def test_write_file_refuses_symlinked_path_and_leaves_target(tmp_path):
     store = Store(tmp_path)
     (tmp_path / "topic").mkdir()
     target = tmp_path / "protected.txt"
     target.write_bytes(b"keep")
-    _symlink(tmp_path / "topic" / "a.md", target)
+    (tmp_path / "topic" / "a.md").symlink_to(target)
     with pytest.raises(ContainmentError):
         store.write_file(Node(id="topic:a", kind="topic", title="A"))
     assert target.read_bytes() == b"keep"
 
 
+@needs_symlinks
 def test_delete_file_refuses_symlinked_path_and_leaves_link(tmp_path):
     store = Store(tmp_path)
     (tmp_path / "topic").mkdir()
     target = tmp_path / "protected.txt"
     target.write_bytes(b"keep")
-    _symlink(tmp_path / "topic" / "a.md", target)
+    (tmp_path / "topic" / "a.md").symlink_to(target)
     with pytest.raises(ContainmentError):
         store.delete_file("topic:a")
     assert (tmp_path / "topic" / "a.md").is_symlink()
     assert target.read_bytes() == b"keep"
 
 
+@needs_symlinks
 def test_store_works_through_symlinked_root(tmp_path):
     real = tmp_path / "real"
     real.mkdir()
     link = tmp_path / "link-root"
-    _symlink(link, real)
+    link.symlink_to(real)
     store = Store(link)
     store.write_file(Node(id="topic:a", kind="topic", title="A"))
     assert store.read_file("topic:a").title == "A"
@@ -1661,7 +1797,7 @@ def test_store_works_through_symlinked_root(tmp_path):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `cd python && uv run --frozen pytest tests/test_store.py -q`
+Run: `just test-fast`
 Expected: the three refusal tests FAIL (`RefError` or success instead of `ContainmentError`); the root test passes.
 
 - [ ] **Step 3: Implement (Python)**
@@ -1705,54 +1841,60 @@ Add `from nodes.core.paths import assert_contained`. `all_nodes` is unchanged: t
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `cd python && uv run --frozen pytest tests/test_store.py tests/test_corpus.py -q`
+Run: `just test-fast`
 Expected: all PASS.
 
 - [ ] **Step 5: Write the failing TypeScript tests**
 
-Append to `ts/tests/store.test.ts` (add `ContainmentError` to the errors import; `existsSync, lstatSync, symlinkSync` to `node:fs`):
+Append to `ts/tests/store.test.ts` (add `ContainmentError` to the errors import; `existsSync, lstatSync, symlinkSync` to `node:fs`; `tmpdir` is imported already):
 
 ```ts
-function symlink(link: string, target: string): boolean {
+/** Probe once. Only a recognized unsupported platform disables the symlink tests (an
+ * explicit skip); any other failure is a real error and propagates. */
+const SYMLINKS = (() => {
+  const probe = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
   try {
-    symlinkSync(target, link);
+    symlinkSync(join(probe, "target"), join(probe, "link"));
     return true;
-  } catch {
-    return false;
+  } catch (e) {
+    if (process.platform === "win32" && (e as NodeJS.ErrnoException).code === "EPERM") return false;
+    throw e;
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
   }
-}
+})();
 
 describe("Store containment", () => {
-  it("readFile refuses a symlinked path", () => {
+  it.skipIf(!SYMLINKS)("readFile refuses a symlinked path", () => {
     store.writeFile(n("topic:real", "topic"));
-    if (!symlink(join(root, "topic", "a.md"), join(root, "topic", "real.md"))) return;
+    symlinkSync(join(root, "topic", "real.md"), join(root, "topic", "a.md"));
     expect(() => store.readFile("topic:a")).toThrow(ContainmentError);
   });
 
-  it("writeFile refuses a symlinked path and leaves the target", () => {
+  it.skipIf(!SYMLINKS)("writeFile refuses a symlinked path and leaves the target", () => {
     mkdirSync(join(root, "topic"));
     const target = join(root, "protected.txt");
     writeFileSync(target, "keep");
-    if (!symlink(join(root, "topic", "a.md"), target)) return;
+    symlinkSync(target, join(root, "topic", "a.md"));
     expect(() => store.writeFile(n("topic:a", "topic"))).toThrow(ContainmentError);
     expect(readFileSync(target, "utf-8")).toBe("keep");
   });
 
-  it("deleteFile refuses a symlinked path and leaves the link", () => {
+  it.skipIf(!SYMLINKS)("deleteFile refuses a symlinked path and leaves the link", () => {
     mkdirSync(join(root, "topic"));
     const target = join(root, "protected.txt");
     writeFileSync(target, "keep");
-    if (!symlink(join(root, "topic", "a.md"), target)) return;
+    symlinkSync(target, join(root, "topic", "a.md"));
     expect(() => store.deleteFile("topic:a")).toThrow(ContainmentError);
     expect(lstatSync(join(root, "topic", "a.md")).isSymbolicLink()).toBe(true);
     expect(readFileSync(target, "utf-8")).toBe("keep");
   });
 
-  it("works through a symlinked root", () => {
+  it.skipIf(!SYMLINKS)("works through a symlinked root", () => {
     const real = join(root, "real");
     mkdirSync(real);
     const link = join(root, "link-root");
-    if (!symlink(link, real)) return;
+    symlinkSync(real, link);
     const linked = new Store(link);
     linked.writeFile(n("topic:a", "topic"));
     expect(linked.readFile("topic:a").title).toBe("topic:a");
@@ -1764,7 +1906,7 @@ describe("Store containment", () => {
 
 - [ ] **Step 6: Run to verify they fail**
 
-Run: `cd ts && npx vitest run tests/store.test.ts`
+Run: `just test-fast`
 Expected: the three refusal tests FAIL.
 
 - [ ] **Step 7: Implement (TypeScript)**
@@ -1773,21 +1915,16 @@ In `ts/src/store.ts`, add `import { assertContained } from "./paths.js";` and in
 
 - [ ] **Step 8: Run to verify they pass**
 
-Run: `cd ts && npx vitest run tests/store.test.ts tests/corpus.test.ts`
+Run: `just test-fast`
 Expected: all PASS.
 
-- [ ] **Step 9: Gate and commit**
+- [ ] **Step 9: Gate and close the child record**
 
 Run: `just gate`
-Expected: green.
+Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
 
 ```bash
-git add python/src/nodes/core/store.py python/tests/test_store.py ts/src/store.ts ts/tests/store.test.ts
-git commit -m "feat(store): contain the direct read, write, and delete paths
-
-Store's tier-3 file mechanics bypass the executor; they now run
-assert_contained on the mapped path first, so the containment guarantee
-is stated over nodes rather than over Corpus alone."
+tasks done nodes-b72b50 "Store.read_file/write_file/delete_file and the TS forms call assertContained on the mapped path"
 ```
 
 ---
@@ -1809,7 +1946,9 @@ Fixture schema (documented in the file's `$comment`):
 - `files`: `{ "<root-relative path>": "<utf-8 content>" }` created under the root.
 - `outside`: `{ "<path>": "<content>" }` created under a sibling `outside/` directory.
 - `symlinks`: `{ "<root-relative link path>": "root:<rel>" | "outside:<rel>" }`; the target may not exist (dangling).
-- `action`: one of `walk`, `construct`, `flush`, `execute`, `store-read`, `store-write`, `store-delete`, `vector-put`, `cache-write`.
+- `setup_flush`: when `true`, the harness constructs a corpus and calls `flush_index` during setup, so a valid snapshot exists before the action (installed after `files` and before `symlinks`).
+- `then_symlinks`: like `symlinks`, but installed *after* the construction phase of a `construct-then-flush` action — for cases where the symlink must not affect construction.
+- `action`: one of `walk`, `construct`, `flush`, `construct-then-flush`, `execute`, `store-read`, `store-write`, `store-delete`, `vector-put`, `cache-write`. `construct-then-flush` constructs (asserted to succeed, outside the expected-error assertion), installs `then_symlinks`, then calls `flush_index` inside it.
 - `plan`: for `execute`, a list of `{op, path, content?, expected_digest?}`; `expected_digest` defaults to 64 zeros (the executor carries but does not enforce it).
 - `id`: for `store-*`, the node id; `store-write` builds a node with that id, its kind, and title `"T"`.
 - `rel`: for `cache-write`, the relative cache path.
@@ -1818,6 +1957,10 @@ Fixture schema (documented in the file's `$comment`):
 - `absent` / `present`: `["root:<rel>" | "outside:<rel>"]` (lstat-level; a symlink counts as present).
 
 Node markdown used in `files` is the minimal valid document: `---\nid: <id>\nuid: "<32 hex>"\nkind: <kind>\ntitle: <title>\n---\n`.
+
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-ceccb8`
 
 - [ ] **Step 1: Write the fixture**
 
@@ -2067,12 +2210,12 @@ Node markdown used in `files` is the minimal valid document: `---\nid: <id>\nuid
       "expect": { "error": "ContainmentError" }
     },
     {
-      "name": "symlinked .nodes-index refuses flush and writes nothing outside",
+      "name": "symlinked .nodes-index installed after construction refuses flush and writes nothing outside",
       "root": "direct",
       "files": { "kind/a.md": "$node_a" },
       "outside": { "cache/.keep": "" },
-      "symlinks": { ".nodes-index": "outside:cache" },
-      "action": "flush",
+      "then_symlinks": { ".nodes-index": "outside:cache" },
+      "action": "construct-then-flush",
       "expect": { "error": "ContainmentError" },
       "absent": ["outside:cache/snapshot.py.json", "outside:cache/snapshot.ts.json", "outside:cache/snapshot.py.json.tmp", "outside:cache/snapshot.ts.json.tmp"]
     },
@@ -2097,14 +2240,15 @@ Node markdown used in `files` is the minimal valid document: `---\nid: <id>\nuid
       "absent": ["outside:vec/0000000000000000000000000000000000000000000000000000000000000000.json"]
     },
     {
-      "name": "stray snapshot tmp symlink: construction reads, flush refuses",
+      "name": "stray snapshot tmp symlink: construction reads the existing snapshot, flush refuses",
       "root": "direct",
-      "files": { "kind/a.md": "$node_a", ".nodes-index/.keep": "" },
+      "files": { "kind/a.md": "$node_a" },
+      "setup_flush": true,
       "outside": { "protected.txt": "keep" },
       "symlinks": { ".nodes-index/snapshot.py.json.tmp": "outside:protected.txt", ".nodes-index/snapshot.ts.json.tmp": "outside:protected.txt" },
-      "action": "flush",
+      "action": "construct-then-flush",
       "expect": { "error": "ContainmentError" },
-      "untouched": ["outside:protected.txt"]
+      "untouched": ["outside:protected.txt", "root:.nodes-index/snapshot.py.json", "root:.nodes-index/snapshot.ts.json"]
     },
     {
       "name": "single-segment cache path is a programming error and leaves .nodes-index.tmp alone",
@@ -2157,7 +2301,7 @@ Node markdown used in `files` is the minimal valid document: `---\nid: <id>\nuid
 }
 ```
 
-Notes for the harness author: `"$node_a"` / `"$node_b"` in any content string are replaced by the top-level `node_a` / `node_b` values; `"root": "missing"` means the harness passes a path that does not exist and creates nothing. The `flush` action constructs then calls `flush_index`; because both language snapshot names appear in symlink maps, each harness creates every listed symlink (the other language's name is a harmless extra file). Two `.md` symlinks that would collide with real files are never listed in the same case.
+Notes for the harness author: `"$node_a"` / `"$node_b"` in any content string are replaced by the top-level `node_a` / `node_b` values; `"root": "missing"` means the harness passes a path that does not exist and creates nothing. The `flush` action constructs then calls `flush_index` inside the error assertion (used where construction itself must refuse); `construct-then-flush` asserts construction separately so a refusal in the wrong phase fails the case. Because both language snapshot names appear in symlink maps and `untouched` lists, each harness creates every listed symlink and skips an `untouched` entry whose file does not exist (the other language's snapshot). In the stray-`.tmp` case `setup_flush` guarantees a valid snapshot exists, so a successful construction is a construction that read past the stray sibling; the per-language unit test in Task 2 pins the read tolerance directly. Two `.md` symlinks that would collide with real files are never listed in the same case.
 
 - [ ] **Step 2: Write the Python harness**
 
@@ -2168,6 +2312,8 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -2208,6 +2354,35 @@ def _resolve(spec: str, real_root: Path, outside: Path) -> Path:
     return (real_root if kind == "root" else outside) / rel
 
 
+def _symlinks_supported() -> bool:
+    """Probe once. Only a recognized unsupported-platform failure disables the symlink
+    cases (an explicit skip); any other failure is a real error and propagates."""
+    probe = Path(tempfile.mkdtemp(prefix="nodes-symlink-probe-"))
+    try:
+        (probe / "link").symlink_to(probe / "target")
+        return True
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            return False
+        raise
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
+
+
+SYMLINKS = _symlinks_supported()
+
+
+def _needs_symlinks(case: dict) -> bool:
+    return case["root"] == "symlink" or bool(case.get("symlinks")) or bool(case.get("then_symlinks"))
+
+
+def _install_symlinks(links: dict[str, str], real_root: Path, outside: Path) -> None:
+    for link, target in links.items():
+        link_path = real_root / link
+        link_path.parent.mkdir(parents=True, exist_ok=True)
+        link_path.symlink_to(_resolve(target, real_root, outside))
+
+
 def _materialize(case: dict, tmp_path: Path) -> tuple[Path, Path, Path]:
     """Returns (root as the action should address it, real root, outside)."""
     outside = tmp_path / "outside"
@@ -2218,21 +2393,14 @@ def _materialize(case: dict, tmp_path: Path) -> tuple[Path, Path, Path]:
     real_root.mkdir()
     for rel, text in case.get("files", {}).items():
         _write(real_root, rel, text)
+    if case.get("setup_flush"):
+        Corpus(real_root).flush_index()
     for rel, text in case.get("outside", {}).items():
         _write(outside, rel, text)
-    for link, target in case.get("symlinks", {}).items():
-        link_path = real_root / link
-        link_path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            link_path.symlink_to(_resolve(target, real_root, outside))
-        except (NotImplementedError, OSError) as exc:
-            pytest.skip(f"symlink creation unsupported: {exc}")
+    _install_symlinks(case.get("symlinks", {}), real_root, outside)
     if case["root"] == "symlink":
         link_root = tmp_path / "link-root"
-        try:
-            link_root.symlink_to(real_root)
-        except (NotImplementedError, OSError) as exc:
-            pytest.skip(f"symlink creation unsupported: {exc}")
+        link_root.symlink_to(real_root)
         return link_root, real_root, outside
     return real_root, real_root, outside
 
@@ -2251,7 +2419,7 @@ def _plan(case: dict) -> list[WriteOp]:
     return ops
 
 
-def _act(case: dict, root: Path) -> list[str] | None:
+def _act(case: dict, root: Path, real_root: Path, outside: Path) -> list[str] | None:
     action = case["action"]
     if action == "walk":
         return [f.path for f in iter_corpus_files(root)]
@@ -2259,6 +2427,10 @@ def _act(case: dict, root: Path) -> list[str] | None:
         Corpus(root)
     elif action == "flush":
         Corpus(root).flush_index()
+    elif action == "construct-then-flush":
+        corpus = case["_constructed"]  # built by the test body, outside the error assertion
+        _install_symlinks(case.get("then_symlinks", {}), real_root, outside)
+        corpus.flush_index()
     elif action == "execute":
         DefaultExecutor(root).execute(_plan(case))
     elif action == "store-read":
@@ -2278,24 +2450,34 @@ def _act(case: dict, root: Path) -> list[str] | None:
 
 
 def _snapshot_bytes(case: dict, real_root: Path, outside: Path) -> dict[str, bytes]:
-    return {spec: _resolve(spec, real_root, outside).read_bytes() for spec in case.get("untouched", [])}
+    out: dict[str, bytes] = {}
+    for spec in case.get("untouched", []):
+        path = _resolve(spec, real_root, outside)
+        if path.exists():  # the other language's snapshot name is listed too and need not exist
+            out[spec] = path.read_bytes()
+    return out
 
 
 @pytest.mark.parametrize("case", ORACLE["cases"], ids=[c["name"] for c in ORACLE["cases"]])
 def test_containment_matches_committed_oracle(case, tmp_path):
+    if _needs_symlinks(case) and not SYMLINKS:
+        pytest.skip("symlinks unsupported on this platform")
+    case = dict(case)
     root, real_root, outside = _materialize(case, tmp_path)
+    if case["action"] == "construct-then-flush":
+        case["_constructed"] = Corpus(root)  # a refusal here fails the case in the construction phase
     before = _snapshot_bytes(case, real_root, outside)
     expect = case["expect"]
 
     if "error" in expect:
         with pytest.raises(ERRORS[expect["error"]]) as info:
-            _act(case, root)
+            _act(case, root, real_root, outside)
         if "index" in expect:
             assert info.value.index == expect["index"]
         if "applied" in expect:
             assert info.value.applied == expect["applied"]
     else:
-        walked = _act(case, root)
+        walked = _act(case, root, real_root, outside)
         if "walk" in expect:
             assert walked == expect["walk"]
 
@@ -2308,7 +2490,7 @@ def test_containment_matches_committed_oracle(case, tmp_path):
 
 - [ ] **Step 3: Run the Python harness**
 
-Run: `cd python && uv run --frozen pytest tests/test_containment_parity.py -q`
+Run: `just test-fast` (the new file is the affected selection)
 Expected: all cases PASS. A failing case means Tasks 1–5 missed something the oracle pins — fix the implementation, not the oracle, unless the oracle contradicts the spec.
 
 - [ ] **Step 4: Write the TypeScript harness**
@@ -2338,8 +2520,10 @@ interface Case {
   name: string;
   root: "direct" | "symlink" | "missing";
   files?: Record<string, string>;
+  setup_flush?: boolean;
   outside?: Record<string, string>;
   symlinks?: Record<string, string>;
+  then_symlinks?: Record<string, string>;
   action: string;
   plan?: Array<{ op: string; path: string; content?: string; expected_digest?: string }>;
   id?: string;
@@ -2369,6 +2553,25 @@ function lexists(path: string): boolean {
   }
 }
 
+/** Probe once. Only a recognized unsupported platform disables the symlink cases (an
+ * explicit skip); any other failure is a real error and propagates. */
+const SYMLINKS = (() => {
+  const probe = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
+  try {
+    symlinkSync(join(probe, "target"), join(probe, "link"));
+    return true;
+  } catch (e) {
+    if (process.platform === "win32" && (e as NodeJS.ErrnoException).code === "EPERM") return false;
+    throw e;
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
+  }
+})();
+
+function needsSymlinks(c: Case): boolean {
+  return c.root === "symlink" || Boolean(c.symlinks && Object.keys(c.symlinks).length) || Boolean(c.then_symlinks && Object.keys(c.then_symlinks).length);
+}
+
 let tmp: string;
 beforeEach(() => {
   tmp = mkdtempSync(join(tmpdir(), "nodes-containment-"));
@@ -2382,8 +2585,15 @@ function resolveSpec(spec: string, realRoot: string, outside: string): string {
   return join(kind === "root" ? realRoot : outside, rel);
 }
 
-/** Returns null when the platform cannot create a needed symlink (the case is skipped). */
-function materialize(c: Case): { root: string; realRoot: string; outside: string } | null {
+function installSymlinks(links: Record<string, string> | undefined, realRoot: string, outside: string): void {
+  for (const [link, target] of Object.entries(links ?? {})) {
+    const linkPath = join(realRoot, link);
+    mkdirSync(dirname(linkPath), { recursive: true });
+    symlinkSync(resolveSpec(target, realRoot, outside), linkPath);
+  }
+}
+
+function materialize(c: Case): { root: string; realRoot: string; outside: string } {
   const outside = join(tmp, "outside");
   mkdirSync(outside);
   if (c.root === "missing") {
@@ -2393,23 +2603,12 @@ function materialize(c: Case): { root: string; realRoot: string; outside: string
   const realRoot = join(tmp, "real");
   mkdirSync(realRoot);
   for (const [rel, text] of Object.entries(c.files ?? {})) write(realRoot, rel, text);
+  if (c.setup_flush) new Corpus(realRoot).flushIndex();
   for (const [rel, text] of Object.entries(c.outside ?? {})) write(outside, rel, text);
-  for (const [link, target] of Object.entries(c.symlinks ?? {})) {
-    const linkPath = join(realRoot, link);
-    mkdirSync(dirname(linkPath), { recursive: true });
-    try {
-      symlinkSync(resolveSpec(target, realRoot, outside), linkPath);
-    } catch {
-      return null;
-    }
-  }
+  installSymlinks(c.symlinks, realRoot, outside);
   if (c.root === "symlink") {
     const linkRoot = join(tmp, "link-root");
-    try {
-      symlinkSync(realRoot, linkRoot);
-    } catch {
-      return null;
-    }
+    symlinkSync(realRoot, linkRoot);
     return { root: linkRoot, realRoot, outside };
   }
   return { root: realRoot, realRoot, outside };
@@ -2425,7 +2624,7 @@ function plan(c: Case): WriteOp[] {
   });
 }
 
-function act(c: Case, root: string): string[] | null {
+function act(c: Case, root: string, realRoot: string, outside: string, constructed: Corpus | null): string[] | null {
   switch (c.action) {
     case "walk":
       return iterCorpusFiles(root).map((f) => f.path);
@@ -2434,6 +2633,10 @@ function act(c: Case, root: string): string[] | null {
       return null;
     case "flush":
       new Corpus(root).flushIndex();
+      return null;
+    case "construct-then-flush":
+      installSymlinks(c.then_symlinks, realRoot, outside);
+      (constructed as Corpus).flushIndex(); // constructed by the test body, outside the error assertion
       return null;
     case "execute":
       new DefaultExecutor(root).execute(plan(c));
@@ -2484,22 +2687,25 @@ function expectError(name: string, e: unknown): void {
 
 function snapshotBytes(c: Case, realRoot: string, outside: string): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const spec of c.untouched ?? []) out[spec] = readFileSync(resolveSpec(spec, realRoot, outside), "utf-8");
+  for (const spec of c.untouched ?? []) {
+    const path = resolveSpec(spec, realRoot, outside);
+    if (existsSync(path)) out[spec] = readFileSync(path, "utf-8"); // the other language's snapshot name is listed too
+  }
   return out;
 }
 
 describe("containment parity", () => {
   for (const c of ORACLE.cases as Case[]) {
-    it(c.name, () => {
-      const m = materialize(c);
-      if (m === null) return; // symlink unsupported on this platform
-      const { root, realRoot, outside } = m;
+    it.skipIf(needsSymlinks(c) && !SYMLINKS)(c.name, () => {
+      const { root, realRoot, outside } = materialize(c);
+      // Construction phase of construct-then-flush: a refusal here fails the case here.
+      const constructed = c.action === "construct-then-flush" ? new Corpus(root) : null;
       const before = snapshotBytes(c, realRoot, outside);
 
       if (c.expect.error !== undefined) {
         let caught: unknown;
         try {
-          act(c, root);
+          act(c, root, realRoot, outside, constructed);
         } catch (e) {
           caught = e;
         }
@@ -2508,7 +2714,7 @@ describe("containment parity", () => {
         if (c.expect.index !== undefined) expect((caught as ExecutionError).index).toBe(c.expect.index);
         if (c.expect.applied !== undefined) expect((caught as ExecutionError).applied).toBe(c.expect.applied);
       } else {
-        const walked = act(c, root);
+        const walked = act(c, root, realRoot, outside, constructed);
         if (c.expect.walk !== undefined) expect(walked).toEqual(c.expect.walk);
       }
 
@@ -2522,22 +2728,16 @@ describe("containment parity", () => {
 
 - [ ] **Step 5: Run the TypeScript harness**
 
-Run: `cd ts && npx vitest run tests/containment_parity.test.ts`
+Run: `just test-fast`
 Expected: all cases PASS.
 
-- [ ] **Step 6: Gate and commit**
+- [ ] **Step 6: Gate and close the child record**
 
 Run: `just gate`
-Expected: green.
+Expected: check green, Python and TypeScript suites green. No commit — A commits once, in Task 7.
 
 ```bash
-git add fixtures/containment.oracle.json python/tests/test_containment_parity.py ts/tests/containment_parity.test.ts
-git commit -m "test: shared containment oracle materialized by both kernels
-
-Symlinks are not checkout-portable, so the tier-1 fixture describes each
-filesystem — files, outside artifacts, symlinks, root spelling — and one
-action; each language builds it in a temp dir and asserts the outcome,
-including byte-identical protected artifacts."
+tasks done nodes-ceccb8 "containment.oracle.json with its Python and TypeScript harnesses; every case passes on both"
 ```
 
 ---
@@ -2552,13 +2752,19 @@ including byte-identical protected artifacts."
 
 **Interfaces:** none — documentation and task records.
 
+- [ ] **Step 0: Claim the child record**
+
+Run: `tasks start nodes-c1fde3`
+
 - [ ] **Step 1: STANDARD §4.1**
 
 Replace the membership bullet (lines 106–110) with:
 
 ```markdown
 - *(2.0)* Corpus membership (the files a corpus walk considers): regular `*.md` files
-  under the root, recursively; walk order is sorted by root-relative POSIX path.
+  under the root, recursively; walk order is sorted by root-relative POSIX path in
+  Unicode code-point order (cf. §8.2, §9.1). The root-relative path is the literal
+  filename with the platform separator mapped to `/`; no other character is rewritten.
   `.nodes-index/` is the **reserved namespace** — nodes' private cache directory, as the
   root's direct child only — and MUST be skipped; a nested `<kind>/.nodes-index/` is not
   reserved and is walked. The reserved list is exactly `[".nodes-index/"]`; changes to it
@@ -2641,6 +2847,11 @@ In `docs/designs/2026-09-11-nodes-reserved-paths-and-containment-design.md` §4:
 
 - In §5's table, replace the row "snapshot manifest row with `a\b.md` or `kind/a:b.md` | snapshot rejected as malformed (rebuild), matching the plan rule" with a sentence under the table: "The manifest-row arm of the portable-path rule is pinned per language in the snapshot-load tests, since a snapshot document is language-specific."
 
+- In §3 (walk), after "sorted by root-relative POSIX path in code-point order", add: "(TypeScript's sort moved to `compareCodepoints` with this sub-task; sub-task C's collation item is thereby done for the walk and is struck from its scope.)"
+- In §3, add a bullet: "keep the literal filename when deriving the root-relative path — TypeScript's `relPosix` splits on the platform separator only, so a POSIX filename containing `\\` is reported verbatim and later reads address exactly the path the walk inspected."
+
+Also run `tasks note nodes-cd59f0 "A landed the code-point walk sort in TypeScript (compareCodepoints); C's collation item now covers only the STANDARD wording and Python/TS parity of any remaining sorts"` so sub-task C's record reflects it.
+
 Update the spec's status line to `**Status:** implemented on branch \`nodes-2.0\` (2026-09-11); Science sign-off on the seam amendment pending`.
 
 - [ ] **Step 5: Verify the standard's marker set and gate**
@@ -2651,19 +2862,35 @@ Expected: the pending line plus the D markers (§7 ×3, §8.2, §11.2) plus the 
 Run: `just gate`
 Expected: green (docs changes do not alter tests; the gate also runs `tasks check`).
 
-- [ ] **Step 6: Close the task and commit**
+- [ ] **Step 6: Close the records and make A's single commit**
+
+Every child (Tasks 1–6) is already `done` in the working tree. Close this one and the parent, then commit everything A touched — code, tests, fixture, STANDARD, both design docs, and the task records — as one commit, so the branch never holds a commit where code and standard disagree.
 
 ```bash
+tasks done nodes-c1fde3 "STANDARD §§4.1, 6, 7, 10, 11.2 marked (2.0); seam §3 amended with Science sign-off pending and the process exception in §8; spec reconciled"
 tasks done nodes-01111b "Reserved-path contract, containment (walk, executor preflight, Store, caches), portable path rule, containment.oracle.json with both harnesses; STANDARD §§4.1, 6, 7, 10, 11.2 marked (2.0); seam §3 amended with Science sign-off pending and the process exception recorded in §8"
-git add docs/STANDARD.md docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md docs/designs/2026-09-11-nodes-reserved-paths-and-containment-design.md tasks/
-git commit -m "docs(standard): reserved namespace, non-Markdown guarantee, containment, portable paths (2.0)
+tasks check
+git add -A python ts fixtures docs tasks
+git status --short   # review: nothing outside python/, ts/, fixtures/, docs/, tasks/
+git commit -m "feat!: reserved-path contract and containment across walk, executor, store, and caches
+
+Nodes never touches non-Markdown content outside its root-relative
+reserved namespace, and never follows a symlink below the corpus root on
+any path it walks, reads, writes, or deletes. One dependency-neutral
+paths module per language holds the portable root-relative path rule,
+assert_contained, and root-aware cache helpers; validate_plan refuses
+non-portable and non-.md targets; DefaultExecutor preflights the whole
+plan before any effect; Store's direct paths and the snapshot and vector
+caches run the same check. Both walks propagate filesystem failures and
+sort by code point. containment.oracle.json describes each case for
+both harnesses to materialize.
 
 STANDARD §4.1 states the two guarantees, the hard-link precondition, the
-closed reserved list, and the portable root-relative path rule; §6 names
+closed reserved list, and the portable path rule; §6 names
 ContainmentError; §7 and §10 carry the executor preflight and cache
-containment; §11.2 lists containment.oracle.json. The seam design's §3
-executor row and lexical rule are amended, with Science sign-off pending
-and the decision to proceed recorded in §8.
+containment; §11.2 lists the oracle. The seam design's §3 executor row
+and lexical rule are amended, with Science sign-off pending and the
+decision to proceed recorded in §8.
 
-Closes nodes-01111b."
+Closes nodes-01111b and its seven step tasks."
 ```
