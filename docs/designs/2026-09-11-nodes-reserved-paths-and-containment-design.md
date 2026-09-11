@@ -130,9 +130,19 @@ arbitrary absolute path, and inferring a root from the file's parent would miss 
 symlinked ancestor. Their signatures become root-aware — `read_json(root, rel_path)` and
 `write_json_atomic(root, rel_path, obj)`, likewise in TypeScript where both are public
 exports — and `rel_path` must be a portable root-relative path (§2, without the `.md`
-rule) whose first segment is the reserved namespace; anything else is a `ValueError` /
-`TypeError` programming error, not a containment refusal. `snapshot_path` returns that
-relative path. `VectorCache` builds its entry paths the same way and calls the helpers.
+rule) **strictly beneath** the reserved namespace: first segment `.nodes-index` and at
+least one further segment. The single-segment `.nodes-index` is refused because its
+temporary sibling would be `.nodes-index.tmp` — outside the reserved directory, where it
+could overwrite a protected artifact. Anything else is a `ValueError` / `TypeError`
+programming error, not a containment refusal. `snapshot_path` returns that relative
+path. `VectorCache` builds its entry paths the same way and calls the helpers.
+
+The helpers live below both consumers: `snapshot.py` already imports `VectorIndex` from
+`similarity.py`, so `VectorCache` importing the helpers back from `snapshot.py` would be
+a cycle. `assert_contained`, the portable-path predicate, `ContainmentError`'s use, and
+the two JSON helpers go in a dependency-neutral module — `nodes.core.paths` /
+`ts/src/paths.ts` — that imports only `errors`. `snapshot` and `similarity` import from
+it; existing public export names are re-exported unchanged from where they are today.
 
 Reads check the final path only; writes check the final path *and* the `.tmp` sibling,
 before any `mkdir`, write, or rename. A read never touches the sibling, so a stray
@@ -176,6 +186,7 @@ a temporary directory and asserts the outcome. Cases:
 | suffix rule: `kind/a.txt`, `kind/a.md/` | `PlanRefusedError` |
 | snapshot manifest row with `a\b.md` or `kind/a:b.md` | snapshot rejected as malformed (rebuild), matching the plan rule |
 | `.nodes-index/snapshot.<lang>.json.tmp` is a stray symlink | construction reads the snapshot normally; `flush_index` raises `ContainmentError` and the target is unchanged |
+| `write_json_atomic(root, ".nodes-index", obj)` with a protected `.nodes-index.tmp` present | refused as a programming error; `.nodes-index.tmp` byte-identical |
 | direct plan creating `corpus.yaml`, replacing `<kind>/notes.txt` | `PlanRefusedError`; both untouched |
 | `.nodes-index` is a symlink to an outside directory | construction and `flush_index` raise `ContainmentError`; nothing written outside |
 | `.nodes-index/snapshot.<lang>.json` is a file symlink | construction raises `ContainmentError`; target unread and unchanged |
@@ -208,8 +219,9 @@ exercises (create), so seam §8 requires Science sign-off. Two rows go in the lo
 
 ## 7. Files
 
-`python/src/nodes/core/snapshot.py` (walk, cache I/O), `similarity.py` (`VectorCache`),
-`store.py`, `write_plan.py`, `errors.py`; `ts/src/snapshot.ts`, `similarity.ts`,
+`python/src/nodes/core/paths.py` (new: predicate, `assert_contained`, JSON helpers),
+`snapshot.py` (walk; cache calls), `similarity.py` (`VectorCache`), `store.py`,
+`write_plan.py`, `errors.py`; `ts/src/paths.ts` (new), `snapshot.ts`, `similarity.ts`,
 `store.ts`, `write-plan.ts`, `errors.ts`, `index.ts` (export);
 `fixtures/containment.oracle.json`; one parity test per language plus permission cases;
 `docs/STANDARD.md` §§4.1, 7, 11.2, and the error list; the seam design §§3, 8.
