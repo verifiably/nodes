@@ -1,7 +1,7 @@
 # Digest-id hazards — design
 
 **Date:** 2026-09-11
-**Status:** draft for review; implementation has not started
+**Status:** reviewed design, corrections incorporated; implementation has not started
 **Task:** `nodes-cd59f0`, sub-task C of `nodes-ce28b8`
 **Sources:** `2026-09-11-nodes-2.0-remainder-design.md` §C;
 `2026-08-03-nodes-under-the-system-redesign-design.md` §2.4.
@@ -9,7 +9,7 @@
 
 ## 1. Decisions and alternatives
 
-This draft recommends:
+Decisions after review:
 
 - Preserve existing exact-path, in-place renames; refuse a rename whose destination
   differs in spelling but folds to an occupied path, including its own source path.
@@ -22,10 +22,11 @@ This draft recommends:
 Uniformly refusing every same-key rename is simpler to describe but would remove the
 safe exact-path replacement already implemented in both kernels. Supporting case-only
 renames instead would require a new execution strategy whose behavior differs between
-filesystems. Neither change is needed here.
+filesystems. This design retains exact-path replacement and tightens case-only rename
+admission; the latter is a breaking restriction on case-sensitive volumes (§4).
 
 An `error` severity for existing collisions is a possible policy alternative. This
-draft chooses `warning` to distinguish an existing portability hazard from content that
+design chooses `warning` to distinguish an existing portability hazard from content that
 cannot be read. The code and severity are tier 2 and require explicit fixture coverage.
 
 ## 2. Identity and path definitions
@@ -33,8 +34,12 @@ cannot be read. The code and severity are tier 2 and require explicit fixture co
 A node is **well-placed** when the literal root-relative path of its file equals the
 canonical mapped path of its live id, exactly. The mapping remains
 `kind/slug.md`, replacing every `:` in the slug with `__`. C defines this predicate;
-B owns applying it during construction and the treatment of misplaced members.
-C introduces no placement rejection or `path-mismatch` finding.
+B owns disk-member admission and the treatment of misplaced members. The snapshot
+validator already rejects manifest paths that differ from the mapped id path; C feeds
+that existing check with the shared mapping. Rejection discards the cache and triggers
+a cold rebuild, which currently admits misplaced files. Changed-file reconciliation
+also lacks placement checks. B must enforce placement on both disk-admission paths;
+C introduces no new placement rejection or `path-mismatch` finding.
 
 The **collision key** is NFC followed by default case folding of that mapped path.
 Two distinct live claimants collide when their keys are equal. Physical filenames and
@@ -60,9 +65,12 @@ Examples:
 Move the existing id-to-relative-path calculation into the dependency-neutral `paths`
 module in each language. Python's Store and snapshot validator currently duplicate it;
 TypeScript's implementation currently lives in `snapshot.ts`. Store, snapshot validation,
-Corpus and collision detection use the shared calculation. Preserve TypeScript's existing
-`pathForNodeId` exports from `snapshot.ts` and the package index through re-exports.
+Corpus and collision detection use the shared calculation. Keep TypeScript's public
+package-index export of `pathForNodeId`, sourced directly from `paths.ts`; remove the
+`snapshot.ts` export. Update `store.ts`, `corpus.ts`, `snapshot.ts`, `index.ts`, and the
+snapshot-load test imports. There is no module-path compatibility re-export.
 The paths module may import `ids` and `errors`; neither imports the structural index.
+Update both paths module dependency comments to match.
 
 Proposed shared names are `path_for_node_id` / `pathForNodeId` and
 `path_collision_key` / `pathCollisionKey`. Keys accept ids, not arbitrary disk paths.
@@ -70,7 +78,8 @@ Python `Store.rel_path` delegates to the shared mapping rather than retaining a 
 formula. Existing public Store path helpers keep their behavior.
 
 The structural Index gains a private derived map from collision key to a set of live
-uids. Update it with `upsert` and removal, including removal of empty buckets. Rebuild it
+uids. Populate it in `upsert`; remove the old claim in `_drop` / `drop`, which is shared
+by replacement and removal, and delete empty buckets there. Rebuild it
 from entries during snapshot deserialization; do not serialize it or bump snapshot schema
 versions. A bucket may contain several uids: construction must be able to represent a
 collision rather than silently select one winner.
@@ -125,7 +134,12 @@ work or executor invocation:
 The exact-path branch already exists in both Corpus implementations and never emits a
 delete for that file. Keep it. Do not extend it to differently spelled paths: the
 ordinary create/delete plan is unsuitable when those spellings address one physical file.
-Renaming out of an existing collision and deleting a claimant remain permitted.
+Case-only rename currently succeeds on a case-sensitive volume, so refusing it is a
+2.0 tightening. Two renames through a free temporary id remain available:
+`kind:A` → `kind:tmp` → `kind:a`. Deprecated ids do not occupy path buckets and identity
+checks compare exact strings, so the old `kind:A` alias does not block `kind:a`. Pin
+this sequence in a regression test. Renaming out of an existing collision and deleting
+a claimant remain permitted.
 Direct Store and executor APIs retain their existing lower-level responsibilities;
 they do not have a corpus identity index and cannot enforce corpus admission policy.
 
@@ -145,8 +159,11 @@ through the derived map, with no separately cached finding list.
 
 Strict rebuild and reconciliation accept well-placed case-variant claimants with
 distinct uids and otherwise legal identity claims. This is a latent portability hazard,
-not a duplicate uid. B later applies its own placement/exclusion rules and consumes the
-same reporting query for retained members.
+not a duplicate uid. At rest, two well-placed case variants require a case-sensitive
+volume; the exact `:`/`__` pair cannot occupy two well-placed files on any volume.
+Until B lands, cold rebuild and changed-file reconciliation also accept misplaced
+claimants, as today. B later applies its own placement/exclusion rules and consumes
+the same reporting query for retained members.
 
 ## 6. Uid opacity and remaining ordering
 
@@ -155,11 +172,18 @@ treats supplied uid strings opaquely and minting policy belongs to a profile. Ex
 UUID-hex convenience defaults remain available; do not change default minting or impose
 hex, UUID, digest, case, or normalization validation on supplied uids.
 
-Both current Node schemas accept an empty uid. Preserve that behavior and fix Python
-`Index.resolve_uid`, which currently uses `live.get(ref) or deprecated.get(ref)` and
-therefore mistakes an empty uid for absence. Absence is `None` / `null`, never truthiness.
+Both current Node schemas accept an empty uid. Reject it in both languages with the
+kernel `ValidationError` at node construction and Markdown parsing boundaries. Non-empty
+is a presence constraint, not a shape constraint: do not trim, normalize, or otherwise
+restrict supplied strings. This is another 2.0 tightening. Reject empty uids in restored
+structural entries too, so an old snapshot cannot bypass node validation; the normal
+invalid-cache fallback then parses the documents and reports their actual validity.
+
+Fix Python `Index.resolve_uid`, which currently uses
+`live.get(ref) or deprecated.get(ref)`: absence is `None` / `null`, never truthiness.
 Exercise live and deprecated resolution, identity refusal and snapshot round trips for
-empty and non-hex uids.
+non-empty opaque uids, and rejection of empty uids. A focused lower-level test may
+pin the explicit-absence lookup without representing an empty uid as a valid node.
 
 A already delivered the walk's code-point sort and STANDARD §4.1 wording. Remaining
 relevant TypeScript sorts are Corpus manifest output, neighbor uid order and rename
@@ -171,14 +195,15 @@ selection and unrelated convenience ordering are outside C.
 ## 7. Fixtures and verification
 
 Add a shared `path-collision.oracle.json` containing logical node/id/uid descriptions,
-expected keys, mutation outcomes, reporting rows and ordering expectations. Do not commit
+expected keys, collision-related mutation outcomes and reporting rows. Do not commit
 case-variant or misplaced Markdown claimants. The oracle has three kinds of coverage:
 
 - Pure Index cases run everywhere: case variants, exact `:`/`__` aliasing, three-member
   buckets, distinct kind directories, deprecated-only aliases, replacement admission,
   removal/rename bucket maintenance and deserialization.
 - Filesystem mutation cases run everywhere with one existing claimant: refused second
-  add, refused case-only rename, safe exact-path rename, and ordinary rename. Refusal
+  add, refused case-only rename, safe exact-path rename, ordinary rename and the
+  temporary-id workaround. Refusal
   tests assert unchanged documents/indexes and no executor or embedder/cache effects.
 - A constructed, well-placed case-variant corpus pins public `check()` findings,
   replacement, repair by rename/delete, cold rebuild, cached reload and externally added
@@ -190,9 +215,12 @@ The exact `:`/`__` collision cannot have two well-placed files at rest, so its d
 case stays in memory and its refusal/safe-rename cases use one on-disk file. Every platform
 still runs the collision algorithm and mutation-refusal oracle arms.
 
-Add opaque-uid coverage, including non-BMP versus BMP uid ordering in neighbors and a
-captured rename plan with multiple referrers. Use semantic plan comparisons, as the
-existing rename oracle does; do not depend on language-specific serialized byte formatting.
+Keep uid validation and collation out of the collision oracle. Add opaque-uid coverage
+to node, snapshot and neighbor tests, with a small `uid.oracle.json` pinning accepted
+non-empty strings and empty-string rejection. Extend the existing rename corpus and
+`write-plan.rename.canonical.json` / `corpus.rename.canonical.json` with non-BMP versus
+BMP referrer uids to pin the captured rename plan order. Use semantic plan comparisons,
+as those existing rename tests do; do not depend on language-specific serialized byte formatting.
 Snapshot tests must verify derived buckets after both full restore and incremental
 reconciliation. No Python-only finding, error taxonomy or persisted index field is added.
 
@@ -201,14 +229,14 @@ reconciliation. No Python-only finding, error taxonomy or persisted index field 
 C is tier 1 (admission, rename and identity) plus tier 2 (findings). Its implementation,
 tests, oracle and STANDARD amendments land together in one commit on `nodes-2.0`:
 
-- §2 uid field: opacity/profile wording.
+- §2 uid field: non-empty presence constraint and opacity/profile wording.
 - §3 and §7: identity versus path admission; construction acceptance; exact-path rename
   and differently spelled same-key refusal; code-point ordering of deterministic uid
   sequences.
 - §4.1: well-placed and mapped-path collision definitions, retaining A's walk ordering.
 - §6: path-admission refusal also uses `CollisionError`.
 - §8.2: new finding row and updated exhaustive structural-finding inventory.
-- §11.2: the new oracle.
+- §11.2: collision and uid oracles, plus the existing rename plan/corpus ordering fixture.
 
 Mark edited clauses `*(2.0)*`, retaining header 1.2 and the pending note for E. Amend the
 seam's rename description and amendment log to record the existing exact-path replace
