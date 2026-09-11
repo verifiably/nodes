@@ -1,10 +1,21 @@
 /** Path rules shared by the walk, the write plan, the store, and the caches.
- * Imports only `errors`, so `snapshot` and `similarity` can both depend on it. */
+ * Imports only `ids` and `errors`, so `snapshot` and `similarity` can both depend on it. */
 import { type Stats, lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { ContainmentError } from "./errors.js";
+import { NodeId } from "./ids.js";
 
 export const RESERVED_NAMESPACE = ".nodes-index";
+
+export function pathForNodeId(nodeId: string): string {
+  const nid = NodeId.parse(nodeId);
+  return `${nid.kind}/${nid.slug.replaceAll(":", "__")}.md`;
+}
+
+export function pathCollisionKey(nodeId: string): string {
+  // Valid ids are ASCII; NFC is identity and lowercase equals casefold.
+  return pathForNodeId(nodeId).toLowerCase();
+}
 
 /** The lexical rule for instruction and cache paths: split on `/` only,
  * no empty/`.`/`..` segment, no segment carrying `\` or `:` (a canonical segment never

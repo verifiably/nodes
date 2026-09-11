@@ -73,7 +73,7 @@ export {
   RESERVED_NAMESPACE,
   validatePlan,
 } from "./write-plan.js";
-export { assertCachePath, assertContained, isPortableRelativePath } from "./paths.js";
+export { assertCachePath, assertContained, isPortableRelativePath, pathForNodeId } from "./paths.js";
 export { Corpus, type Finding } from "./corpus.js";
 export {
   type CorpusFile,
@@ -88,7 +88,6 @@ export {
   iterCorpusFiles,
   listCorpusFileStats,
   loadSnapshot,
-  pathForNodeId,
   readCorpusFingerprint,
   readJson,
   sameCorpusFingerprint,

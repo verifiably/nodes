@@ -18,6 +18,8 @@ import {
   assertCachePath,
   assertContained,
   isPortableRelativePath,
+  pathCollisionKey,
+  pathForNodeId,
   readJson,
   writeJsonAtomic,
 } from "../src/paths.js";
@@ -235,4 +237,11 @@ describe("cache helpers", () => {
     symlinkSync(target, join(root, ".nodes-index", "a.json"));
     expect(() => readJson(root, ".nodes-index/a.json")).toThrow(ContainmentError);
   });
+});
+
+it("maps validated ids and folds the mapped path", () => {
+  expect(pathForNodeId("gene:BRCA1:v2")).toBe("gene/BRCA1__v2.md");
+  expect(pathCollisionKey("gene:BRCA1:v2")).toBe("gene/brca1__v2.md");
+  expect(pathCollisionKey("gene:BRCA1:v2")).toBe(pathCollisionKey("gene:brca1__v2"));
+  expect(pathCollisionKey("other:a")).not.toBe(pathCollisionKey("gene:a"));
 });

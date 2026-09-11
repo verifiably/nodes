@@ -4,9 +4,8 @@ from pathlib import Path
 
 from nodes.core.errors import RefError
 from nodes.core.frontmatter import node_from_markdown, node_to_markdown
-from nodes.core.ids import NodeId
 from nodes.core.node import Node
-from nodes.core.paths import assert_contained
+from nodes.core.paths import assert_contained, path_for_node_id
 from nodes.core.snapshot import iter_corpus_files
 
 
@@ -20,8 +19,7 @@ class Store:
         self.root = Path(root)
 
     def rel_path(self, node_id: str) -> str:
-        nid = NodeId.parse(node_id)
-        return f"{nid.kind}/{nid.slug.replace(':', '__')}.md"
+        return path_for_node_id(node_id)
 
     def path_for(self, node_id: str) -> Path:
         return self.root / self.rel_path(node_id)

@@ -4,6 +4,8 @@ import json
 
 import pytest
 
+from nodes.core.corpus import Corpus
+from nodes.core.errors import ValidationError
 from nodes.core.structural_index import Index
 from nodes.core.node import Node
 from nodes.core.relations import relates_to
@@ -12,12 +14,14 @@ from nodes.core.snapshot import (
     ManifestEntry,
     SNAPSHOT_REL_PATH,
     Snapshot,
+    hash_bytes,
     load_snapshot,
     read_json,
     snapshot_path,
     write_json_atomic,
     write_snapshot,
 )
+from nodes.core.store import Store
 
 
 def _nodes() -> list[Node]:
@@ -443,3 +447,20 @@ def test_embedder_vector_id_by_uid_mismatch_returns_none(tmp_path):
     write_json_atomic(tmp_path, SNAPSHOT_REL_PATH, doc)
 
     assert load_snapshot(tmp_path, "model-v1") is None
+
+
+def test_old_empty_uid_snapshot_cannot_bypass_document_validation(tmp_path):
+    # Mutate a valid Node after construction to reproduce a cache written by the old
+    # schema; no production code gains a bypass.
+    node = Node(id="topic:a", uid="valid", kind="topic", title="A")
+    node.uid = ""
+    Store(tmp_path).write_file(node)
+    data = (tmp_path / "topic/a.md").read_bytes()
+    manifest = [ManifestEntry(path="topic/a.md", sha256=hash_bytes(data), uid="")]
+    write_snapshot(tmp_path, manifest, Index.build([node]), SearchIndex.build([node]), None)
+    assert load_snapshot(tmp_path, None) is None
+    with pytest.raises(ValidationError):
+        Corpus(tmp_path)
+    node.uid = "repaired"
+    Store(tmp_path).write_file(node)
+    assert Corpus(tmp_path).get("topic:a").uid == "repaired"

@@ -14,6 +14,8 @@ from nodes.core.paths import (
     assert_cache_path,
     assert_contained,
     is_portable_relative_path,
+    path_collision_key,
+    path_for_node_id,
     read_json,
     write_json_atomic,
 )
@@ -258,3 +260,10 @@ def test_cache_read_refuses_symlinked_file(tmp_path):
     (tmp_path / ".nodes-index" / "a.json").symlink_to(target)
     with pytest.raises(ContainmentError):
         read_json(tmp_path, ".nodes-index/a.json")
+
+
+def test_id_mapping_and_collision_key():
+    assert path_for_node_id("gene:BRCA1:v2") == "gene/BRCA1__v2.md"
+    assert path_collision_key("gene:BRCA1:v2") == "gene/brca1__v2.md"
+    assert path_collision_key("gene:BRCA1:v2") == path_collision_key("gene:brca1__v2")
+    assert path_collision_key("other:a") != path_collision_key("gene:a")

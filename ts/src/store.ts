@@ -3,8 +3,8 @@ import { dirname, join } from "node:path";
 import { RefError } from "./errors.js";
 import { nodeFromMarkdown, nodeToMarkdown } from "./frontmatter.js";
 import type { Node } from "./node.js";
-import { assertContained } from "./paths.js";
-import { hashBytes, listCorpusFileStats, pathForNodeId } from "./snapshot.js";
+import { assertContained, pathForNodeId } from "./paths.js";
+import { hashBytes, listCorpusFileStats } from "./snapshot.js";
 
 interface CachedFile {
   readonly mtimeMs: number;

@@ -2,6 +2,7 @@ import { CollisionError, EmbedderRequiredError, RefError } from "./errors.js";
 import { nodeFromMarkdown, nodeToMarkdown } from "./frontmatter.js";
 import { NodeId } from "./ids.js";
 import type { Node } from "./node.js";
+import { pathForNodeId } from "./paths.js";
 import type { Registry } from "./registry.js";
 import { type SearchHit, SearchIndex, compareCodepoints } from "./search.js";
 import { EDGES, KEYS, MEMBERSHIP, ORDER } from "./shapes.js";
@@ -12,7 +13,6 @@ import {
   hashBytes,
   iterCorpusFiles,
   loadSnapshot,
-  pathForNodeId,
   writeSnapshot,
 } from "./snapshot.js";
 import { Store } from "./store.js";
@@ -165,10 +165,11 @@ export class Corpus {
       this.vectorIndex?.remove(uid);
     }
     for (const { path, sha256, node } of changed) {
-      // Full build() collision contract: duplicate uid is rejected outright, then assertAddable.
+      // Reconciliation is construction: duplicate uid is rejected outright, then identity
+      // claims only, as in Index.build.
       if (this.index.byUid.has(node.uid))
         throw new CollisionError(`duplicate uid ${JSON.stringify(node.uid)} in corpus`);
-      this.index.assertAddable(node);
+      this.index.assertIdentityClaims(node);
       const prepared =
         this.vectorIndex !== undefined
           ? this.vectorIndex.prepare(node, this.embedder as Embedder, this.vectorCache as VectorCache)
@@ -182,7 +183,7 @@ export class Corpus {
   }
 
   flushIndex(): void {
-    const manifest = [...this.manifest.values()].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+    const manifest = [...this.manifest.values()].sort((a, b) => compareCodepoints(a.path, b.path));
     writeSnapshot(this.store.root, manifest, this.index, this.searchIndex, this.vectorIndex);
   }
 
@@ -274,7 +275,7 @@ export class Corpus {
       if (edge.sourceUid !== null) neighborUids.add(edge.sourceUid);
     }
     neighborUids.delete(uid);
-    return [...neighborUids].sort().map((u) => this.store.readFile(this.idFor(u)));
+    return [...neighborUids].sort(compareCodepoints).map((u) => this.store.readFile(this.idFor(u)));
   }
 
   private sortedLiveIds(uids: Iterable<string>): string[] {
@@ -296,6 +297,9 @@ export class Corpus {
     if (this.index.resolveUid(newId) !== null) {
       throw new CollisionError(`target id ${JSON.stringify(newId)} already in use`);
     }
+    // Path admission before any preparation: a differently spelled same-key
+    // destination is refused; the source's own exact mapped path is a replace.
+    this.index.assertPathAvailable(uid, newId);
 
     // 2. Snapshot the referrer set BEFORE any index mutation (upsert rewrites inRefs).
     const referrerUids = new Set<string>();
@@ -311,7 +315,7 @@ export class Corpus {
 
     // 4. Rewrite every OTHER referrer in memory, in uid order (deterministic plan positions).
     const referrers: Node[] = [];
-    for (const referrerUid of [...referrerUids].sort()) {
+    for (const referrerUid of [...referrerUids].sort(compareCodepoints)) {
       if (referrerUid === uid) continue;
       const referrer = this.store.readFile(this.idFor(referrerUid));
       rewriteRefs(referrer, oldId, newId);
@@ -382,9 +386,10 @@ export class Corpus {
   }
 
   /** Report corpus-validity findings; never throws on content. Registry violations
-   * (configured or passed) are errors; unresolved top-level relation targets and
-   * unresolved membership member refs are warnings. Sorted by (ref, code, detail)
-   * — `message` is human-only. */
+   * (configured or passed) are errors; unresolved top-level relation targets,
+   * unresolved membership member refs and mapped-path collisions (a portability
+   * hazard, registry or not) are warnings. Sorted by (ref, code, detail) —
+   * `message` is human-only. */
   check(registry?: Registry): Finding[] {
     const reg = registry ?? this.registry;
     const findings: Finding[] = [];
@@ -415,6 +420,15 @@ export class Corpus {
         ref: containerId,
         detail: ref,
         message: `${containerId}: member ${JSON.stringify(ref)} resolves to no live node`,
+      });
+    }
+    for (const [liveId, key] of this.index.pathCollisions()) {
+      findings.push({
+        severity: "warning",
+        code: "path-collision",
+        ref: liveId,
+        detail: key,
+        message: `${liveId}: mapped path collides at ${JSON.stringify(key)}`,
       });
     }
     findings.sort(

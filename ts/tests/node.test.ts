@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ValidationError } from "../src/errors.js";
+import { nodeFromMarkdown, nodeToMarkdown } from "../src/frontmatter.js";
 import { makeNode, newUid } from "../src/node.js";
+
+const uidOracle = JSON.parse(
+  readFileSync(fileURLToPath(new URL("../../fixtures/uid.oracle.json", import.meta.url)), "utf-8"),
+) as { accepted: string[]; rejected: string[] };
 
 describe("node", () => {
   it("newUid is 32 lowercase hex chars (uuid4().hex parity)", () => {
@@ -62,3 +69,17 @@ describe("node", () => {
     );
   });
 });
+
+for (const uid of uidOracle.accepted) {
+  it(`preserves opaque uid ${JSON.stringify(uid)}`, () => {
+    const node = makeNode({ id: "kind:a", uid, kind: "kind", title: "A" });
+    expect(node.uid).toBe(uid);
+    expect(nodeFromMarkdown(nodeToMarkdown(node)).uid).toBe(uid);
+  });
+}
+for (const uid of uidOracle.rejected) {
+  it("refuses empty uid in construction and Markdown", () => {
+    expect(() => makeNode({ id: "kind:a", uid, kind: "kind", title: "A" })).toThrow(ValidationError);
+    expect(() => nodeFromMarkdown('---\nid: kind:a\nuid: ""\nkind: kind\ntitle: A\n---\n')).toThrow(ValidationError);
+  });
+}

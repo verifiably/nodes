@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { Corpus } from "../src/corpus.js";
 import { RefError } from "../src/errors.js";
 import { makeNode } from "../src/node.js";
+import { relatesTo } from "../src/relations.js";
 import { MEMBERSHIP } from "../src/shapes.js";
 
 function tmpRoot(): string {
@@ -64,4 +65,28 @@ describe("Corpus — membership traversal", () => {
       expect(() => c[fn]("note:ghost")).toThrow(RefError);
     }
   });
+});
+
+it("orders neighbor nodes by uid code points before and after reload", () => {
+  // U+E000 and U+10000 sort oppositely under UTF-16 code units; code points are the contract.
+  const root = mkdtempSync(join(tmpdir(), "nodes-neighbors-"));
+  const c = new Corpus(root);
+  for (const [slug, uid] of [
+    ["bmp", "\uE000"],
+    ["nonbmp", "\u{10000}"],
+  ]) {
+    c.add(makeNode({ id: `kind:${slug}`, uid, kind: "kind", title: slug }));
+  }
+  c.add(
+    makeNode({
+      id: "kind:center",
+      uid: "center",
+      kind: "kind",
+      title: "Center",
+      relations: [relatesTo("kind:center", "kind:nonbmp"), relatesTo("kind:center", "kind:bmp")],
+    }),
+  );
+  expect(c.neighbors("kind:center").map((n) => n.uid)).toEqual(["\uE000", "\u{10000}"]);
+  c.flushIndex();
+  expect(new Corpus(root).neighbors("kind:center").map((n) => n.uid)).toEqual(["\uE000", "\u{10000}"]);
 });

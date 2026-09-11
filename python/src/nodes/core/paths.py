@@ -1,6 +1,6 @@
 """Path rules shared by the walk, the write plan, the store, and the caches.
 
-Imports only `errors`, so `snapshot` and `similarity` can both depend on it.
+Imports only `ids` and `errors`, so `snapshot` and `similarity` can both depend on it.
 """
 
 from __future__ import annotations
@@ -11,8 +11,19 @@ import stat
 from pathlib import Path
 
 from nodes.core.errors import ContainmentError
+from nodes.core.ids import NodeId
 
 RESERVED_NAMESPACE = ".nodes-index"
+
+
+def path_for_node_id(node_id: str) -> str:
+    nid = NodeId.parse(node_id)
+    return f"{nid.kind}/{nid.slug.replace(':', '__')}.md"
+
+
+def path_collision_key(node_id: str) -> str:
+    # Valid ids are ASCII; NFC is identity and lowercase equals casefold.
+    return path_for_node_id(node_id).lower()
 
 
 def is_portable_relative_path(path: str, *, suffix: str | None = ".md") -> bool:

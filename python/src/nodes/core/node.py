@@ -33,6 +33,9 @@ class Node(BaseModel):
 
     @model_validator(mode="after")
     def _check_id_kind(self) -> Node:
+        # Presence only: uid is opaque, so no shape, case or normalization rule applies.
+        if self.uid == "":
+            raise ValidationError("uid must be non-empty")
         try:
             parsed = NodeId.parse(self.id)
         except IdError as exc:

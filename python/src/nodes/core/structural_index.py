@@ -11,6 +11,7 @@ from pydantic import ValidationError as PydanticValidationError
 from nodes.core.errors import CollisionError, IdError
 from nodes.core.ids import NodeId
 from nodes.core.node import Node
+from nodes.core.paths import path_collision_key, path_for_node_id
 from nodes.core.relations import Relation
 from nodes.core.shapes import EDGES, KEYS, MEMBERSHIP, ORDER
 
@@ -166,6 +167,9 @@ class Index:
         self.id_to_uid: dict[str, str] = {}
         self.deprecated_to_uid: dict[str, str] = {}
         self.in_refs: dict[str, list[InRef]] = {}
+        # Derived: collision key (folded mapped path) -> live uids claiming it. Never
+        # serialized; rebuilt from entries on restore.
+        self._path_uids: dict[str, set[str]] = {}
 
     @classmethod
     def build(cls, nodes: Iterable[Node]) -> "Index":
@@ -173,14 +177,21 @@ class Index:
         for node in nodes:
             if node.uid in idx.by_uid:
                 raise CollisionError(f"duplicate uid {node.uid!r} in corpus")
-            idx.assert_addable(node)  # fail-early on a corrupt corpus (collision contract)
+            # Construction checks identity only: a path-collided corpus is legal on the
+            # volume that holds it and is reported by check(), not refused here.
+            idx.assert_identity_claims(node)
             idx.upsert(node)
         return idx
 
     def resolve_uid(self, ref: str) -> str | None:
-        return self.id_to_uid.get(ref) or self.deprecated_to_uid.get(ref)
+        uid = self.id_to_uid.get(ref)
+        return uid if uid is not None else self.deprecated_to_uid.get(ref)
 
     def assert_addable(self, node: Node) -> None:
+        self.assert_identity_claims(node)
+        self.assert_path_available(node.uid, node.id)
+
+    def assert_identity_claims(self, node: Node) -> None:
         existing = self.by_uid.get(node.uid)
         if existing is not None and existing.id != node.id:
             raise CollisionError(
@@ -190,6 +201,26 @@ class Index:
             owner = self.resolve_uid(claim)
             if owner is not None and owner != node.uid:
                 raise CollisionError(f"identity claim {claim!r} already in use by uid {owner!r}")
+
+    def assert_path_available(self, candidate_uid: str, candidate_id: str) -> None:
+        """Mutation admission: refuse a mapped path whose collision key another live
+        uid already claims. A uid re-claiming its own exact mapped path changes nothing."""
+        candidate_path = path_for_node_id(candidate_id)
+        existing = self.by_uid.get(candidate_uid)
+        if existing is not None and path_for_node_id(existing.id) == candidate_path:
+            return
+        key = path_collision_key(candidate_id)
+        if self._path_uids.get(key):
+            raise CollisionError(f"mapped path for {candidate_id!r} collides at {key!r}")
+
+    def path_collisions(self) -> list[tuple[str, str]]:
+        """Every (live id, collision key) in a bucket claimed by more than one uid."""
+        return [
+            (self.by_uid[uid].id, key)
+            for key, uids in self._path_uids.items()
+            if len(uids) > 1
+            for uid in uids
+        ]
 
     def upsert(self, node: Node) -> None:
         if node.uid in self.by_uid:
@@ -202,6 +233,7 @@ class Index:
             out_refs=_extract_out_refs(node),
         )
         self.by_uid[node.uid] = entry
+        self._path_uids.setdefault(path_collision_key(entry.id), set()).add(entry.uid)
         self.id_to_uid[node.id] = node.uid
         for dep in node.deprecated_ids:
             self.deprecated_to_uid[dep] = node.uid
@@ -262,8 +294,8 @@ class Index:
             kind = raw["kind"]
             relations_raw = raw["relations"]
             structural_refs_raw = raw["structural_refs"]
-            if not isinstance(uid, str):
-                raise ValueError("structural snapshot: entry uid must be a string")
+            if not isinstance(uid, str) or uid == "":
+                raise ValueError("structural snapshot: entry uid must be a non-empty string")
             if not isinstance(entry_id, str):
                 raise ValueError("structural snapshot: entry id must be a string")
             if not isinstance(kind, str):
@@ -307,6 +339,7 @@ class Index:
                         f"structural snapshot: identity claim {claim!r} already in use by uid {owner!r}"
                     )
             idx.by_uid[uid] = entry
+            idx._path_uids.setdefault(path_collision_key(entry.id), set()).add(entry.uid)
             idx.id_to_uid[entry.id] = uid
             for dep in entry.deprecated_ids:
                 idx.deprecated_to_uid[dep] = uid
@@ -321,6 +354,11 @@ class Index:
         entry = self.by_uid.pop(uid, None)
         if entry is None:
             return
+        key = path_collision_key(entry.id)
+        bucket = self._path_uids[key]
+        bucket.remove(uid)
+        if not bucket:
+            del self._path_uids[key]
         if self.id_to_uid.get(entry.id) == uid:
             del self.id_to_uid[entry.id]
         for dep in entry.deprecated_ids:

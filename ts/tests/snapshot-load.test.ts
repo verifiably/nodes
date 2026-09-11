@@ -2,19 +2,16 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { Corpus } from "../src/corpus.js";
+import { ValidationError } from "../src/errors.js";
 import { nodeToMarkdown } from "../src/frontmatter.js";
 import { makeNode } from "../src/node.js";
+import { pathForNodeId } from "../src/paths.js";
 import { relatesTo } from "../src/relations.js";
 import { SearchIndex } from "../src/search.js";
 import { type Embedder, type Vector, VectorCache, VectorIndex } from "../src/similarity.js";
-import {
-  type ManifestEntry,
-  hashBytes,
-  loadSnapshot,
-  pathForNodeId,
-  snapshotPath,
-  writeSnapshot,
-} from "../src/snapshot.js";
+import { type ManifestEntry, hashBytes, loadSnapshot, snapshotPath, writeSnapshot } from "../src/snapshot.js";
+import { Store } from "../src/store.js";
 import { Index } from "../src/structural-index.js";
 
 let root: string;
@@ -153,4 +150,20 @@ describe("snapshot writeSnapshot/loadSnapshot", () => {
       expect(loadSnapshot(root, null)).toBeNull();
     },
   );
+});
+
+it("rejects an old empty-uid snapshot before it can bypass document validation", () => {
+  // Mutate a valid Node after construction to reproduce a cache written by the old
+  // schema; no production code gains a bypass.
+  const node = makeNode({ id: "topic:a", uid: "valid", kind: "topic", title: "A" });
+  node.uid = "";
+  new Store(root).writeFile(node);
+  const data = readFileSync(join(root, "topic/a.md"));
+  const manifest = [{ path: "topic/a.md", sha256: hashBytes(data), uid: "" }];
+  writeSnapshot(root, manifest, Index.build([node]), SearchIndex.build([node]), undefined);
+  expect(loadSnapshot(root, null)).toBeNull();
+  expect(() => new Corpus(root)).toThrow(ValidationError);
+  node.uid = "repaired";
+  new Store(root).writeFile(node);
+  expect(new Corpus(root).get("topic:a").uid).toBe("repaired");
 });

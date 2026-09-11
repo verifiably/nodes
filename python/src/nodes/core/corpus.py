@@ -149,7 +149,8 @@ class Corpus:
         for path, sha, node in changed:
             if node.uid in self.index.by_uid:
                 raise CollisionError(f"duplicate uid {node.uid!r} in corpus")
-            self.index.assert_addable(node)
+            # Reconciliation is construction: identity checks only, as in Index.build.
+            self.index.assert_identity_claims(node)
             prepared = None
             if self.vector_index is not None:
                 assert self.embedder is not None and self.vector_cache is not None
@@ -272,6 +273,9 @@ class Corpus:
             raise CollisionError(f"target id {new_id!r} already in use")
 
         uid = self.index.id_to_uid[old_id]
+        # Path admission before any preparation: a differently spelled same-key
+        # destination is refused; the source's own exact mapped path is a replace.
+        self.index.assert_path_available(uid, new_id)
         referrer_uids = {ir.source_uid for ir in self.index.in_refs.get(old_id, [])}
 
         # --- prepare: rewrite every node that will change, in memory ---
@@ -348,8 +352,9 @@ class Corpus:
         """Report corpus-validity findings; never raises on content.
 
         Registry violations (when a registry is configured or passed) are errors;
-        unresolved top-level relation targets and unresolved membership member refs
-        are warnings. Sorted by (ref, code, detail) — `message` is human-only.
+        unresolved top-level relation targets, unresolved membership member refs and
+        mapped-path collisions (a portability hazard, registry or not) are warnings.
+        Sorted by (ref, code, detail) — `message` is human-only.
         """
         reg = registry if registry is not None else self.registry
         findings: list[Finding] = []
@@ -379,6 +384,16 @@ class Corpus:
                     ref=container_id,
                     detail=ref,
                     message=f"{container_id}: member {ref!r} resolves to no live node",
+                )
+            )
+        for live_id, key in self.index.path_collisions():
+            findings.append(
+                Finding(
+                    severity="warning",
+                    code="path-collision",
+                    ref=live_id,
+                    detail=key,
+                    message=f"{live_id}: mapped path collides at {key!r}",
                 )
             )
         findings.sort(key=lambda f: (f.ref, f.code, f.detail))

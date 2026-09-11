@@ -50,9 +50,9 @@
 - Produces: `Index.assert_identity_claims(node: Node) -> None`, `assert_path_available(candidate_uid: str, candidate_id: str) -> None`, `path_collisions() -> list[tuple[str, str]]` (live id, key). TS `assertIdentityClaims(node: Node): void`, `assertPathAvailable(candidateUid: string, candidateId: string): void`, `pathCollisions(): Array<[string, string]>`.
 - `assert_addable` / `assertAddable` remains the public combined gate. Reporting query order is unspecified; Corpus owns final finding order.
 
-- [ ] **Step 0: Start this task.** Run `tasks start nodes-7b859d`.
+- [x] **Step 0: Start this task.** Run `tasks start nodes-7b859d`.
 
-- [ ] **Step 1: Pin the shared mapping and replacement/removal/restore behavior.** Add these tests with the shown imports to the existing files. They cover exact-path aliasing as well as case folding; neither needs filesystem case support.
+- [x] **Step 1: Pin the shared mapping and replacement/removal/restore behavior.** Add these tests with the shown imports to the existing files. They cover exact-path aliasing as well as case folding; neither needs filesystem case support.
 
 ```python
 from nodes.core.paths import path_collision_key, path_for_node_id
@@ -127,9 +127,9 @@ it("maintains collision buckets through replacement, removal and restore", () =>
 });
 ```
 
-- [ ] **Step 2: Run `just test-fast`.** Expected failure: shared helpers or index methods absent.
+- [x] **Step 2: Run `just test-fast`.** Expected failure: shared helpers or index methods absent.
 
-- [ ] **Step 3: Centralize mapping and wire all imports.** Add the helpers below to `paths`, update the dependency comment to say imports `ids` and `errors`, and import NodeId. Move the snapshot function rather than keeping an alias.
+- [x] **Step 3: Centralize mapping and wire all imports.** Add the helpers below to `paths`, update the dependency comment to say imports `ids` and `errors`, and import NodeId. Move the snapshot function rather than keeping an alias.
 
 ```python
 def path_for_node_id(node_id: str) -> str:
@@ -156,7 +156,7 @@ export function pathCollisionKey(nodeId: string): string {
 
 Python `Store.rel_path` becomes `return path_for_node_id(node_id)`; remove its unused NodeId import. Remove snapshot's private mapping and call the shared helper at manifest validation. TS Store, Corpus, snapshot and snapshot-load tests import `pathForNodeId` from `paths.js`. Remove it from the package index's snapshot export block and add `export { pathForNodeId } from "./paths.js";`. Do not add a snapshot re-export or expose other new helpers through the package index.
 
-- [ ] **Step 4: Add buckets and split admission.** Rename the existing identity-check method to `assert_identity_claims` / `assertIdentityClaims`, preserving its body. Replace obsolete caller comments. Add:
+- [x] **Step 4: Add buckets and split admission.** Rename the existing identity-check method to `assert_identity_claims` / `assertIdentityClaims`, preserving its body. Replace obsolete caller comments. Add:
 
 ```python
 # Index.__init__:
@@ -250,7 +250,7 @@ if (bucket.size === 0) this.pathUids.delete(key);
 
 In Index.build and Corpus's changed-file reconcile loop only, replace calls to `assert_addable` / `assertAddable` with identity-only calls. Preserve their separate duplicate-uid refusal. Corpus.add keeps combined admission. This change must land with the new gate so a snapshot cannot change construction acceptance.
 
-- [ ] **Step 5: Run `just test-fast`, then `just gate`.** New index tests and existing collision, snapshot and Corpus tests must pass. Confirm `rg -n 'pathForNodeId|_path_for_node_id|assert_addable|assertAddable|assert_identity_claims|assertIdentityClaims' python/src ts/src ts/tests/snapshot-load.test.ts` shows the intended caller split and no snapshot alias. Run `tasks done nodes-7b859d "Task 1 verified; held for the single C implementation commit"`; leave changes uncommitted for Task 4.
+- [x] **Step 5: Run `just test-fast`, then `just gate`.** New index tests and existing collision, snapshot and Corpus tests must pass. Confirm `rg -n 'pathForNodeId|_path_for_node_id|assert_addable|assertAddable|assert_identity_claims|assertIdentityClaims' python/src ts/src ts/tests/snapshot-load.test.ts` shows the intended caller split and no snapshot alias. Run `tasks done nodes-7b859d "Task 1 verified; held for the single C implementation commit"`; leave changes uncommitted for Task 4.
 
 ### Task 2: Corpus admission, collision findings and shared oracle
 
@@ -264,9 +264,9 @@ In Index.build and Corpus's changed-file reconcile loop only, replace calls to `
 - Consumes: Task 1's path helpers, Index gates and `path_collisions() -> list[tuple[str, str]]` / `pathCollisions(): Array<[string, string]>`.
 - Produces: Corpus rename refusal before preparation/effects, and warning findings `{severity, code, ref, detail, message}`. No new constructor flag or finding severity.
 
-- [ ] **Step 0: Start this task.** Run `tasks start nodes-45a188`.
+- [x] **Step 0: Start this task.** Run `tasks start nodes-45a188`.
 
-- [ ] **Step 1: Add the collision-only oracle below.** Node seeds use snake-case `deprecated_ids` in shared JSON; harnesses adapt it to each Node constructor. Kind is the prefix before `:` and title is the id. Group rows compare `[live_id, collision_key]`; mutations expect error class or operation-kind sequence. These are logical descriptions, never a committed colliding file tree.
+- [x] **Step 1: Add the collision-only oracle below.** Node seeds use snake-case `deprecated_ids` in shared JSON; harnesses adapt it to each Node constructor. Kind is the prefix before `:` and title is the id. Group rows compare `[live_id, collision_key]`; mutations expect error class or operation-kind sequence. These are logical descriptions, never a committed colliding file tree.
 
 ```json
 {
@@ -292,7 +292,7 @@ In Index.build and Corpus's changed-file reconcile loop only, replace calls to `
 }
 ```
 
-- [ ] **Step 2: Add group and mutation runners.** Python file imports json, Path, pytest, Corpus, CollisionError, Node, Store, Index, and RecordingExecutor; load `Path(__file__).parents[2] / "fixtures/path-collision.oracle.json"`. TS imports fs temp/read/remove/write functions, tmpdir, join, fileURLToPath, Vitest, Corpus, CollisionError, makeNode/Node, Store, Index, RecordingExecutor, compareCodepoints. Resolve the fixture with `new URL("../../fixtures/path-collision.oracle.json", import.meta.url)` and use fresh mkdtemp/beforeEach and rmSync/afterEach roots. Define these seed adapters and runners:
+- [x] **Step 2: Add group and mutation runners.** Python file imports json, Path, pytest, Corpus, CollisionError, Node, Store, Index, and RecordingExecutor; load `Path(__file__).parents[2] / "fixtures/path-collision.oracle.json"`. TS imports fs temp/read/remove/write functions, tmpdir, join, fileURLToPath, Vitest, Corpus, CollisionError, makeNode/Node, Store, Index, RecordingExecutor, compareCodepoints. Resolve the fixture with `new URL("../../fixtures/path-collision.oracle.json", import.meta.url)` and use fresh mkdtemp/beforeEach and rmSync/afterEach roots. Define these seed adapters and runners:
 
 ```python
 ORACLE = json.loads((Path(__file__).parents[2] / "fixtures/path-collision.oracle.json").read_text())
@@ -448,9 +448,9 @@ A cache hit can conceal premature preparation on rename, so the refusal cases al
 replace `prepare` with an immediate failing spy. The expected CollisionError proves
 refusal preceded preparation, even when the existing node already has a cached vector.
 
-- [ ] **Step 3: Run `just test-fast`.** Expected red: case-only rename reaches execution or collision findings absent. Index-only groups may already pass after Task 1.
+- [x] **Step 3: Run `just test-fast`.** Expected red: case-only rename reaches execution or collision findings absent. Index-only groups may already pass after Task 1.
 
-- [ ] **Step 4: Add Corpus integration.** After live-source/unresolved-target checks and binding the source uid in rename, before reading/referrer gathering/vector preparation, insert:
+- [x] **Step 4: Add Corpus integration.** After live-source/unresolved-target checks and binding the source uid in rename, before reading/referrer gathering/vector preparation, insert:
 
 ```python
 self.index.assert_path_available(uid, new_id)
@@ -479,7 +479,7 @@ for (const [liveId, key] of this.index.pathCollisions()) {
 
 Update check docstrings to include portability warnings; no registry required. Existing add wiring from Task 1 needs no second guard.
 
-- [ ] **Step 5: Pin temporary-id rename, occupied-other-uid refusal, same-(uid,id) replacement and existing-collision lifecycle.** Add these tests in both harnesses:
+- [x] **Step 5: Pin temporary-id rename, occupied-other-uid refusal, same-(uid,id) replacement and existing-collision lifecycle.** Add these tests in both harnesses:
 
 ```python
 def test_temporary_id_rename_and_occupied_destination(tmp_path):
@@ -632,7 +632,7 @@ for (const withRegistry of [false, true]) {
 The exact `:`/`__` two-claimant case remains index-only. The registry case must emit
 exactly the same two findings; it must not suppress or duplicate them.
 
-- [ ] **Step 6: Run `just test-fast`, then `just gate`.** All logical cases run on every volume; only the two-file lifecycle can skip. Inspect test output for expected executed cases. Run `tasks done nodes-45a188 "Task 2 verified; held for the single C implementation commit"`; leave changes uncommitted.
+- [x] **Step 6: Run `just test-fast`, then `just gate`.** All logical cases run on every volume; only the two-file lifecycle can skip. Inspect test output for expected executed cases. Run `tasks done nodes-45a188 "Task 2 verified; held for the single C implementation commit"`; leave changes uncommitted.
 
 ### Task 3: Non-empty opaque uids and code-point ordering
 
@@ -648,9 +648,9 @@ exactly the same two findings; it must not suppress or duplicate them.
 - Produces: empty uid → kernel ValidationError; non-empty supplied uid preserved exactly; empty structural snapshot entry → invalid-cache fallback. Existing snapshots with valid uids retain their schema and acceptance.
 - Produces: code-point order for neighbor uids, referrer uids and manifest paths. Python already supplies this ordering.
 
-- [ ] **Step 0: Start this task.** Run `tasks start nodes-bbb832`.
+- [x] **Step 0: Start this task.** Run `tasks start nodes-bbb832`.
 
-- [ ] **Step 1: Add the uid-only oracle and schema/parsing tests.**
+- [x] **Step 1: Add the uid-only oracle and schema/parsing tests.**
 
 ```json
 {"accepted":["not-a-digest"," ","\u00e9","e\u0301","\ue000","\ud800\udc00"],"rejected":[""]}
@@ -740,9 +740,9 @@ it("resolves opaque uid claims and rejects an empty restored uid", () => {
 The Python lookup test sets maps directly to isolate sentinel behavior; it does not
 represent an empty uid as a valid Node.
 
-- [ ] **Step 2: Run `just test-fast`.** Expected red: empty uid is accepted; Python truthiness lookup chooses the alias owner.
+- [x] **Step 2: Run `just test-fast`.** Expected red: empty uid is accepted; Python truthiness lookup chooses the alias owner.
 
-- [ ] **Step 3: Enforce presence at existing validation boundaries.** Extend Python's existing after-model validator before its id/kind checks, so direct Node construction raises the kernel error (a Field min_length alone would leak Pydantic's exception):
+- [x] **Step 3: Enforce presence at existing validation boundaries.** Extend Python's existing after-model validator before its id/kind checks, so direct Node construction raises the kernel error (a Field min_length alone would leak Pydantic's exception):
 
 ```python
 if self.uid == "":
@@ -809,7 +809,7 @@ it("rejects an old empty-uid snapshot before it can bypass document validation",
 Neither rejection is a finding. A valid non-empty opaque-uid snapshot must continue
 loading without a schema bump.
 
-- [ ] **Step 4: Extend the existing rename fixture to expose UTF-16 sorting.** Add two referrers with uids U+E000 and U+10000, ids `note:bmp` and `note:nonbmp`, and one `related: [topic:old]` relation each. The existing three documents retain their uid values and bytes. New Markdown, with actual Unicode characters represented by JSON-style YAML escapes:
+- [x] **Step 4: Extend the existing rename fixture to expose UTF-16 sorting.** Add two referrers with uids U+E000 and U+10000, ids `note:bmp` and `note:nonbmp`, and one `related: [topic:old]` relation each. The existing three documents retain their uid values and bytes. New Markdown, with actual Unicode characters represented by JSON-style YAML escapes:
 
 ```yaml
 ---
@@ -881,9 +881,9 @@ it("orders neighbor nodes by uid code points before and after reload", () => {
 });
 ```
 
-- [ ] **Step 5: Run `just test-fast`.** Expected TS red: rename's referrer plan order and neighbor uid order put the non-BMP uid first. Python is the code-point baseline.
+- [x] **Step 5: Run `just test-fast`.** Expected TS red: rename's referrer plan order and neighbor uid order put the non-BMP uid first. Python is the code-point baseline.
 
-- [ ] **Step 6: Replace the three remaining TS sorts.** Use the already imported comparator; retain all other mutation/order behavior:
+- [x] **Step 6: Replace the three remaining TS sorts.** Use the already imported comparator; retain all other mutation/order behavior:
 
 ```typescript
 // flushIndex manifest:
@@ -896,7 +896,7 @@ for (const referrerUid of [...referrerUids].sort(compareCodepoints)) {
 
 Neighbors continues returning Node objects; only their ordering comparator changes. No new traversal API. Manifest paths produced from valid ids are ASCII, so the sort is a consistency pin; do not invent invalid-id filesystem fixtures to test it. Keep the existing path-sorted snapshot assertions.
 
-- [ ] **Step 7: Run `just test-fast`, then `just gate`.** Check the four rename parity runners still read the same shared input corpus and both updated oracles; no uid case appears in path-collision.oracle.json. Run `tasks done nodes-bbb832 "Task 3 verified; held for the single C implementation commit"`; leave changes uncommitted.
+- [x] **Step 7: Run `just test-fast`, then `just gate`.** Check the four rename parity runners still read the same shared input corpus and both updated oracles; no uid case appears in path-collision.oracle.json. Run `tasks done nodes-bbb832 "Task 3 verified; held for the single C implementation commit"`; leave changes uncommitted.
 
 ### Task 4: Normative amendment and C closeout
 
@@ -910,9 +910,9 @@ Neighbors continues returning Node objects; only their ordering comparator chang
 - Consumes: verified behavior and fixtures from Tasks 1–3.
 - Produces: one reviewable C commit on nodes-2.0 with same-change STANDARD/fixtures/code, closed children and parent. E still owns version/history/marker cleanup and the main merge remains the umbrella's closeout.
 
-- [ ] **Step 0: Start this task.** Run `tasks start nodes-bf3fc1`.
+- [x] **Step 0: Start this task.** Run `tasks start nodes-bf3fc1`.
 
-- [ ] **Step 1: Amend STANDARD with the following contract, retaining adjacent guarantees.** Every amended clause/row gets `*(2.0)*` once; reuse existing markers where the whole clause is already marked.
+- [x] **Step 1: Amend STANDARD with the following contract, retaining adjacent guarantees.** Every amended clause/row gets `*(2.0)*` once; reuse existing markers where the whole clause is already marked.
 
 | Section | Exact amendment content |
 | --- | --- |
@@ -928,7 +928,7 @@ Neighbors continues returning Node objects; only their ordering comparator chang
 | §8.2 exhaustive structural list | Preserve dangling-ref and dangling-member counts/dedup; add one path-collision per live claimant, registry-independent. Three claimants produce three findings. Existing final (ref,code,detail) code-point sort remains. |
 | §11.2 | Add path-collision.oracle.json for mapped-path collision admission/reporting; uid.oracle.json for non-empty opaque uid acceptance; include write-plan.rename.canonical.json alongside corpus/ and corpus.rename.canonical.json, naming code-point referrer ordering and semantic plan parity. |
 
-- [ ] **Step 2: Update seam and design records.** Seam §2's rename plan description must distinguish exact-path in-place replacement from create/delete and specify code-point uid referrer order. Also replace the opening sentence of the **quoted pending amendment in §7 item 2**, which E copies into STANDARD, with:
+- [x] **Step 2: Update seam and design records.** Seam §2's rename plan description must distinguish exact-path in-place replacement from create/delete and specify code-point uid referrer order. Also replace the opening sentence of the **quoted pending amendment in §7 item 2**, which E copies into STANDARD, with:
 
 > Execution replaces the renamed document in place when the exact mapped paths match; otherwise it creates the new document and deletes the old document, then in either case replaces referrers in ascending uid Unicode code-point order.
 
@@ -938,7 +938,7 @@ Add §8 row: `2026-09-11 | §2; §7 item 2 | exact-path rename replacement and c
 
 Replace umbrella §C's “one helper for add and reconcile” with the identity-only construction/reconcile versus mutation-admission split. Record reviewed policy: warning, exact-path replace, case-only refusal, temporary-id workaround, non-empty opaque uid; shared collision oracle and existing rename collation fixtures. Mention snapshot manifest placement validation already exists but its cold fallback and changed-file reconciliation still require B's admission checks. Mark C's own design implemented on nodes-2.0 only after verifying the implementation exists; mark this plan completed on the branch with verification evidence. Do not fabricate a future commit hash in either status.
 
-- [ ] **Step 3: Review the complete diff and propagated claims.** Use `git diff --check`, `git diff --stat`, and inspect the combined code/fixture/docs diff. Search user-facing docs:
+- [x] **Step 3: Review the complete diff and propagated claims.** Use `git diff --check`, `git diff --stat`, and inspect the combined code/fixture/docs diff. Search user-facing docs:
 
 ```bash
 rg -n '32-char|uid.*SHOULD|assert_addable|assertAddable|case.only|write-new-then-delete-old|referrer.*order|pathForNodeId|path-collision' docs python/README.md ts/README.md
@@ -947,7 +947,7 @@ rg -n '\*\(2\.0\)\*|\*\*Pending:\*\*' docs/STANDARD.md
 
 Correct current instructions contradicted by C; retain explicitly historical descriptions. E still owns broad redesign/seam status headers and §12 history. Confirm no package rename drift. Review staged code against design, including `_drop` replacement cleanup, index restoration, refusal before cache writes, and exact-path file preservation. Use the selected execution skill's review workflow; resolve concrete findings before closeout.
 
-- [ ] **Step 4: Close tasks, gate, commit.** After review, run `tasks done nodes-bf3fc1 "C normative amendment and review complete"`, then `tasks done nodes-cd59f0 "Path collision admission/reporting and non-empty opaque uid ordering implemented in both languages"`. Run `tasks check` (zero errors; report every warning), then `just gate`. If either fails, fix the cause before committing and rerun the affected check. With gate green:
+- [x] **Step 4: Close tasks, gate, commit.** After review, run `tasks done nodes-bf3fc1 "C normative amendment and review complete"`, then `tasks done nodes-cd59f0 "Path collision admission/reporting and non-empty opaque uid ordering implemented in both languages"`. Run `tasks check` (zero errors; report every warning), then `just gate`. If either fails, fix the cause before committing and rerun the affected check. With gate green:
 
 ```bash
 git add python ts fixtures docs tasks

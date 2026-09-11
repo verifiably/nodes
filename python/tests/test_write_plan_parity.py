@@ -42,5 +42,9 @@ def test_rename_write_plan_matches_shared_oracle(tmp_path):
     c = Corpus(corpus_dir, executor_factory=factory)
     c.rename("topic:old", "topic:new")
     (plan,) = captured[0].plans
+    # Referrer replaces follow uid code-point order: ASCII, then U+E000, then U+10000.
+    assert [op.path for op in plan] == [
+        "topic/new.md", "topic/old.md", "note/r.md", "graph/g.md", "note/bmp.md", "note/nonbmp.md",
+    ]
     oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
     assert project_plan(plan) == oracle

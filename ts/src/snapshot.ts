@@ -2,8 +2,7 @@ import { createHash } from "node:crypto";
 import { type Dirent, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { ContainmentError } from "./errors.js";
-import { NodeId } from "./ids.js";
-import { RESERVED_NAMESPACE, isPortableRelativePath, readJson, writeJsonAtomic } from "./paths.js";
+import { RESERVED_NAMESPACE, isPortableRelativePath, pathForNodeId, readJson, writeJsonAtomic } from "./paths.js";
 import { SearchIndex, compareCodepoints } from "./search.js";
 import { VectorIndex } from "./similarity.js";
 import { Index } from "./structural-index.js";
@@ -115,11 +114,6 @@ export interface Snapshot {
   index: Index;
   searchIndex: SearchIndex;
   vectorIndex: VectorIndex | null;
-}
-
-export function pathForNodeId(nodeId: string): string {
-  const nid = NodeId.parse(nodeId);
-  return `${nid.kind}/${nid.slug.replace(/:/g, "__")}.md`;
 }
 
 export function writeSnapshot(

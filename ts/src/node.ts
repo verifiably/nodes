@@ -34,7 +34,11 @@ export type NodeMetadata = z.infer<typeof NodeMetadataSchema>;
 
 export const NodeSchema = z.object({
   id: z.string(),
-  uid: z.string().default(() => newUid()),
+  // Presence only: uid is opaque, so no shape, case or normalization rule applies.
+  uid: z
+    .string()
+    .min(1, "uid must be non-empty")
+    .default(() => newUid()),
   kind: z.string(),
   title: z.string(),
   body: z.string().default(""),

@@ -73,7 +73,12 @@ at implementation time as a tier-1 obligation: this is mutation semantics.
 Rename emits `create` for the new document, then `delete` for the old document,
 then `replace` operations for referrers, matching today's write-new → delete-old
 → referrers commit order (`~/d/nodes/python/src/nodes/core/corpus.py:254-316`).
-Under the best-effort class, a crash leaves an applied prefix:
+*(2026-09-11, C:)* when the old and new ids map to the same exact path
+(`kind:a:b` → `kind:a__b`), rename instead emits one `replace` of that document
+in place and no `delete`; both kernels already did so. Referrer replaces follow
+ascending uid Unicode code-point order in both kernels, which the tier-1 fixture
+pins with BMP and non-BMP referrer uids. Under the best-effort class, a crash
+leaves an applied prefix:
 
 - Before the create, no operation has applied. After it and before the delete,
   two files carry the uid. This is the acknowledged invalid prefix: strict
@@ -266,9 +271,11 @@ Exactly these two amendments are pending:
    writer at a time. A durable executor owns serialization. Readers may run
    concurrently at the cost of possibly-stale derived indexes.”
 2. **Standard §3 — rename crash state (pending).** After rename's preparation
-   and validation rule, state: “Execution orders the rename plan as create the
-   new document, delete the old document, then replace referrers. Under
-   `DefaultExecutor`, a crash leaves an applied prefix. After create and before
+   and validation rule, state: “Execution replaces the renamed document in place
+   when the exact mapped paths match; otherwise it creates the new document and
+   deletes the old document, then in either case replaces referrers in ascending
+   uid Unicode code-point order. Under `DefaultExecutor`, a crash leaves an
+   applied prefix. After create and before
    delete, two files carry the same uid; this prefix is invalid, is not
    forward-resolvable, and strict construction refuses it with `CollisionError`.
    After delete and before a referrer replacement, unchanged referrers still
@@ -297,6 +304,7 @@ unexercised.
 | 2026-08-18 | §6 | Consumer-note addendum: science's landed adapter derives `CreateDirectory` effects for missing parents inside the same transaction; the note's derivability claim stands and no contract part changed. | `nodes`-side review | n/a — status note only |
 | 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` applies the portable root-relative path rule (canonical segments, no `\` or `:`, `.md` suffix) instead of normalizing. | `nodes`-side review | Science: **pending** |
 | 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
+| 2026-09-11 | §2; §7 item 2 | exact-path rename replacement and code-point referrer order, including the pending STANDARD amendment | `nodes`-side review | rename unexercised by recorded Science add-only slice |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record
