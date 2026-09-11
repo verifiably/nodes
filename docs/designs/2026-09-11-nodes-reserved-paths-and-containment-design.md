@@ -38,6 +38,14 @@ is the deployment's obligation under the single-writer rule (STANDARD §7), whic
 every actor that edits the tree or the root's resolution, including actors outside
 nodes. No locking is introduced.
 
+Hard links are outside the guarantee by precondition, not by detection. A managed `.md`
+hard-linked to a protected artifact shares its bytes, so replacing the node rewrites the
+artifact, and no path-based check can see it. Nodes does not inspect link counts —
+refusing `nlink > 1` would break deployments whose backup tooling hard-links live files
+(`rsync --link-dest`, snapshotting filers). The deployment MUST NOT alias a managed file
+to a protected artifact by hard link; STANDARD §4.1 states this precondition beside the
+guarantee.
+
 ## 2. Reserved namespace: root-relative only
 
 `.nodes-index` is reserved as the first root-relative component and nowhere else. All
@@ -49,10 +57,22 @@ rules — reserving a further root directory can hide existing nodes or take own
 artifacts a consumer relied on being protected, so it is not automatically minor.
 
 Reserved-path validation must survive spelling. Today `validate_plan` checks the raw first
-component, so `./.nodes-index/x` and `a/../.nodes-index/x` evade it. Rather than normalize,
-`validate_plan` refuses any plan path containing an empty, `.`, or `..` segment, a
-leading `/`, or a final segment not ending in `.md`, as lexically malformed
-(`PlanRefusedError`). Plan paths come from `path_for`
+component, so `./.nodes-index/x` and `a/../.nodes-index/x` evade it; and it checks nothing
+that would stop `C:/outside/x.md` or `..\outside\x.md`, which Python's Windows path
+construction would then take outside the root. Rather than normalize, one shared
+predicate — **portable root-relative path** — is defined once per language and used by
+`validate_plan` and by the snapshot-manifest validator (which already rejects
+backslashes and is aligned to the full rule):
+
+- non-empty, no leading `/`;
+- split on `/` only; every segment non-empty and neither `.` nor `..`;
+- no segment contains `\` or `:` — `path_for` maps `:` to `__` and kind names admit
+  neither character, so a legitimate segment never carries them, and this is what closes
+  drive-qualified and backslash spellings before any platform path is built;
+- the final segment ends in `.md`.
+
+A plan path failing the predicate is lexically malformed (`PlanRefusedError`); a
+reserved-namespace first segment is refused separately. Plan paths come from `path_for`
 and are canonical by construction; nothing legitimate is lost, and the rule also closes
 `link/../kind/x.md`, where the operating system resolves `..` through the link *target's*
 parent — a hole lexical normalization would erase rather than catch. The physical
@@ -104,11 +124,25 @@ makes the read guarantee enforced rather than inferred.
 **Cache I/O.** Snapshot load runs before the walk (`Corpus.__init__`), and the snapshot
 writer and `VectorCache` read and write `.nodes-index/...` directly, writing a `.tmp`
 sibling and renaming, with `mkdir(parents=True)` on the way. A symlinked `.nodes-index`
-therefore reaches outside the root today through every one of these. `read_json`,
-`write_json_atomic`, `VectorCache.get`, and `VectorCache.put` (and their TypeScript
-forms) call `assert_contained` on the final path *and* its `.tmp` sibling before any
-`mkdir`, read, write, or rename. `ContainmentError` propagates from construction and
-from `flush_index`; it is a filesystem failure, never a finding.
+therefore reaches outside the root today through every one of these. The helpers cannot
+check what they cannot see: `read_json(path)` and `write_json_atomic(path, obj)` take an
+arbitrary absolute path, and inferring a root from the file's parent would miss a
+symlinked ancestor. Their signatures become root-aware — `read_json(root, rel_path)` and
+`write_json_atomic(root, rel_path, obj)`, likewise in TypeScript where both are public
+exports — and `rel_path` must be a portable root-relative path (§2, without the `.md`
+rule) whose first segment is the reserved namespace; anything else is a `ValueError` /
+`TypeError` programming error, not a containment refusal. `snapshot_path` returns that
+relative path. `VectorCache` builds its entry paths the same way and calls the helpers.
+
+Reads check the final path only; writes check the final path *and* the `.tmp` sibling,
+before any `mkdir`, write, or rename. A read never touches the sibling, so a stray
+symlink at `snapshot.py.json.tmp` must not block reading a sound snapshot.
+
+`ContainmentError` propagates from construction and from `flush_index`; it is a
+filesystem failure, never a finding, and never a rebuild trigger. Python's
+`load_snapshot` fallback catches `(OSError, ValueError)` and so lets a `NodesError`
+through already; TypeScript's catches every `Error` and must exempt `ContainmentError`
+explicitly (`if (e instanceof ContainmentError) throw e`).
 
 **`Store.write_file` / `delete_file`** and their TypeScript forms are public tier-3
 conveniences that bypass the executor. They call `assert_contained` too; the contract
@@ -136,7 +170,12 @@ a temporary directory and asserts the outcome. Cases:
 | delete onto a file symlink | refused, `applied=0`; link and target intact |
 | create under a symlinked parent directory | refused, `applied=0` |
 | two-op plan, symlink at op 1 | `index=1, applied=0`; op 0's path still absent |
-| plan paths `./.nodes-index/x`, `a/../.nodes-index/x`, `a//b`, `/a` | `PlanRefusedError` |
+| segment rule: plan paths `/a.md`, `a//b.md`, `./a.md`, `a/../b.md` | `PlanRefusedError` (each already carries the `.md` suffix, so only the segment rule can be what refuses it) |
+| reserved rule: `.nodes-index/a.md`, `./.nodes-index/a.md`, `a/../.nodes-index/a.md` | `PlanRefusedError` |
+| portability rule: `C:/outside/x.md`, `..\outside\x.md`, `a\b.md`, `kind/a:b.md` | `PlanRefusedError`; `outside/` untouched |
+| suffix rule: `kind/a.txt`, `kind/a.md/` | `PlanRefusedError` |
+| snapshot manifest row with `a\b.md` or `kind/a:b.md` | snapshot rejected as malformed (rebuild), matching the plan rule |
+| `.nodes-index/snapshot.<lang>.json.tmp` is a stray symlink | construction reads the snapshot normally; `flush_index` raises `ContainmentError` and the target is unchanged |
 | direct plan creating `corpus.yaml`, replacing `<kind>/notes.txt` | `PlanRefusedError`; both untouched |
 | `.nodes-index` is a symlink to an outside directory | construction and `flush_index` raise `ContainmentError`; nothing written outside |
 | `.nodes-index/snapshot.<lang>.json` is a file symlink | construction raises `ContainmentError`; target unread and unchanged |
@@ -152,8 +191,9 @@ a JSON description. The fixture's §11.2 row lands with it.
 
 ## 6. Standard and seam amendments
 
-STANDARD §4.1 gains the two guarantees of §1, the versioned reserved list, and the
-canonical-path rule; §7's write-path bullet cross-references seam §5 for the executor's
+STANDARD §4.1 gains the two guarantees of §1, the hard-link precondition, the versioned
+reserved list, and the portable root-relative path rule (shared with §10's snapshot
+manifest); §7's write-path bullet cross-references seam §5 for the executor's
 part. All marked *(2.0)*. `ContainmentError` joins the error list.
 
 Seam design §3's `DefaultExecutor` row gains the whole-plan preflight and its
@@ -163,7 +203,7 @@ exercises (create), so seam §8 requires Science sign-off. Two rows go in the lo
 
 | date | part | change | reviewer | consumer sign-off |
 | --- | --- | --- | --- | --- |
-| 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` refuses non-canonical segments instead of normalizing them, and refuses any target not ending in `.md`. | `nodes`-side review | Science: **pending** |
+| 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` applies the portable root-relative path rule (canonical segments, no `\\` or `:`, `.md` suffix) instead of normalizing. | `nodes`-side review | Science: **pending** |
 | 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
 
 ## 7. Files
