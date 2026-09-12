@@ -134,3 +134,5 @@ def test_containment_matches_committed_oracle(case: dict, tmp_path: Path) -> Non
         assert not os.path.lexists(_resolve(s, real, outside))
     for s in case.get("present", []):
         assert os.path.lexists(_resolve(s, real, outside))
+    for s, text in case.get("contents", {}).items():
+        assert _resolve(s, real, outside).read_bytes() == text.encode("utf-8")

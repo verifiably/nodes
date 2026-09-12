@@ -170,18 +170,23 @@ describe("plan path rules", () => {
     );
     expect(readdirSync(root)).toEqual([]);
   });
-  it.each(["kind/a.txt", "kind/a.md/", "corpus.yaml"])("refuses non-.md target %s", (path) => {
-    expect(() => new DefaultExecutor(root).execute([{ op: "create", path, content: bytes("x") }])).toThrow(
-      PlanRefusedError,
-    );
+  it("refuses a trailing slash", () => {
+    expect(() =>
+      new DefaultExecutor(root).execute([{ op: "create", path: "kind/a.md/", content: bytes("x") }]),
+    ).toThrow(PlanRefusedError);
   });
-  it("a direct plan cannot replace a protected artifact", () => {
+  it.each(["kind/a.txt", "corpus.yaml"])("plan paths carry no suffix rule: %s", (path) => {
+    // A plan is the caller's instruction: a consumer's own artifact is a legal target.
+    new DefaultExecutor(root).execute([{ op: "create", path, content: bytes("x") }]);
+    expect(readFileSync(join(root, path), "utf-8")).toBe("x");
+  });
+  it("a plan replaces a consumer artifact", () => {
     writeFileSync(join(root, "corpus.yaml"), "manifest");
     const plan: WriteOp[] = [
       { op: "replace", path: "corpus.yaml", content: bytes("x"), expectedDigest: sha("manifest") },
     ];
-    expect(() => new DefaultExecutor(root).execute(plan)).toThrow(PlanRefusedError);
-    expect(readFileSync(join(root, "corpus.yaml"), "utf-8")).toBe("manifest");
+    new DefaultExecutor(root).execute(plan);
+    expect(readFileSync(join(root, "corpus.yaml"), "utf-8")).toBe("x");
   });
 });
 

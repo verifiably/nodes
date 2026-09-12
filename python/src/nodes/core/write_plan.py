@@ -47,13 +47,14 @@ class WritePlanExecutor(Protocol):
 
 def validate_plan(plan: WritePlan) -> None:
     """Refuse a lexically malformed plan (`PlanRefusedError`) before any effect:
-    unknown operation kind, a non-portable root-relative `.md` path, or a
-    reserved-namespace path."""
+    unknown operation kind, a non-portable root-relative path, or a
+    reserved-namespace path. No suffix rule: a plan is the caller's instruction,
+    and a consumer may name a non-Markdown artifact of its own."""
     for op in plan:
         if not isinstance(op, (CreateOp, ReplaceOp, DeleteOp)):
             raise PlanRefusedError(f"unknown operation kind: {op!r}")
-        if not is_portable_relative_path(op.path):
-            raise PlanRefusedError(f"not a portable root-relative .md path: {op.path!r}")
+        if not is_portable_relative_path(op.path, suffix=None):
+            raise PlanRefusedError(f"not a portable root-relative path: {op.path!r}")
         if op.path.split("/", 1)[0] == RESERVED_NAMESPACE:
             raise PlanRefusedError(f"path in reserved namespace: {op.path!r}")
 

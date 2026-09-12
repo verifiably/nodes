@@ -41,6 +41,7 @@ interface Case {
   untouched?: string[];
   absent?: string[];
   present?: string[];
+  contents?: Record<string, string>;
 }
 const symlinks = (() => {
   const p = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
@@ -195,5 +196,8 @@ describe("containment parity", () => {
       );
       for (const s of c.absent ?? []) expect(lexists(resolve(s, real, outside))).toBe(false);
       for (const s of c.present ?? []) expect(lexists(resolve(s, real, outside))).toBe(true);
+      for (const [s, text] of Object.entries(c.contents ?? {})) {
+        expect(readFileSync(resolve(s, real, outside), "utf-8")).toBe(text);
+      }
     });
 });

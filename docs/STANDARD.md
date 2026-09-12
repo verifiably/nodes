@@ -155,9 +155,12 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   failure during the walk — a missing root, an unreadable directory — MUST propagate; it
   is never a finding and never absence.
 - **Non-Markdown content.** Nodes never reads, writes, or deletes content under
-  the root other than `*.md` files, with one exception: its own reserved namespace.
+  the root other than `*.md` files on its own initiative — every operation `Corpus`
+  derives targets a node document — with one exception: its own reserved namespace.
   Consumers may place non-Markdown artifacts at any other path under the root with the
-  guarantee they are untouched. Nodes creates kind directories and its cache directories
+  guarantee that nodes leaves them untouched; a write plan a consumer authors is that
+  consumer's instruction and may name its own artifacts (a manifest, a registry record)
+  at any portable, non-reserved path. Nodes creates kind directories and its cache directories
   on write and never removes a directory. Hard links are a precondition, not a check: a
   deployment MUST NOT hard-link a managed file — a node document, a cache entry, or a
   cache temporary — to a protected artifact, since rewriting the managed file would
@@ -173,8 +176,9 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   which binds every actor that edits the tree, including actors outside nodes.
 - **Portable root-relative path.** A write-plan operation path and a snapshot
   manifest row path MUST be non-empty, have no leading `/`, split on `/` only into
-  segments that are non-empty and neither `.` nor `..`, contain no `\` or `:` in any
-  segment, and end in `.md`. Reserved-namespace paths are refused separately. There is
+  segments that are non-empty and neither `.` nor `..`, and contain no `\` or `:` in
+  any segment; a snapshot manifest row path MUST also end in `.md`, while a plan path
+  carries no suffix rule. Reserved-namespace paths are refused separately. There is
   no normalization: a spelling that would normalize to a legal path is malformed. The
   rule binds what nodes *accepts as an instruction*, not what it observes: the walk
   reports any regular `*.md` file it finds by its literal name (a POSIX filename may
@@ -310,7 +314,7 @@ and dangling tracking but are not relation-graph edges.
   `ExecutionError` whose `index` is the offending operation and `applied = 0`; a durable
   executor keeps its own pre-effect refusal contract (`ExecutionError(index=None,
   applied=0)` for a topology or resolution refusal, per the seam design §3). Any
-  executor refuses a plan naming a non-portable or non-`.md` path as malformed
+  executor refuses a plan naming a non-portable path as malformed
   (`PlanRefusedError`).
 - `get(ref)` / `resolve(ref)`: resolve via the index (live then deprecated), read the
   file; `RefError` when the ref does not resolve.
@@ -564,7 +568,11 @@ fingerprint nor the path-keyed snapshot manifest (§10) may be extended toward t
   `write-plan.rename.canonical.json`); the executor's attribution of the single-writer
   obligation and rename's crash state (§3, §7, from the write-plan/executor seam design
   §7); per-language snapshot schema versions bumped (§10); the identity boundary
-  (§11.1); the `biology/gene-axis` facet-name fixture (§11.2).
+  (§11.1); the `biology/gene-axis` facet-name fixture (§11.2). *Corrected the same
+  day, before any consumer read it:* the plan-path suffix rule was withdrawn when
+  Beliefs' landed executor — which takes `validate_plan` as its one lexical authority —
+  was shown to write its manifests, registry and epoch records through the seam; §4.1's
+  non-Markdown guarantee is stated over nodes' own derived effects.
 
 ## 13. Known limitations
 

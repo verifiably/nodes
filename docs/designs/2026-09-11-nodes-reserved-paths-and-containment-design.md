@@ -1,7 +1,7 @@
 # Reserved paths and containment — design
 
 **Date:** 2026-09-11
-**Status:** implemented on branch `nodes-2.0` (2026-09-11); Science sign-off on the seam amendment pending
+**Status:** implemented on branch `nodes-2.0` (2026-09-11); normative as of STANDARD 2.0 (2026-09-12) with the plan-path suffix rule withdrawn the same day on Beliefs' evidence (§1 note)
 **Task:** `nodes-01111b`
 **Source:** `2026-08-03-nodes-under-the-system-redesign-design.md` §2.2 (as amended
 2026-08-17); seam design §5.
@@ -23,6 +23,17 @@ The guarantee is over nodes as a whole, not `Corpus` alone: `DefaultExecutor` is
 so a plan is refused when any operation targets a path not ending in `.md`
 (`PlanRefusedError`, lexical). Plans are sequences of node-document operations by
 definition (seam §2); a caller wanting to write `corpus.yaml` is not using nodes to do it.
+
+*(2026-09-12:)* **withdrawn — the suffix rule only.** Beliefs' gate against the merged 2.0
+showed the premise false: its durable executor takes `validate_plan` as its one lexical
+authority and its landed code writes `corpus.yaml`, `world.yaml`, `registry/*.yaml` and
+`epochs/*` through the seam (`root.py`, `corpus.py`, `world/registry.py`, `world/epoch.py`),
+so the rule refused a consumer-exercised create path. The consumer's answer to the
+pending row below is therefore a refusal as written. STANDARD §4.1 now states the
+non-Markdown guarantee over nodes' *own derived* effects — every operation `Corpus`
+derives targets a node document — and a consumer-authored plan may name any portable,
+non-reserved path. The segment, portability, reserved and containment rules stand; the
+snapshot manifest keeps its `.md` rule. Oracle rows renamed and flipped accordingly.
 
 **Containment.** No path nodes yields, reads, writes, or deletes — node documents,
 snapshots, vector cache entries, and their temporary siblings alike — has a symlink
@@ -189,7 +200,7 @@ a temporary directory and asserts the outcome. Cases:
 | segment rule: plan paths `/a.md`, `a//b.md`, `./a.md`, `a/../b.md` | `PlanRefusedError` (each already carries the `.md` suffix, so only the segment rule can be what refuses it) |
 | reserved rule: `.nodes-index/a.md`, `./.nodes-index/a.md`, `a/../.nodes-index/a.md` | `PlanRefusedError` |
 | portability rule: `C:/outside/x.md`, `..\outside\x.md`, `a\b.md`, `kind/a:b.md` | `PlanRefusedError`; `outside/` untouched |
-| suffix rule: `kind/a.txt`, `kind/a.md/` | `PlanRefusedError` |
+| ~~suffix rule: `kind/a.txt`, `kind/a.md/`~~ *(withdrawn 2026-09-12)*: `kind/a.md/` refused by the segment rule; `kind/a.txt`, `corpus.yaml` created and `kind/notes.txt` replaced | `PlanRefusedError` / ok, contents pinned |
 | `.nodes-index/snapshot.<lang>.json.tmp` is a stray symlink | construction reads the snapshot normally; `flush_index` raises `ContainmentError` and the target is unchanged |
 | `write_json_atomic(root, ".nodes-index", obj)` with a protected `.nodes-index.tmp` present | refused as a programming error; `.nodes-index.tmp` byte-identical |
 | direct plan creating `corpus.yaml`, replacing `<kind>/notes.txt` | `PlanRefusedError`; both untouched |

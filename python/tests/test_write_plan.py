@@ -184,17 +184,22 @@ def test_validate_refuses_windows_spellings(tmp_path, path):
     assert list(tmp_path.iterdir()) == []
 
 
-@pytest.mark.parametrize("path", ["kind/a.txt", "kind/a.md/", "corpus.yaml"])
-def test_validate_refuses_non_md_targets(tmp_path, path):
+def test_validate_refuses_trailing_slash(tmp_path):
     with pytest.raises(PlanRefusedError):
-        DefaultExecutor(tmp_path).execute([CreateOp(path=path, content=b"x")])
+        DefaultExecutor(tmp_path).execute([CreateOp(path="kind/a.md/", content=b"x")])
 
 
-def test_direct_plan_cannot_replace_protected_artifact(tmp_path):
+@pytest.mark.parametrize("path", ["kind/a.txt", "corpus.yaml"])
+def test_plan_paths_carry_no_suffix_rule(tmp_path, path):
+    # A plan is the caller's instruction: a consumer's own artifact is a legal target.
+    DefaultExecutor(tmp_path).execute([CreateOp(path=path, content=b"x")])
+    assert (tmp_path / path).read_bytes() == b"x"
+
+
+def test_plan_replaces_a_consumer_artifact(tmp_path):
     (tmp_path / "corpus.yaml").write_bytes(b"manifest")
-    with pytest.raises(PlanRefusedError):
-        DefaultExecutor(tmp_path).execute([ReplaceOp(path="corpus.yaml", content=b"x", expected_digest=sha(b"manifest"))])
-    assert (tmp_path / "corpus.yaml").read_bytes() == b"manifest"
+    DefaultExecutor(tmp_path).execute([ReplaceOp(path="corpus.yaml", content=b"x", expected_digest=sha(b"manifest"))])
+    assert (tmp_path / "corpus.yaml").read_bytes() == b"x"
 
 
 @needs_symlinks

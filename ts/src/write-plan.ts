@@ -40,15 +40,16 @@ export interface WritePlanExecutor {
 }
 
 /** Refuse a lexically malformed plan (`PlanRefusedError`) before any effect:
- * unknown operation kind, a non-portable root-relative `.md` path, or a
- * reserved-namespace path. */
+ * unknown operation kind, a non-portable root-relative path, or a
+ * reserved-namespace path. No suffix rule: a plan is the caller's instruction,
+ * and a consumer may name a non-Markdown artifact of its own. */
 export function validatePlan(plan: WritePlan): void {
   for (const op of plan) {
     if (op.op !== "create" && op.op !== "replace" && op.op !== "delete") {
       throw new PlanRefusedError(`unknown operation kind: ${JSON.stringify(op)}`);
     }
-    if (!isPortableRelativePath(op.path)) {
-      throw new PlanRefusedError(`not a portable root-relative .md path: ${JSON.stringify(op.path)}`);
+    if (!isPortableRelativePath(op.path, null)) {
+      throw new PlanRefusedError(`not a portable root-relative path: ${JSON.stringify(op.path)}`);
     }
     if (op.path.split("/", 1)[0] === RESERVED_NAMESPACE) {
       throw new PlanRefusedError(`path in reserved namespace: ${JSON.stringify(op.path)}`);
