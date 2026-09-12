@@ -2,7 +2,7 @@
 name = "verifiably-nodes"
 import-names = ["nodes.core"]
 import-namespaces = ["nodes"]
-version = "0.1.1"
+version = "0.2.0"
 description = "Nodes core: a problem-agnostic knowledge substrate"
 readme = "README.md"
 license = "MIT"

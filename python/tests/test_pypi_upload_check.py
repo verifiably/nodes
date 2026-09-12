@@ -8,8 +8,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / ".github/scripts/pypi_upload_check.py"
-WHEEL = "verifiably_nodes-0.1.1-py3-none-any.whl"
-SDIST = "verifiably_nodes-0.1.1.tar.gz"
+WHEEL = "verifiably_nodes-0.2.0-py3-none-any.whl"
+SDIST = "verifiably_nodes-0.2.0.tar.gz"
 
 
 def _load_script() -> ModuleType:

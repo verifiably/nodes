@@ -27,7 +27,7 @@ REQUIRED = (
     "package/dist/index.d.ts",
 )
 UV_VERSION = "0.11.29"
-EXPECTED_RELEASE_VERSION = "0.1.1"
+EXPECTED_RELEASE_VERSION = "0.2.0"
 PUBLISH_GATE = "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
 DOWNLOAD_ARTIFACT_ACTION = (
     "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
