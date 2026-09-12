@@ -1,13 +1,14 @@
 ---
 id: nodes-c7b371
 title: Collecting construction
-status: doing
+status: done
 priority: 1
 size: l
 owner: nodes-2.0
 created: 2026-09-11T12:33:36Z
-updated: 2026-09-12T03:01:35Z
+updated: 2026-09-12T03:21:57Z
 started: 2026-09-11T23:32:59Z
+completed: 2026-09-12T03:21:57Z
 depends: [nodes-01111b, nodes-cd59f0]
 parent: nodes-ce28b8
 tags: [redesign]
@@ -28,3 +29,4 @@ Sub-task B of the 2.0 remainder. Constructor flag mode=collecting, strict defaul
 - 2026-09-12T01:59:58Z (nodes-2.0): parked (waiting on user, review): Review the collecting-construction implementation plan; then execute starting nodes-558de1
 - 2026-09-12T02:46:41Z (nodes-2.0): Plan review round 1: per-file claim dedup before grouping; parse floor wraps pyyaml ValueError, relation pydantic errors, TS toJS alias errors; string-only mapping keys via mapAsMap; null never defaults; registry-backed damaged check and full-index eviction tests; TS add path declaration moved
 - 2026-09-12T03:01:35Z (nodes-2.0): Plan review round 2: TS plain() builds via Object.fromEntries (__proto__ pinned rejected); both walkers detect cyclic aliases on the ancestor path, shared aliases legal; null prohibition scoped to the named top-level fields, weight: null pinned accepted
+- 2026-09-12T03:21:57Z (nodes-2.0): Collecting construction implemented in both languages: parse floor, placement, exclusion with reservations, findings, fixture

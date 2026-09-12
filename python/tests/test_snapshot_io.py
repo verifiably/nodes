@@ -43,7 +43,7 @@ needs_symlinks = pytest.mark.skipif(not _symlinks_supported(), reason="symlinks 
 
 
 def test_constants():
-    assert SNAPSHOT_SCHEMA_VERSION == 2
+    assert SNAPSHOT_SCHEMA_VERSION == 3
     assert SNAPSHOT_LANG == "py"
 
 

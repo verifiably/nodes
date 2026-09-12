@@ -43,6 +43,10 @@ class PlanRefusedError(NodesError):
     path. Refused before any effect."""
 
 
+class PlacementError(NodesError):
+    """A member's literal root-relative path differs from its id's mapped path."""
+
+
 class ContainmentError(NodesError):
     """Raised when a path under the corpus root has a symlink component below the
     root, or cannot be inspected. Refused before any effect."""

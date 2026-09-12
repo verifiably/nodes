@@ -7,6 +7,7 @@ export {
   IdError,
   InvariantError,
   NodesError,
+  PlacementError,
   PlanRefusedError,
   RefError,
   UnknownKindError,
@@ -31,7 +32,7 @@ export {
   makeNode,
   newUid,
 } from "./node.js";
-export { nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "./frontmatter.js";
+export { nodeFromBytes, nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "./frontmatter.js";
 export {
   PROJECTION_VERSION,
   type JsonValue,
@@ -74,7 +75,7 @@ export {
   validatePlan,
 } from "./write-plan.js";
 export { assertCachePath, assertContained, isPortableRelativePath, pathForNodeId } from "./paths.js";
-export { Corpus, type Finding } from "./corpus.js";
+export { Corpus, type ConstructionMode, type Finding } from "./corpus.js";
 export {
   type CorpusFile,
   type CorpusFileStat,

@@ -22,6 +22,9 @@ export class PlanRefusedError extends NodesError {}
  * be inspected. Refused before any effect. */
 export class ContainmentError extends NodesError {}
 
+/** A member's literal root-relative path differs from its id's mapped path. */
+export class PlacementError extends NodesError {}
+
 /** Write-plan execution failed. `index === null` means the failure is not
  * attributable to an operation; `applied === null` means restoration is
  * unproved: the executor cannot prove disk is at its pre-plan state. */

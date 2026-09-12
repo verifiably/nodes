@@ -38,8 +38,9 @@ B owns disk-member admission and the treatment of misplaced members. The snapsho
 validator already rejects manifest paths that differ from the mapped id path; C feeds
 that existing check with the shared mapping. Rejection discards the cache and triggers
 a cold rebuild, which currently admits misplaced files. Changed-file reconciliation
-also lacks placement checks. B must enforce placement on both disk-admission paths;
-C introduces no new placement rejection or `path-mismatch` finding.
+also lacked placement checks. B enforces placement on both disk-admission paths
+(2026-09-11: strict raises `PlacementError`, collecting excludes with `path-mismatch`);
+C introduced no placement rejection or finding of its own.
 
 The **collision key** is NFC followed by default case folding of that mapped path.
 Two distinct live claimants collide when their keys are equal. Physical filenames and

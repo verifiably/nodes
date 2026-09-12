@@ -7,7 +7,7 @@ import { SearchIndex, compareCodepoints } from "./search.js";
 import { VectorIndex } from "./similarity.js";
 import { Index } from "./structural-index.js";
 
-export const SNAPSHOT_SCHEMA_VERSION = 1;
+export const SNAPSHOT_SCHEMA_VERSION = 2;
 export const SNAPSHOT_LANG = "ts";
 export const SNAPSHOT_REL_PATH = `${RESERVED_NAMESPACE}/snapshot.ts.json`;
 export { readJson, writeJsonAtomic };

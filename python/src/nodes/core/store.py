@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from nodes.core.errors import RefError
-from nodes.core.frontmatter import node_from_markdown, node_to_markdown
+from nodes.core.frontmatter import node_from_bytes, node_to_markdown
 from nodes.core.node import Node
 from nodes.core.paths import assert_contained, path_for_node_id
 from nodes.core.snapshot import iter_corpus_files
@@ -38,7 +38,7 @@ class Store:
         path = self.root / rel
         if not path.is_file():
             raise RefError(f"no node at {node_id!r}")
-        return node_from_markdown(path.read_text(encoding="utf-8"))
+        return node_from_bytes(path.read_bytes())
 
     def delete_file(self, node_id: str) -> None:
         rel = self.rel_path(node_id)
@@ -49,4 +49,4 @@ class Store:
         path.unlink()
 
     def all_nodes(self) -> list[Node]:
-        return [node_from_markdown(f.data.decode("utf-8")) for f in iter_corpus_files(self.root)]
+        return [node_from_bytes(f.data) for f in iter_corpus_files(self.root)]

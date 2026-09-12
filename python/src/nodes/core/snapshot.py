@@ -17,7 +17,7 @@ from nodes.core.structural_index import Index
 from nodes.core.search import SearchIndex
 from nodes.core.similarity import VectorIndex
 
-SNAPSHOT_SCHEMA_VERSION = 2
+SNAPSHOT_SCHEMA_VERSION = 3
 SNAPSHOT_LANG = "py"
 SNAPSHOT_REL_PATH = f"{RESERVED_NAMESPACE}/snapshot.py.json"
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")

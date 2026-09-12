@@ -39,7 +39,7 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("snapshot I/O foundations", () => {
   it("exposes the schema version and language", () => {
-    expect(SNAPSHOT_SCHEMA_VERSION).toBe(1);
+    expect(SNAPSHOT_SCHEMA_VERSION).toBe(2);
     expect(SNAPSHOT_LANG).toBe("ts");
   });
 

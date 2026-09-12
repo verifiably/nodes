@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from nodes.core.errors import ValidationError
-from nodes.core.frontmatter import node_from_markdown, node_to_markdown, split_frontmatter
+from nodes.core.frontmatter import node_from_bytes, node_from_markdown, node_to_markdown, split_frontmatter
 from nodes.core.node import Node
+from nodes.core.projection import to_canonical
 from nodes.core.relations import Relation, relates_to
 
 
@@ -104,3 +108,32 @@ def test_split_is_line_anchored_and_preserves_body_rule():
     fm, body = split_frontmatter(text)
     assert fm["id"] == "topic:a"
     assert body == "Intro.\n\n---\n\nAfter rule.\n"
+
+
+MALFORMED = json.loads((Path(__file__).parents[2] / "fixtures/frontmatter.malformed.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("text", MALFORMED["rejected"], ids=lambda t: t.replace("\n", "|")[:48])
+def test_malformed_frontmatter_is_a_kernel_validation_error(text):
+    with pytest.raises(ValidationError):
+        node_from_markdown(text)
+
+
+@pytest.mark.parametrize("text", MALFORMED["accepted"], ids=lambda t: t.replace("\n", "|")[:48])
+def test_wellformed_frontmatter_round_trips(text):
+    node = node_from_markdown(text)
+    assert to_canonical(node_from_markdown(node_to_markdown(node))) == to_canonical(node)
+
+
+def test_unquoted_and_quoted_dates_parse_identically():
+    a = node_from_markdown("---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: 2026-01-01\n---\n")
+    b = node_from_markdown('---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: "2026-01-01"\n---\n')
+    assert to_canonical(a) == to_canonical(b)
+
+
+def test_invalid_utf8_is_a_validation_error_and_bom_is_preserved():
+    with pytest.raises(ValidationError):
+        node_from_bytes(b"---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n\xff")
+    with pytest.raises(ValidationError):
+        node_from_bytes("﻿---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n".encode("utf-8"))
+    assert node_from_bytes(b"---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n").id == "k:a"

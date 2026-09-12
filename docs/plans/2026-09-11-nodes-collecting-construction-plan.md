@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** ready for review; implementation has not started.
+**Status:** completed on branch `nodes-2.0` (2026-09-11); `just gate` green in both languages, `tasks check` clean.
 **Goal:** Construct a corpus over damaged files under `mode="collecting"`, reporting parse, placement and identity failures as findings, while strict construction (the default) refuses the same tree, and both kernels share one parse floor.
 **Architecture:** Both kernels parse documents through a strict boundary (`node_from_bytes` / `nodeFromBytes`) that raises only the kernel `ValidationError`. `Corpus` classifies every walked file — parse, placement, uid grouping, id grouping — through one admission path used by cold build and reconciliation; strict raises at the first failure, collecting excludes the claimants and records path-anchored findings, reserved uids and reserved ids that mutation honors. `check()` folds construction findings in; `all()` iterates the manifest in code-point order. Snapshot schema versions bump so pre-B caches rebuild cold.
 **Tech Stack:** Python 3.11+, Pydantic, PyYAML, pytest; TypeScript, Zod, `yaml`, Vitest; `just` recipes; shared JSON fixtures.
@@ -52,9 +52,9 @@
 - `node_from_markdown` / `nodeFromMarkdown` keep their signatures; `split_frontmatter` / `splitFrontmatter` now raise `ValidationError` on invalid YAML or a non-mapping document instead of leaking.
 - Later tasks call only `node_from_bytes` / `nodeFromBytes` from construction and the store.
 
-- [ ] **Step 0: Start.** `tasks start nodes-558de1`.
+- [x] **Step 0: Start.** `tasks start nodes-558de1`.
 
-- [ ] **Step 1: Write the shared oracle.** Texts are JSON strings; `﻿` is the BOM. The invalid-byte case cannot be a JSON string and lives in Task 3's damaged corpus.
+- [x] **Step 1: Write the shared oracle.** Texts are JSON strings; `﻿` is the BOM. The invalid-byte case cannot be a JSON string and lives in Task 3's damaged corpus.
 
 ```json
 {
@@ -103,7 +103,7 @@
 }
 ```
 
-- [ ] **Step 2: Write the failing tests.** Append to `python/tests/test_frontmatter.py` (add `import json` and `from pathlib import Path`; add `node_from_bytes` to the frontmatter import; add `from nodes.core.projection import to_canonical`):
+- [x] **Step 2: Write the failing tests.** Append to `python/tests/test_frontmatter.py` (add `import json` and `from pathlib import Path`; add `node_from_bytes` to the frontmatter import; add `from nodes.core.projection import to_canonical`):
 
 ```python
 MALFORMED = json.loads((Path(__file__).parents[2] / "fixtures/frontmatter.malformed.json").read_text(encoding="utf-8"))
@@ -168,9 +168,9 @@ it("treats invalid UTF-8 as a ValidationError and preserves a BOM", () => {
 });
 ```
 
-- [ ] **Step 3: Run `just test-fast`.** Expected: Python red on `related: abc`, `related:` (null), `version: "2"`, `version: true`, `directed: "false"`, `weight: "1"`, bad YAML (`yaml.parser.ParserError`, not `ValidationError`), `title: [1]` (pydantic's error), `relations: [3]` (`AttributeError`), `created: 2026-02-30` (`ValueError` from inside `yaml.safe_load`), `attrs:\n    1: x` (raw pydantic error from `Relation(...)`), and `node_from_bytes` missing. TS red on scalar frontmatter and `relations: [null]` / `[3]` (raw `TypeError`), `facets:\n  f: 1`, `facets: *missing` (`ReferenceError` from `toJS`), `facets:` / `created:` / `updated:` null (accepted), numeric mapping keys (accepted as strings), the cyclic alias (`RangeError` in TS, `RecursionError` in Python), the `__proto__` document (accepted through the prototype in TS), and `nodeFromBytes` missing.
+- [x] **Step 3: Run `just test-fast`.** Expected: Python red on `related: abc`, `related:` (null), `version: "2"`, `version: true`, `directed: "false"`, `weight: "1"`, bad YAML (`yaml.parser.ParserError`, not `ValidationError`), `title: [1]` (pydantic's error), `relations: [3]` (`AttributeError`), `created: 2026-02-30` (`ValueError` from inside `yaml.safe_load`), `attrs:\n    1: x` (raw pydantic error from `Relation(...)`), and `node_from_bytes` missing. TS red on scalar frontmatter and `relations: [null]` / `[3]` (raw `TypeError`), `facets:\n  f: 1`, `facets: *missing` (`ReferenceError` from `toJS`), `facets:` / `created:` / `updated:` null (accepted), numeric mapping keys (accepted as strings), the cyclic alias (`RangeError` in TS, `RecursionError` in Python), the `__proto__` document (accepted through the prototype in TS), and `nodeFromBytes` missing.
 
-- [ ] **Step 4: Replace Python's parser.** In `frontmatter.py`, replace `split_frontmatter` and `node_from_markdown` with the following and add `node_from_bytes`. New imports: `import re`, `from datetime import date, datetime`, `from pydantic import ValidationError as PydanticValidationError`.
+- [x] **Step 4: Replace Python's parser.** In `frontmatter.py`, replace `split_frontmatter` and `node_from_markdown` with the following and add `node_from_bytes`. New imports: `import re`, `from datetime import date, datetime`, `from pydantic import ValidationError as PydanticValidationError`.
 
 ```python
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -333,7 +333,7 @@ def node_from_bytes(data: bytes) -> Node:
 
 `Relation.from_serialized` stays for in-code callers; the boundary no longer uses it. Route the three Python decode sites through `node_from_bytes`: `store.py` `read_file` (`node_from_bytes(path.read_bytes())`) and `all_nodes` (`node_from_bytes(f.data)`), and `corpus.py`'s two `node_from_markdown(f.data.decode("utf-8"))` calls in `_full_rebuild` and `_reconcile`; update each module's import.
 
-- [ ] **Step 5: Tighten TypeScript's parser.** In `frontmatter.ts`, replace the two lines from `const fm = (doc.toJS() ?? {}) ...` through the `return` with:
+- [x] **Step 5: Tighten TypeScript's parser.** In `frontmatter.ts`, replace the two lines from `const fm = (doc.toJS() ?? {}) ...` through the `return` with:
 
 ```typescript
   let raw: unknown;
@@ -473,7 +473,7 @@ export function nodeFromBytes(data: Uint8Array): Node {
 
 `created` / `updated` keep flowing into `makeNode`, whose `dateStr` schema already rejects a non-string, a timestamp, and an impossible date; `makeNode` wraps the Zod error. Route the three TS decode sites through `nodeFromBytes`: `store.ts` `load` (`nodeFromBytes(data)`), and `corpus.ts`'s two `nodeFromMarkdown(f.data.toString("utf-8"))` calls; update imports. Add `nodeFromBytes` to `index.ts`'s frontmatter export block.
 
-- [ ] **Step 6: Run `just test-fast`, then `just gate`.** All new cases green in both languages. `test_check_parity.py` / `check_parity.test.ts` must still pass: the committed `check-corpus` has no document the tightened floor rejects. Run `tasks done nodes-558de1 "Task 1 verified; held for the single B implementation commit"`; leave changes uncommitted.
+- [x] **Step 6: Run `just test-fast`, then `just gate`.** All new cases green in both languages. `test_check_parity.py` / `check_parity.test.ts` must still pass: the committed `check-corpus` has no document the tightened floor rejects. Run `tasks done nodes-558de1 "Task 1 verified; held for the single B implementation commit"`; leave changes uncommitted.
 
 ### Task 2: Strict tightenings — placement refusal, snapshot bump, manifest-ordered reads
 
@@ -489,9 +489,9 @@ export function nodeFromBytes(data: Uint8Array): Node {
 - Produces: `all()` ordered by manifest path in code-point order; registry-backed `check()` iterates `all()`.
 - `SNAPSHOT_SCHEMA_VERSION` is `3` (Python) and `2` (TypeScript).
 
-- [ ] **Step 0: Start.** `tasks start nodes-0ecf2e`.
+- [x] **Step 0: Start.** `tasks start nodes-0ecf2e`.
 
-- [ ] **Step 1: Write the failing tests.** Update the two constant assertions: `python/tests/test_snapshot_io.py:46` → `== 3`; `ts/tests/snapshot-io.test.ts:42` → `toBe(2)`. Create `python/tests/test_corpus_construction.py`:
+- [x] **Step 1: Write the failing tests.** Update the two constant assertions: `python/tests/test_snapshot_io.py:46` → `== 3`; `ts/tests/snapshot-io.test.ts:42` → `toBe(2)`. Create `python/tests/test_corpus_construction.py`:
 
 ```python
 from __future__ import annotations
@@ -637,9 +637,9 @@ it("all() follows manifest paths in code-point order", () => {
 });
 ```
 
-- [ ] **Step 2: Run `just test-fast`.** Expected: `PlacementError` import fails in both; version assertions fail; the migration test fails (the old-version snapshot is at the current version, so the forged entry is kept — the bypass); ordering fails after reconcile.
+- [x] **Step 2: Run `just test-fast`.** Expected: `PlacementError` import fails in both; version assertions fail; the migration test fails (the old-version snapshot is at the current version, so the forged entry is kept — the bypass); ordering fails after reconcile.
 
-- [ ] **Step 3: Add `PlacementError` and bump the versions.**
+- [x] **Step 3: Add `PlacementError` and bump the versions.**
 
 ```python
 # errors.py, after ContainmentError
@@ -655,7 +655,7 @@ export class PlacementError extends NodesError {}
 
 Add `PlacementError` to the `index.ts` errors export block (alphabetical, after `NodesError`). Set `SNAPSHOT_SCHEMA_VERSION = 3` in `snapshot.py` and `= 2` in `snapshot.ts`.
 
-- [ ] **Step 4: Parse-and-place through one helper; read through the manifest.** Python `corpus.py` — add the import `from nodes.core.errors import PlacementError` and `from nodes.core.paths import path_for_node_id`, add the helper, and use it in both construction paths:
+- [x] **Step 4: Parse-and-place through one helper; read through the manifest.** Python `corpus.py` — add the import `from nodes.core.errors import PlacementError` and `from nodes.core.paths import path_for_node_id`, add the helper, and use it in both construction paths:
 
 ```python
     def _parse_member(self, f: CorpusFile) -> Node:
@@ -715,7 +715,7 @@ Use it in `fullRebuild` (`const node = this.parseMember(f);`) and `reconcile` (`
 
 `Store.all_nodes` / `Store.allNodes` remain as store-level helpers; nothing in `Corpus` calls them after this step.
 
-- [ ] **Step 5: Run `just test-fast`, then `just gate`.** Confirm with `rg -n 'all_nodes\(\)|allNodes\(\)' python/src ts/src` that only the store definitions remain. Run `tasks done nodes-0ecf2e "Task 2 verified; held for the single B implementation commit"`; leave changes uncommitted.
+- [x] **Step 5: Run `just test-fast`, then `just gate`.** Confirm with `rg -n 'all_nodes\(\)|allNodes\(\)' python/src ts/src` that only the store definitions remain. Run `tasks done nodes-0ecf2e "Task 2 verified; held for the single B implementation commit"`; leave changes uncommitted.
 
 ### Task 3: Collecting mode — admission, exclusion, reservations, findings, fixture
 
@@ -731,9 +731,9 @@ Use it in `fullRebuild` (`const node = this.parseMember(f);`) and `reconcile` (`
 - Produces: `check()` findings with codes `parse-error`, `path-mismatch`, `uid-collision`, `id-collision`; `add` / `rename` refusals for excluded paths, reserved uids and reserved ids.
 - No new public accessor: `check()` and `all()` are the surface.
 
-- [ ] **Step 0: Start.** `tasks start nodes-775188`.
+- [x] **Step 0: Start.** `tasks start nodes-775188`.
 
-- [ ] **Step 1: Write the damaged corpus.** Create the files with this Python snippet run from the worktree root (it writes bytes so the invalid-UTF-8 member is exact):
+- [x] **Step 1: Write the damaged corpus.** Create the files with this Python snippet run from the worktree root (it writes bytes so the invalid-UTF-8 member is exact):
 
 ```python
 from pathlib import Path
@@ -777,7 +777,7 @@ Write `fixtures/damaged.oracle.json`:
 }
 ```
 
-- [ ] **Step 2: Write the failing parity harness.** `python/tests/test_damaged_parity.py`:
+- [x] **Step 2: Write the failing parity harness.** `python/tests/test_damaged_parity.py`:
 
 ```python
 """Collecting construction over the committed damaged corpus, and the interactions
@@ -1178,9 +1178,9 @@ it("a candidate evicts the kept claimant from every index", () => {
 });
 ```
 
-- [ ] **Step 3: Run `just test-fast`.** Expected red: `mode` is an unknown argument in both languages.
+- [x] **Step 3: Run `just test-fast`.** Expected red: `mode` is an unknown argument in both languages.
 
-- [ ] **Step 4: Implement collecting mode in Python.** In `corpus.py`:
+- [x] **Step 4: Implement collecting mode in Python.** In `corpus.py`:
 
 Imports: `from typing import Literal, NamedTuple`; `from nodes.core.errors import CollisionError, EmbedderRequiredError, PlacementError, RefError, ValidationError`.
 
@@ -1373,7 +1373,7 @@ and remove the later duplicate `old_rel_path` / `new_rel_path` assignments. The 
                 raise CollisionError(f"id {claim!r} is reserved by an excluded document")
 ```
 
-- [ ] **Step 5: Implement collecting mode in TypeScript.** In `corpus.ts`:
+- [x] **Step 5: Implement collecting mode in TypeScript.** In `corpus.ts`:
 
 Imports: add `PlacementError`, `ValidationError` to the errors import. Module level:
 
@@ -1578,7 +1578,7 @@ removing the later duplicate `oldRelPath` / `newRelPath` declarations. The share
 
 Export the type from `index.ts`: `export { Corpus, type ConstructionMode, type Finding } from "./corpus.js";`.
 
-- [ ] **Step 6: Run `just test-fast`, then `just gate`.** Every damaged-parity case green in both languages; `check_parity`, `path-collision-parity`, and the rename parity runners unchanged. Run `tasks done nodes-775188 "Task 3 verified; held for the single B implementation commit"`; leave changes uncommitted.
+- [x] **Step 6: Run `just test-fast`, then `just gate`.** Every damaged-parity case green in both languages; `check_parity`, `path-collision-parity`, and the rename parity runners unchanged. Run `tasks done nodes-775188 "Task 3 verified; held for the single B implementation commit"`; leave changes uncommitted.
 
 ### Task 4: Normative amendment and B closeout
 
@@ -1587,9 +1587,9 @@ Export the type from `index.ts`: `export { Corpus, type ConstructionMode, type F
 - Modify: `.worktrees/nodes-2.0/docs/designs/2026-09-11-nodes-2.0-remainder-design.md` (§B), `2026-09-11-nodes-digest-id-hazards-design.md` (§2 note), `2026-09-11-nodes-collecting-construction-design.md` (status), and this plan (status, checklists).
 - Mutate task records only through the CLI.
 
-- [ ] **Step 0: Start.** `tasks start nodes-c1c23d`.
+- [x] **Step 0: Start.** `tasks start nodes-c1c23d`.
 
-- [ ] **Step 1: Amend STANDARD.** Every amended clause gets `*(2.0)*` once.
+- [x] **Step 1: Amend STANDARD.** Every amended clause gets `*(2.0)*` once.
 
 | Section | Amendment |
 | --- | --- |
@@ -1607,9 +1607,9 @@ Export the type from `index.ts`: `export { Corpus, type ConstructionMode, type F
 | §10 | Append: A snapshot records accepted members only; exclusion is never persisted and re-derives on open. A snapshot at an earlier schema version is discarded and the corpus rebuilds cold; schema versions are per language and changed by the 2.0 parse floor. |
 | §11.2 | Rows: `damaged-corpus/`, `damaged.oracle.json` — *(2.0)* collecting-mode findings, accepted members and strict's refusal over one committed damaged tree (parse, placement, uid and id collisions, and a dangling ref into an excluded member), plus single-fault subsets pinning each strict error; `frontmatter.malformed.json` — *(2.0)* the parse floor: texts both kernels refuse and texts both accept. |
 
-- [ ] **Step 2: Update the design records.** Umbrella §B: replace the bullet list of open questions with the decided shapes (mode flag; parse floor; four path-anchored findings, all claimants excluded, per-`(path, contested id)`; `PlacementError`; excluded-path occupancy and stage-specific reservations; one admission algorithm with eviction; manifest-ordered reads; version bump; `path-collision` stays in C's in-test construction). C design §2: replace "B must enforce placement on both disk-admission paths" with a sentence recording that B does, dated. Mark the B design "implemented on branch `nodes-2.0` (date)" only after verifying the code exists; mark this plan completed with gate evidence. No future commit hash in either status.
+- [x] **Step 2: Update the design records.** Umbrella §B: replace the bullet list of open questions with the decided shapes (mode flag; parse floor; four path-anchored findings, all claimants excluded, per-`(path, contested id)`; `PlacementError`; excluded-path occupancy and stage-specific reservations; one admission algorithm with eviction; manifest-ordered reads; version bump; `path-collision` stays in C's in-test construction). C design §2: replace "B must enforce placement on both disk-admission paths" with a sentence recording that B does, dated. Mark the B design "implemented on branch `nodes-2.0` (date)" only after verifying the code exists; mark this plan completed with gate evidence. No future commit hash in either status.
 
-- [ ] **Step 3: Review the diff and propagated claims.** `git diff --check`, `git diff --stat`, read the combined diff. Then:
+- [x] **Step 3: Review the diff and propagated claims.** `git diff --check`, `git diff --stat`, read the combined diff. Then:
 
 ```bash
 rg -n 'all_nodes|allNodes|node_from_markdown\(.*decode|toString\("utf-8"\)|first unparseable|fails hard|write-new-then-delete-old' docs/STANDARD.md README.md python/README.md ts/README.md
@@ -1618,7 +1618,7 @@ rg -n '\*\(2\.0\)\*|\*\*Pending:\*\*' docs/STANDARD.md | wc -l
 
 Correct live instructions the change contradicts; leave dated historical designs and plans alone. Confirm the pre-B bypass is closed in both languages by re-reading the migration tests' assertions against the version constants.
 
-- [ ] **Step 4: Close, gate, commit.** `tasks done nodes-c1c23d "B normative amendment and review complete"`, then `tasks done nodes-c7b371 "Collecting construction implemented in both languages: parse floor, placement, exclusion with reservations, findings, fixture"`. `tasks check` (zero errors; report warnings), `just gate`. With both green:
+- [x] **Step 4: Close, gate, commit.** `tasks done nodes-c1c23d "B normative amendment and review complete"`, then `tasks done nodes-c7b371 "Collecting construction implemented in both languages: parse floor, placement, exclusion with reservations, findings, fixture"`. `tasks check` (zero errors; report warnings), `just gate`. With both green:
 
 ```bash
 git add python ts fixtures docs tasks
