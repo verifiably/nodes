@@ -1,7 +1,7 @@
 # Nodes under the system redesign — design
 
 **Date:** 2026-08-03
-**Status:** Detailed review complete 2026-08-17 — §2.1 landed 2026-08-20; §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; other deltas await implementation
+**Status:** Landed — §2.1 on 2026-08-20; §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; §§2.2–2.4, 3, 5 and 6 landed on branch `nodes-2.0` as STANDARD 2.0 (2026-09-12, umbrella `nodes-ce28b8`, per 2026-09-11-nodes-2.0-remainder-design.md; §6's 1.3 verdict was superseded by the traversal withdrawal's major bump)
 **Authority:** `docs/STANDARD.md` remains normative; this document records rationale and implementation status.
 **Consumer requirements:** science's four system-redesign designs of 2026-08-02 (epistemic
 kernel, substrate consolidation, world addressing, computation & reproducibility).
@@ -261,6 +261,8 @@ Mechanical; lands with this design's plan:
 
   *(2026-08-17:)* **stands.** STANDARD still contains no “corpus-state identity” boundary;
   the implementation amendment must add the sentence above.
+
+  *(2026-09-12:)* **corrected.** STANDARD §11.1 carries the identity boundary as of 2.0.
 - **Release follow-ups.** First-publish-recovery §4's post-tag steps (npm 0.0.0
   deprecation, attestation verification, credential revocation) get a status note
   recording whether they happened.
@@ -305,3 +307,6 @@ the retained `dangling-ref` and `dangling-member` findings through `check.oracle
 the convenience API itself. Under §12, the surviving pinned traversal removal requires a
 major bump. **1.3 (minor)** is available only if every surviving withdrawal leaves pinned
 surfaces untouched, which this inventory does not.
+
+*(2026-09-12:)* **landed as 2.0.** STANDARD §12's history entry names the pinned traversal
+removal as the major cause and inventories the rest.

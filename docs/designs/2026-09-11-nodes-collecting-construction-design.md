@@ -1,7 +1,7 @@
 # Collecting construction — design
 
 **Date:** 2026-09-11
-**Status:** implemented on branch `nodes-2.0` (2026-09-11); the umbrella's E owns the final version bump and marker removal
+**Status:** implemented on branch `nodes-2.0` (2026-09-11); normative as of STANDARD 2.0 (2026-09-12)
 **Task:** `nodes-c7b371`, sub-task B of `nodes-ce28b8`
 **Sources:** `2026-09-11-nodes-2.0-remainder-design.md` §B;
 `2026-08-03-nodes-under-the-system-redesign-design.md` §2.3;

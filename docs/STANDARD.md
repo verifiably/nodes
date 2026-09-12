@@ -1,10 +1,8 @@
 # The nodes Standard
 
-- **Spec version:** 1.2
+- **Spec version:** 2.0
 - **Status:** Living standard — the authoritative definition of the portable `nodes` contract.
 - **Implementations:** Python (`python/src/nodes/`), TypeScript (`ts/src/`).
-- **Pending:** 2.0 amendment in progress on branch `nodes-2.0`; clauses marked *(2.0)*
-  are not yet in force.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are to be interpreted as
 described in RFC 2119. Where a historical document in `docs/designs/` or `docs/plans/`
@@ -31,7 +29,7 @@ Guarantees fall into three conformance tiers:
   `idsByKind` / `allByKind`, corpus stat fingerprints). Out of scope for this standard;
   no parity obligation until the other language has a real consumer.
 
-*(2.0)* **Construction modes.** `Corpus` constructs in `strict` mode by default,
+**Construction modes.** `Corpus` constructs in `strict` mode by default,
 refusing the first damaged, misplaced or colliding file with the error §3–§4 name; in
 `collecting` mode it excludes such files, constructs over the remainder, and reports
 each exclusion through `check()` (§8.2). Collecting is the documented posture for audit
@@ -50,7 +48,7 @@ The universal container. Fields:
 | Field | Contract |
 |-------|----------|
 | `id` | Canonical `kind:slug` identifier (§3). Required. |
-| `uid` | *(2.0)* Immutable, corpus-unique, non-empty opaque string; survives renames. Required. Nodes preserves supplied strings without shape constraints or normalization; minting policy belongs to a profile. Convenience constructors MAY retain their UUID-hex default. An empty uid MUST raise `ValidationError`. |
+| `uid` | Immutable, corpus-unique, non-empty opaque string; survives renames. Required. Nodes preserves supplied strings without shape constraints or normalization; minting policy belongs to a profile. Convenience constructors MAY retain their UUID-hex default. An empty uid MUST raise `ValidationError`. |
 | `kind` | Type name, resolved against a registry (§6). MUST equal the `id`'s kind segment. |
 | `title` | Human-readable display title. Required. |
 | `body` | Markdown content. May be empty. |
@@ -95,7 +93,7 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   Resolution MUST be O(1) via the structural index.
 - **Collisions.** The corpus MUST reject a node claiming a live id or another node's
   still-active deprecated id (`CollisionError`), and MUST reject a duplicate `uid`.
-  *(2.0)* These are **identity** checks and apply at construction and mutation alike.
+  These are **identity** checks and apply at construction and mutation alike.
   **Mapped-path admission** (§4.1) applies to mutation only: `add` and `rename` refuse a
   candidate whose collision key another live uid already claims (`CollisionError`),
   while construction — cold build and snapshot reconciliation — admits otherwise legal
@@ -108,7 +106,7 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   before excluding.
 - **Rename** is a library operation. Given `old_id` → `new_id`: `old_id` MUST be live
   (`RefError` otherwise); `new_id` MUST NOT resolve (`CollisionError` otherwise).
-  *(2.0)* Then, before referrer preparation, embedding or cache work, or executor
+  Then, before referrer preparation, embedding or cache work, or executor
   invocation, `new_id`'s collision key MUST be available (`CollisionError` otherwise),
   except that the source uid's own **exact** mapped path is always available to it. A
   differently spelled destination with the same key — a case-only rename — is refused
@@ -119,18 +117,23 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   node and in every referrer the reverse index names (relation `source`/`target`,
   membership members, `edges`/`order`/`keys` form-facet refs). Cost MUST be O(degree).
   `uid` never changes; a stale ref still resolves through `deprecated_ids`.
-- **Rename atomicity.** All rewrites are prepared in memory; with a registry (§6) every
-  node that will be written is validated before anything is written (no partial rename).
-  *(2.0)* Commit writes the renamed node first — replaced in place when the old and new
-  ids map to the same exact path, otherwise create-new-then-delete-old — then referrers,
-  in ascending uid Unicode code-point order.
+- **Rename preparation and crash state.** All rewrites are prepared in memory; with a
+  registry (§6) every node that will be written is validated before anything is written.
+  Execution replaces the renamed document in place when the exact mapped paths match;
+  otherwise it creates the new document and deletes the old document, then in either
+  case replaces referrers in ascending uid Unicode code-point order. Under
+  `DefaultExecutor`, a crash leaves an applied prefix. After create and before delete,
+  two files carry the same uid; this prefix is invalid, is not forward-resolvable, and
+  strict construction refuses it with `CollisionError`. After delete and before a
+  referrer replacement, unchanged referrers still resolve through the renamed node's
+  `deprecated_ids`. A durable executor applies the complete plan all-or-nothing.
 
 ## 4. On-disk format
 
 ### 4.1 Corpus layout & membership
 
 - One file per node: `<root>/<kind>/<slug>.md`, with any `:` in the slug mapped to `__`.
-- *(2.0)* **Well-placed and collision key.** A member is *well-placed* when its literal
+- **Well-placed and collision key.** A member is *well-placed* when its literal
   root-relative path equals its live id's mapped path exactly. A live id's **collision
   key** is NFC followed by default case folding of its mapped path; two live claimants
   *collide* when their keys are equal (`kind:A` / `kind:a`; `kind:a:b` / `kind:a__b`).
@@ -140,7 +143,7 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   member (`PlacementError`); collecting construction excludes it (`path-mismatch`).
   Membership is what the walk yields; **acceptance** is what admission keeps.
 - Files are canonical and git-versioned; everything else is rebuildable from them.
-- *(2.0)* Corpus membership (the files a corpus walk considers): regular `*.md` files
+- Corpus membership (the files a corpus walk considers): regular `*.md` files
   under the root, recursively; walk order is sorted by root-relative POSIX path in
   Unicode code-point order (cf. §8.2, §9.1). The root-relative path is the literal
   filename with the platform separator mapped to `/`; no other character is rewritten.
@@ -151,7 +154,7 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   non-regular files MUST be skipped at every depth, without being followed. A filesystem
   failure during the walk — a missing root, an unreadable directory — MUST propagate; it
   is never a finding and never absence.
-- *(2.0)* **Non-Markdown content.** Nodes never reads, writes, or deletes content under
+- **Non-Markdown content.** Nodes never reads, writes, or deletes content under
   the root other than `*.md` files, with one exception: its own reserved namespace.
   Consumers may place non-Markdown artifacts at any other path under the root with the
   guarantee they are untouched. Nodes creates kind directories and its cache directories
@@ -159,7 +162,7 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   deployment MUST NOT hard-link a managed file — a node document, a cache entry, or a
   cache temporary — to a protected artifact, since rewriting the managed file would
   rewrite the artifact through the shared inode.
-- *(2.0)* **Containment.** No path nodes yields, reads, writes, or deletes — node
+- **Containment.** No path nodes yields, reads, writes, or deletes — node
   documents, snapshots, cache entries, and their temporary siblings alike — has a symlink
   component below the root. Walks inspect directory entries without following symlinks
   and skip links; direct I/O inspects every path prefix with `lstat` and refuses
@@ -168,7 +171,7 @@ currently tolerate them. New facet schemas SHOULD reject unknown keys.
   observes it at the moment of the operation; substitution between inspection and
   effect, and retargeting of the root, are excluded by the single-writer rule (§7),
   which binds every actor that edits the tree, including actors outside nodes.
-- *(2.0)* **Portable root-relative path.** A write-plan operation path and a snapshot
+- **Portable root-relative path.** A write-plan operation path and a snapshot
   manifest row path MUST be non-empty, have no leading `/`, split on `/` only into
   segments that are non-empty and neither `.` nor `..`, contain no `\` or `:` in any
   segment, and end in `.md`. Reserved-namespace paths are refused separately. There is
@@ -190,7 +193,7 @@ preserved verbatim). Top-level fields:
 - `relations` — optional list of typed relations in node-relation form (§4.3).
 - `facets` — optional nested map keyed by facet name.
 - `deprecated_ids` — optional list of previous ids.
-- *(2.0)* **Parse floor.** A document is decoded as UTF-8 fatally, BOM preserved, and
+- **Parse floor.** A document is decoded as UTF-8 fatally, BOM preserved, and
   begins with `---` at byte zero. The frontmatter is a mapping. `id`, `uid`, `kind`,
   `title` are strings. `related`, `relations`, `deprecated_ids` are absent or lists —
   `null` is malformed — of strings, mappings, strings respectively. `facets` is absent
@@ -272,12 +275,12 @@ and dangling tracking but are not relation-graph edges.
 |-----------|-------|
 | Malformed canonical id | `IdError` |
 | Unresolvable input ref; delete/rename of a non-live id | `RefError` |
-| Live-id / deprecated-id / uid collision; *(2.0)* mapped-path admission collision; excluded-path occupancy and reserved-claim refusal (collecting mutation) | `CollisionError` |
-| *(2.0)* Member's literal path differs from its id's mapped path (strict construction) | `PlacementError` |
+| Live-id / deprecated-id / uid collision; mapped-path admission collision; excluded-path occupancy and reserved-claim refusal (collecting mutation) | `CollisionError` |
+| Member's literal path differs from its id's mapped path (strict construction) | `PlacementError` |
 | Unregistered kind | `UnknownKindError` |
 | Missing, unexpected, or malformed facet payload | `FacetError` |
 | Shape or registry invariant violation | `InvariantError` |
-| *(2.0)* Symlink component below the root, or a direct-I/O path that cannot be inspected | `ContainmentError` |
+| Symlink component below the root, or a direct-I/O path that cannot be inspected | `ContainmentError` |
 | Structural node/frontmatter failure (missing required field, id/kind mismatch) | `ValidationError` |
 | Similarity API on a corpus without an embedder | `EmbedderRequiredError` |
 
@@ -295,7 +298,7 @@ and dangling tracking but are not relation-graph edges.
 
 - `add(node)`: registry validation (when configured) → collision check → similarity
   vector preparation (when configured) → file write → index upserts. Any failure MUST
-  precede the disk write. *(2.0)* The collision check is identity claims then
+  precede the disk write. The collision check is identity claims then
   mapped-path admission (§3), both before vector preparation or any effect; a
   same-`(uid, id)` replacement still passes mapped-path admission when the corpus
   already carries a `path-collision` warning. On a collecting corpus, `add` also
@@ -314,19 +317,19 @@ and dangling tracking but are not relation-graph edges.
 - `delete(id)`: **live-id-only** — a stale/deprecated id MUST raise `RefError` so a
   stale alias never deletes the renamed live node. Inbound refs to a deleted node remain
   on disk and become dangling.
-- `rename(old, new)`: as specified in §3. *(2.0)* On a collecting corpus the same
+- `rename(old, new)`: as specified in §3. On a collecting corpus the same
   refusals as `add` apply to the new id and, when it differs from the old, the new
   mapped path.
-- *(2.0)* `all()` returns accepted members ordered by manifest path in Unicode
+- `all()` returns accepted members ordered by manifest path in Unicode
   code-point order; registry-backed `check()` iterates the same sequence. Neither walks
   the directory.
-- *(2.0)* Relation queries (`outbound`, `inbound`, `neighbors`) are relations-only and
+- Relation queries (`outbound`, `inbound`, `neighbors`) are relations-only and
   uid-based. A **dangling** target (a relation whose target no longer resolves) is a
   normal state — surfaced in the edge (`target_uid` null) and reported by `check`
   (`dangling-ref`, §8.2), never raised. `inbound`/`outbound` raise `RefError` only when
   the *input* ref does not resolve. `neighbors` returns nodes ordered by their distinct
   resolved uids in ascending Unicode code-point order.
-- *(2.0)* Membership queries (`members`, `containers`) expose the containment graph over
+- Membership queries (`members`, `containers`) expose the containment graph over
   `membership.members` refs, one hop each. Each method MUST resolve its input ref (live
   then deprecated; `RefError` when it resolves to no live node — the only raising path)
   and return a sorted (Unicode code point), uid-deduplicated list of **live ids**. They
@@ -337,14 +340,17 @@ and dangling tracking but are not relation-graph edges.
   a container's internal `edges` facet, so cross-node membership containment cycles are
   legal. A node without a membership facet has no members; a node no container lists
   has no containers — both are empty results, never errors.
-- *(2.0)* These five methods — `outbound`, `inbound`, `neighbors`, `members`,
+- These five methods — `outbound`, `inbound`, `neighbors`, `members`,
   `containers` — are the complete one-hop graph-query surface. Transitive walks
   (formerly `descendants` / `ancestors`) and the corpus-local dangling-edge list
   (formerly `dangling()`) are withdrawn: a corpus-local closure truncates at the corpus
   edge, and the layer that joins corpora owns traversal across it.
-- **Single-writer assumption.** Nothing coordinates concurrent mutation of one corpus
-  (by two processes or two languages). Deployments MUST ensure a single writer at a
-  time; readers may run concurrently at the cost of possibly-stale derived indexes.
+- **Single-writer obligation.** The kernel performs no coordination. Each executor
+  declares whether it serializes corpus mutation or passes the single-writer obligation
+  through to the deployment. `DefaultExecutor` provides no serialization, so
+  deployments using it MUST ensure a single writer at a time. A durable executor owns
+  serialization. Readers may run concurrently at the cost of possibly-stale derived
+  indexes.
 
 ## 8. Corpus validity & checking
 
@@ -370,7 +376,7 @@ Returns a list of violations; MUST NOT raise on content. Each violation carries
 
 ### 8.2 `Corpus.check(registry?)`
 
-Returns a list of findings; MUST NOT raise on content. *(2.0)* This holds from the
+Returns a list of findings; MUST NOT raise on content. This holds from the
 parse floor up: under collecting construction, content that cannot be parsed is a
 finding, never an exception. `ref` is a node id or a literal root-relative path; the
 finding code alone says which. Uses the passed registry, else
@@ -389,15 +395,15 @@ node the finding anchors to.
 | `invariant-violated` | error | `""` | invariant raised `InvariantError` |
 | `dangling-ref` | warning | target ref | top-level relation target resolves to no live node (`ref` = the relation's source node) |
 | `dangling-member` | warning | member ref | a `membership.members` entry resolves to no live node (`ref` = the container node) |
-| `path-collision` | warning | collision key | *(2.0)* one per live claimant in a key bucket holding more than one uid (`ref` = the live id) |
-| `parse-error` | error | `""` | *(2.0)* a walked document the parse floor refuses (`ref` = path; collecting only) |
-| `path-mismatch` | error | mapped path | *(2.0)* a well-formed document at a path other than its id's (`ref` = path; collecting only) |
-| `uid-collision` | error | the uid | *(2.0)* one per claimant of a uid claimed by more than one accepted-so-far document (`ref` = path; collecting only) |
-| `id-collision` | error | the contested id | *(2.0)* one per `(claimant, contested id)` among the remaining documents (`ref` = path; collecting only) |
+| `path-collision` | warning | collision key | one per live claimant in a key bucket holding more than one uid (`ref` = the live id) |
+| `parse-error` | error | `""` | a walked document the parse floor refuses (`ref` = path; collecting only) |
+| `path-mismatch` | error | mapped path | a well-formed document at a path other than its id's (`ref` = path; collecting only) |
+| `uid-collision` | error | the uid | one per claimant of a uid claimed by more than one accepted-so-far document (`ref` = path; collecting only) |
+| `id-collision` | error | the contested id | one per `(claimant, contested id)` among the remaining documents (`ref` = path; collecting only) |
 
 - With a registry: every node runs through `Registry.check`; each violation becomes an
   `error` finding.
-- *(2.0)* Always (registry or not), the exhaustive list of structural findings: every
+- Always (registry or not), the exhaustive list of structural findings: every
   construction finding of the handle (collecting mode), then one `dangling-ref` per unresolved top-level relation target — every outbound edge whose
   `target_uid` is null, over the whole corpus — and one `dangling-member` per unresolved
   `(container, member ref)` pair, deduplicated (a duplicated dangling entry reports
@@ -452,7 +458,7 @@ The cross-language ranking contract is the 6-decimal, round-half-up score key
 - The derived indexes persist to a **private, disposable, per-language** snapshot:
   `<root>/.nodes-index/snapshot.py.json` (Python) / `snapshot.ts.json` (TypeScript).
   A language MUST NOT read the other's snapshot.
-- *(2.0)* Snapshot and vector-cache paths are portable root-relative paths in §4.1's
+- Snapshot and vector-cache paths are portable root-relative paths in §4.1's
   sense with `.json` in place of `.md`, strictly beneath `.nodes-index/` (first segment
   `.nodes-index` and at least one more), and are subject to the same containment rule
   as node documents (§4.1): a read inspects the final path; a write inspects the final
@@ -468,7 +474,7 @@ The cross-language ranking contract is the 6-decimal, round-half-up score key
   internally inconsistent snapshot MUST be discarded silently and trigger a full
   rebuild. Files remain the single source of truth; deleting a snapshot only costs
   startup speed.
-- *(2.0)* A snapshot records accepted members only; exclusion is never persisted and
+- A snapshot records accepted members only; exclusion is never persisted and
   re-derives on open. A snapshot at an earlier schema version is discarded and the
   corpus rebuilds cold; schema versions are per language and were changed by the 2.0
   parse floor.
@@ -503,25 +509,31 @@ RFC 8785 UTF-16 ordering. Non-finite numbers and values outside JSON MUST be ref
 Any change to this projection's value or canonical text requires a major
 projection-version bump.
 
+**Identity boundary.** Node content identity (a digest of this canonical text) and the
+exact corpus-state identity (a digest over `corpus_id` plus the sorted
+`(uid, content identity)` pairs) are distinct, science-owned primitives: nodes owns the
+projection, not identity or digest policy. Neither the tier-3 `(path, mtime, size)`
+fingerprint nor the path-keyed snapshot manifest (§10) may be extended toward them.
+
 ### 11.2 Fixture inventory
 
 | Fixture | Pins |
 |---------|------|
 | `projection.v1.canonical.json` | byte/text oracle for `projection.v1` RFC 8785 canonical JSON |
 | `gene_phf19.md`, `gene_phf19.canonical.json` | frontmatter parse → canonical JSON projection |
-| `gene-axis.md`, `gene-axis.canonical.json` | *(2.0)* namespaced facet name `biology/gene-axis` projected identically through both `projection.v1` projections: one facet name distinct from `biology`, the slash no path separator; the oracle is RFC 8785 text, read as text and as value |
+| `gene-axis.md`, `gene-axis.canonical.json` | namespaced facet name `biology/gene-axis` projected identically through both `projection.v1` projections: one facet name distinct from `biology`, the slash no path separator; the oracle is RFC 8785 text, read as text and as value |
 | `gene_phf19.py-emit.md`, `gene_phf19.ts-emit.md` | cross-emitted samples: each language re-emits (regenerate-and-diff) and parses the other's |
-| `corpus/`, `corpus.rename.canonical.json`, `write-plan.rename.canonical.json` | rename semantics across referrers (whole-corpus post-rename oracle) and *(2.0)* the captured rename plan, semantically compared, with referrer replaces in uid code-point order (BMP versus non-BMP referrers) |
-| `path-collision.oracle.json` | *(2.0)* mapped-path collision admission and reporting: key groups, refused and admitted mutations, `check` findings; logical descriptions only — the well-placed case pair is constructed in-test |
-| `uid.oracle.json` | *(2.0)* non-empty opaque uid acceptance (round-trip) and empty-uid rejection |
-| `damaged-corpus/`, `damaged.oracle.json` | *(2.0)* collecting-mode findings, accepted members and strict's refusal over one committed damaged tree (parse, placement, uid and id collisions, and a dangling ref into an excluded member), plus single-fault subsets pinning each strict error |
-| `frontmatter.malformed.json` | *(2.0)* the parse floor: texts both kernels refuse and texts both accept |
+| `corpus/`, `corpus.rename.canonical.json`, `write-plan.rename.canonical.json` | rename semantics across referrers (whole-corpus post-rename oracle) and the captured rename plan, semantically compared, with referrer replaces in uid code-point order (BMP versus non-BMP referrers) |
+| `path-collision.oracle.json` | mapped-path collision admission and reporting: key groups, refused and admitted mutations, `check` findings; logical descriptions only — the well-placed case pair is constructed in-test |
+| `uid.oracle.json` | non-empty opaque uid acceptance (round-trip) and empty-uid rejection |
+| `damaged-corpus/`, `damaged.oracle.json` | collecting-mode findings, accepted members and strict's refusal over one committed damaged tree (parse, placement, uid and id collisions, and a dangling ref into an excluded member), plus single-fault subsets pinning each strict error |
+| `frontmatter.malformed.json` | the parse floor: texts both kernels refuse and texts both accept |
 | `search.tokenizer.json` | tokenizer freeze |
 | `search-corpus/`, `search.oracle.json` | BM25F ranked ids + 6-dp scores |
 | `similarity-corpus/`, `similarity.vectors.json`, `similarity.oracle.json` | similarity ranking over frozen vectors (model embeddings are not portable) |
 | `check-corpus/`, `check.oracle.json` | corpus-validity findings (severity, code, ref, detail); includes a membership cluster (nesting, a cycle, self-membership, one dangling member) |
-| `traversal.oracle.json` | *(2.0)* membership queries (`members` / `containers`) over `check-corpus/`, including the two-node cycle and self-membership |
-| `containment.oracle.json` | *(2.0)* reserved namespace, non-Markdown preservation, symlink containment across the walk, executor, store, and caches, and the portable-path rule; describes filesystems for each language's harness to materialize |
+| `traversal.oracle.json` | membership queries (`members` / `containers`) over `check-corpus/`, including the two-node cycle and self-membership |
+| `containment.oracle.json` | reserved namespace, non-Markdown preservation, symlink containment across the walk, executor, store, and caches, and the portable-path rule; describes filesystems for each language's harness to materialize |
 
 ## 12. Versioning & change policy
 
@@ -539,9 +551,27 @@ projection-version bump.
   **1.2** (2026-07-12) — knowledge vocab retired from the shipped surface
   (base-vocabulary boundary design); §2.3 source-facet rule removed; minor bumps
   redefined to cover backward-compatible removals.
+  **2.0** (2026-09-12) — major because the pinned transitive traversal surface
+  (`descendants`, `ancestors`, `dangling()`) is withdrawn and its `traversal.oracle.json`
+  rows deleted, leaving the five one-hop methods (§7). Landed with it: construction
+  modes and the parse floor (§1, §4.2, `frontmatter.malformed.json`); the reserved
+  namespace, non-Markdown preservation, containment, and portable-path rules (§4.1,
+  §10, `containment.oracle.json`); well-placedness, the collision key, mapped-path
+  admission, and the `path-collision` finding (§3, §4.1, §8.2,
+  `path-collision.oracle.json`); `PlacementError` and the collecting-mode findings
+  (§6, §8.2, `damaged.oracle.json`); non-empty opaque uids (§2.1, `uid.oracle.json`);
+  code-point collation of query results and referrer replaces (§3, §7,
+  `write-plan.rename.canonical.json`); the executor's attribution of the single-writer
+  obligation and rename's crash state (§3, §7, from the write-plan/executor seam design
+  §7); per-language snapshot schema versions bumped (§10); the identity boundary
+  (§11.1); the `biology/gene-axis` facet-name fixture (§11.2).
 
 ## 13. Known limitations
 
-- Single-writer only (§7); no locking.
+- No coordination (§7): `DefaultExecutor` serializes nothing, so a deployment using it
+  supplies the single writer; a durable executor owns serialization.
+- Graph queries are one-hop and corpus-local (§7); joining corpora, and any traversal
+  across them, belongs to the consuming layer.
+- Collecting construction excludes and reports (§1, §8.2); it never repairs.
 - In-memory indexes and brute-force cosine target personal-corpus scale (order of
   10⁴–10⁵ nodes), not bulk graph workloads.

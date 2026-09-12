@@ -1,11 +1,14 @@
 ---
 id: nodes-d077df
 title: Normative amendment and STANDARD 1.2 → 2.0
-status: todo
+status: done
 priority: 1
 size: s
+owner: nodes-2.0
 created: 2026-09-11T12:33:36Z
-updated: 2026-09-11T12:33:36Z
+updated: 2026-09-12T10:04:08Z
+started: 2026-09-12T10:02:32Z
+completed: 2026-09-12T10:04:08Z
 depends: [nodes-01111b, nodes-c7b371, nodes-cd59f0, nodes-2dca6c, nodes-dfee96]
 parent: nodes-ce28b8
 tags: [contract]

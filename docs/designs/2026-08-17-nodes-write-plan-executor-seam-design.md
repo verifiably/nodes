@@ -1,6 +1,8 @@
 # Nodes write-plan/executor seam design
 
 **Date:** 2026-08-17
+**Status:** §7's two amendments landed in STANDARD 2.0 on branch `nodes-2.0`
+(2026-09-12); the design is otherwise a historical record of the seam.
 
 ## 1. Why and status
 
@@ -25,8 +27,8 @@ exercised by a landed consumer requires that consumer's sign-off, recorded in
 is pinned by the tier-1 fixture `fixtures/write-plan.rename.canonical.json`,
 which fixes referrer replace operations in uid order — the deterministic order
 position-wise equality requires and §2 left to the fixture. The §7 amendments
-remain pending on the trailing review's version verdict; the standard still
-describes 1.2 and gained no seam text.
+remained pending on the trailing review's version verdict until STANDARD 2.0
+(2026-09-12), which carries both.
 
 ## 2. The write plan
 
@@ -259,9 +261,11 @@ Science supplies a root-taking executor factory to `Corpus`; that factory closes
 over the engine handles and lets `Corpus` provide the root. The composition root
 exclusively owns the executor choice.
 
-## 7. Pending standard amendments
+## 7. Standard amendments
 
-Exactly these two amendments are pending:
+*(2026-09-12:)* both landed in STANDARD 2.0 — item 1 as §7's single-writer
+obligation, item 2 as §3's rename preparation and crash state. Recorded as pending
+below, as written:
 
 1. **Standard §7 — single-writer attribution (pending).** Replace the current
    single-writer paragraph with: “The kernel performs no coordination. Each
@@ -283,8 +287,8 @@ Exactly these two amendments are pending:
    applies the complete plan all-or-nothing.” This specified invalid prefix
    replaces every “crash-atomic” or blanket forward-resolvable characterization.
 
-Both entries land only in the standard amendment—1.3 or 2.0, per the trailing
-review's version verdict—and change nothing until that amendment lands.
+Both entries were bound to the standard amendment—1.3 or 2.0, per the trailing
+review's version verdict—and changed nothing until it landed.
 
 ## 8. Amendment record
 
@@ -305,6 +309,7 @@ unexercised.
 | 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` applies the portable root-relative path rule (canonical segments, no `\` or `:`, `.md` suffix) instead of normalizing. | `nodes`-side review | Science: **pending** |
 | 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
 | 2026-09-11 | §2; §7 item 2 | exact-path rename replacement and code-point referrer order, including the pending STANDARD amendment | `nodes`-side review | rename unexercised by recorded Science add-only slice |
+| 2026-09-12 | §7 | Both pending amendments applied to STANDARD 2.0 (§7 single-writer obligation; §3 rename crash state) on branch `nodes-2.0`; wording as recorded here, no contract change. | `nodes`-side review | n/a — wording already reviewed; no exercised part changed |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record

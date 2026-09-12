@@ -1,7 +1,7 @@
 # Digest-id hazards — design
 
 **Date:** 2026-09-11
-**Status:** implemented on branch `nodes-2.0` (2026-09-11); the umbrella's E owns the final version bump and marker removal
+**Status:** implemented on branch `nodes-2.0` (2026-09-11); normative as of STANDARD 2.0 (2026-09-12)
 **Task:** `nodes-cd59f0`, sub-task C of `nodes-ce28b8`
 **Sources:** `2026-09-11-nodes-2.0-remainder-design.md` §C;
 `2026-08-03-nodes-under-the-system-redesign-design.md` §2.4.
@@ -242,7 +242,8 @@ tests, oracle and STANDARD amendments land together in one commit on `nodes-2.0`
 Mark edited clauses `*(2.0)*`, retaining header 1.2 and the pending note for E. Amend the
 seam's §2 rename description, §7 item 2 quoted pending STANDARD amendment, and §8
 amendment log to record the existing exact-path replace branch and code-point referrer
-order. E must copy the corrected pending text so its amendment preserves both clauses.
+order. E must copy the corrected pending text so its amendment preserves both clauses
+(*2026-09-12:* done — STANDARD 2.0 §3 carries both).
 The recorded exercise map leaves rename unexercised by Science's add-only slice.
 Keep A's existing pending Science sign-off row unchanged.
 Do not infer new consumer sign-off or send notifications on consumers' behalf.
