@@ -16,6 +16,8 @@
 - Keep STANDARD's `1.2` header and pending line; mark edited clauses `*(2.0)*`. E owns the version bump and marker removal.
 - A content failure is exactly the kernel `ValidationError` raised by decoding and parsing one document; no other exception class is ever caught into a finding. Filesystem failures (`OSError`, `ContainmentError`) propagate in both modes.
 - Findings from construction: `parse-error` (detail `""`), `path-mismatch` (detail = mapped path), `uid-collision` (detail = uid), `id-collision` (detail = contested id); all `severity: "error"`, `ref` = literal root-relative path, one per `(path, detail)`. Messages are human-only.
+- Every mapping key in frontmatter, at any depth, is a string; a non-string key is malformed in both kernels. `null` for an optional field is malformed; only absence defaults.
+- A file's identity claims are deduplicated (live id plus deprecated ids, first occurrence kept) before grouping; a document repeating a deprecated id never contests itself.
 - Grouping completes before exclusion within each identity stage. Uid-stage claimants reserve uids; id-stage claimants reserve uids and their live and deprecated ids. Uid and id reservations are separate namespaces. Parse-failed and misplaced files reserve nothing.
 - Snapshot schema versions: Python `2 → 3`, TypeScript `1 → 2`. Nothing about exclusion is persisted.
 - Inner loop: `just test-fast`; it can stop after Python fails, so rerun after a Python fix to expose TS failures. Each task ends with `just gate`.
@@ -76,14 +78,23 @@
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: 2026-01-01T00:00:00\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  weight: \"1\"\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  directed: \"false\"\n---\n",
-    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  attrs: 1\n---\n"
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  attrs: 1\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: 2026-02-30\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  attrs:\n    1: x\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n  f:\n    1: x\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\n1: x\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets: *missing\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated:\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nupdated:\n---\n"
   ],
   "accepted": [
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\nbody\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelated: []\nrelations: []\ndeprecated_ids: []\nfacets: {}\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: cites\n  target: k:b\n  directed: false\n  weight: 0.5\n  attrs:\n    x: 1\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: 2026-01-01\nupdated: \"2026-02-28\"\n---\n",
-    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nversion: 2\n---\n"
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nversion: 2\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ndeprecated_ids:\n- k:old\n- k:old\n---\n"
   ]
 }
 ```
@@ -153,7 +164,7 @@ it("treats invalid UTF-8 as a ValidationError and preserves a BOM", () => {
 });
 ```
 
-- [ ] **Step 3: Run `just test-fast`.** Expected: Python red on `related: abc`, `related:` (null), `version: "2"`, `version: true`, `directed: "false"`, `weight: "1"`, bad YAML (`yaml.parser.ParserError`, not `ValidationError`), `title: [1]` (pydantic's error), `relations: [3]` (`AttributeError`), and `node_from_bytes` missing. TS red on scalar frontmatter and `relations: [null]` / `[3]` (raw `TypeError`), `facets:\n  f: 1`, and `nodeFromBytes` missing.
+- [ ] **Step 3: Run `just test-fast`.** Expected: Python red on `related: abc`, `related:` (null), `version: "2"`, `version: true`, `directed: "false"`, `weight: "1"`, bad YAML (`yaml.parser.ParserError`, not `ValidationError`), `title: [1]` (pydantic's error), `relations: [3]` (`AttributeError`), `created: 2026-02-30` (`ValueError` from inside `yaml.safe_load`), `attrs:\n    1: x` (raw pydantic error from `Relation(...)`), and `node_from_bytes` missing. TS red on scalar frontmatter and `relations: [null]` / `[3]` (raw `TypeError`), `facets:\n  f: 1`, `facets: *missing` (`ReferenceError` from `toJS`), `facets:` / `created:` / `updated:` null (accepted), numeric mapping keys (accepted as strings), and `nodeFromBytes` missing.
 
 - [ ] **Step 4: Replace Python's parser.** In `frontmatter.py`, replace `split_frontmatter` and `node_from_markdown` with the following and add `node_from_bytes`. New imports: `import re`, `from datetime import date, datetime`, `from pydantic import ValidationError as PydanticValidationError`.
 
@@ -180,14 +191,29 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     if idx == -1:
         return {}, text
     try:
+        # PyYAML's timestamp constructor raises a bare ValueError for an impossible date.
         fm = yaml.safe_load(rest[:idx])
-    except yaml.YAMLError as exc:
+    except (yaml.YAMLError, ValueError) as exc:
         raise ValidationError(f"invalid frontmatter YAML: {exc}") from exc
     if fm is None:
         fm = {}
     if not isinstance(fm, dict):
         raise _malformed("frontmatter must be a mapping")
+    _require_string_keys(fm)
     return fm, rest[idx + len(sep):]
+
+
+def _require_string_keys(value: object) -> None:
+    """Every mapping key at any depth is a string; YAML admits other scalars, the
+    boundary does not (TypeScript's object keys would silently stringify them)."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise _malformed(f"mapping key {key!r} must be a string")
+            _require_string_keys(item)
+    elif isinstance(value, list):
+        for item in value:
+            _require_string_keys(item)
 
 
 def _require_str(fm: dict, name: str) -> str:
@@ -239,7 +265,10 @@ def _relation_from_row(row: dict, container_id: str) -> Relation:
     attrs = row.get("attrs", {})
     if not isinstance(attrs, dict):
         raise _malformed("relation 'attrs' must be a mapping")
-    return Relation(source=source, predicate=predicate, target=target, directed=directed, weight=weight, attrs=attrs)
+    try:
+        return Relation(source=source, predicate=predicate, target=target, directed=directed, weight=weight, attrs=attrs)
+    except PydanticValidationError as exc:
+        raise _malformed(f"relation: {exc.errors()[0]['msg']}") from exc
 
 
 def node_from_markdown(text: str) -> Node:
@@ -252,7 +281,7 @@ def node_from_markdown(text: str) -> Node:
     node_id = _require_str(fm, "id")
     relations = [relates_to(node_id, ref) for ref in _optional_list(fm, "related", str, "strings")]
     relations += [_relation_from_row(row, node_id) for row in _optional_list(fm, "relations", dict, "mappings")]
-    facets = fm.get("facets", {})
+    facets = fm["facets"] if "facets" in fm else {}  # absence defaults; null does not
     if not isinstance(facets, dict) or any(not isinstance(v, dict) for v in facets.values()):
         raise _malformed("'facets' must be a mapping of mappings")
     meta: dict[str, Any] = {}
@@ -291,12 +320,41 @@ def node_from_bytes(data: bytes) -> Node:
 
 `Relation.from_serialized` stays for in-code callers; the boundary no longer uses it. Route the three Python decode sites through `node_from_bytes`: `store.py` `read_file` (`node_from_bytes(path.read_bytes())`) and `all_nodes` (`node_from_bytes(f.data)`), and `corpus.py`'s two `node_from_markdown(f.data.decode("utf-8"))` calls in `_full_rebuild` and `_reconcile`; update each module's import.
 
-- [ ] **Step 5: Tighten TypeScript's parser.** In `frontmatter.ts`, after `const fm = (doc.toJS() ?? {}) as Record<string, unknown>;` add:
+- [ ] **Step 5: Tighten TypeScript's parser.** In `frontmatter.ts`, replace the two lines from `const fm = (doc.toJS() ?? {}) ...` through the `return` with:
 
 ```typescript
-  if (typeof fm !== "object" || fm === null || Array.isArray(fm)) {
-    throw new ValidationError("malformed frontmatter: frontmatter must be a mapping");
+  let raw: unknown;
+  try {
+    // mapAsMap keeps key scalars typed, so a numeric key is visible; toJS also resolves
+    // aliases and throws a raw ReferenceError on an undefined one — a document error.
+    raw = doc.toJS({ mapAsMap: true });
+  } catch (e) {
+    throw new ValidationError(`invalid frontmatter YAML: ${(e as Error).message}`);
   }
+  const fm = raw === null || raw === undefined ? {} : plain(raw);
+  if (!isMapping(fm)) throw new ValidationError("malformed frontmatter: frontmatter must be a mapping");
+  return [fm, rest.slice(idx + sep.length)];
+```
+
+and add this walker above `splitFrontmatter` (it needs `isMapping`, defined below it in this same task — move the two `is*` helpers above `splitFrontmatter`):
+
+```typescript
+/** Convert the typed-key tree to plain objects, refusing any non-string mapping key at
+ * any depth (Python refuses the same; object keys would otherwise stringify silently). */
+function plain(value: unknown): unknown {
+  if (value instanceof Map) {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of value) {
+      if (typeof key !== "string") {
+        throw new ValidationError(`malformed frontmatter: mapping key ${JSON.stringify(key)} must be a string`);
+      }
+      out[key] = plain(item);
+    }
+    return out;
+  }
+  if (Array.isArray(value)) return value.map(plain);
+  return value;
+}
 ```
 
 Replace the body of `nodeFromMarkdown` from the `missing` check down to the `return makeNode(...)` with:
@@ -318,13 +376,15 @@ Replace the body of `nodeFromMarkdown` from the `missing` check down to the `ret
     }
     throw e;
   }
-  const facets = fm.facets ?? {};
+  const facets = "facets" in fm ? fm.facets : {}; // absence defaults; null does not
   if (!isMapping(facets) || Object.values(facets).some((v) => !isMapping(v))) {
     throw new ValidationError("malformed frontmatter: 'facets' must be a mapping of mappings");
   }
   const metadata: Record<string, unknown> = {};
   for (const k of ["created", "updated"] as const) {
-    if (k in fm) metadata[k] = fm[k];
+    if (!(k in fm)) continue;
+    if (fm[k] === null) throw new ValidationError(`malformed frontmatter: '${k}' must be a YYYY-MM-DD date`);
+    metadata[k] = fm[k];
   }
   if ("version" in fm) {
     if (typeof fm.version !== "number" || !Number.isInteger(fm.version)) {
@@ -712,6 +772,7 @@ from nodes.core import errors
 from nodes.core.corpus import Corpus
 from nodes.core.errors import CollisionError, RefError, ValidationError
 from nodes.core.node import Node
+from nodes.core.registry import KindSpec, Registry
 from nodes.core.store import Store
 
 from tests._executors import RecordingExecutor
@@ -753,6 +814,24 @@ def test_collecting_matches_the_oracle_and_strict_refuses(tmp_path):
         c.get("topic:current")
     with pytest.raises(getattr(errors, ORACLE["strict_raises"])):
         Corpus(root)
+
+
+def test_registry_backed_check_iterates_accepted_members_only(tmp_path):
+    # A re-walk would re-raise on the damaged files; the registry check reads the manifest.
+    reg = Registry()
+    reg.register(KindSpec(name="topic"))
+    c = Corpus(damaged(tmp_path), registry=reg, mode="collecting")
+    assert findings(c) == ORACLE["findings"]
+
+
+def test_a_repeated_deprecated_id_never_contests_itself(tmp_path):
+    Store(tmp_path).write_file(_node("a", "a", deprecated_ids=["topic:old", "topic:old"]))
+    c = Corpus(tmp_path, mode="collecting")
+    assert findings(c) == [] and ids(c) == ["topic:a"]
+    c.flush_index()
+    again = Corpus(tmp_path, mode="collecting")
+    assert findings(again) == [] and ids(again) == ["topic:a"]
+    assert ids(Corpus(tmp_path)) == ["topic:a"]
 
 
 @pytest.mark.parametrize("subset", ORACLE["subsets"], ids=lambda s: s["name"])
@@ -868,14 +947,17 @@ def test_three_claimants_are_grouped_simultaneously_cached(tmp_path):
     assert ids(c) == []
 
 
-def test_a_candidate_evicts_the_kept_claimant_it_collides_with(tmp_path):
+def test_a_candidate_evicts_the_kept_claimant_from_every_index(tmp_path):
     store = Store(tmp_path)
     store.write_file(_node("a", "u"))
-    Corpus(tmp_path, mode="collecting").flush_index()
+    Corpus(tmp_path, embedder=_Embedder(), mode="collecting").flush_index()
     store.write_file(_node("b", "u"))
-    c = Corpus(tmp_path, mode="collecting")
+    c = Corpus(tmp_path, embedder=_Embedder(), mode="collecting")
     assert ids(c) == []
     assert c.index.by_uid == {}
+    assert c.search_index.lengths == {}
+    assert c.vector_index is not None and c.vector_index.vectors == {}
+    assert c.manifest == {}
     assert [f["ref"] for f in findings(c)] == ["topic/a.md", "topic/b.md"]
     with pytest.raises(RefError):
         c.get("topic:a")
@@ -895,6 +977,7 @@ import { Corpus } from "../src/corpus.js";
 import * as errors from "../src/errors.js";
 import { CollisionError, RefError, ValidationError } from "../src/errors.js";
 import { type Node, makeNode } from "../src/node.js";
+import { Registry } from "../src/registry.js";
 import { Store } from "../src/store.js";
 import { RecordingExecutor } from "./_executors.js";
 
@@ -945,6 +1028,26 @@ it("collecting matches the oracle and strict refuses", () => {
   expect(ids(c)).toEqual(oracle.accepted);
   expect(() => c.get("topic:current")).toThrow(RefError);
   expect(() => new Corpus(root)).toThrow(errorClass(oracle.strict_raises));
+});
+
+it("registry-backed check iterates accepted members only", () => {
+  // A re-walk would re-throw on the damaged files; the registry check reads the manifest.
+  const reg = new Registry();
+  reg.register({ name: "topic" });
+  const c = new Corpus(damaged(), reg, undefined, undefined, { mode: "collecting" });
+  expect(findings(c)).toEqual(oracle.findings);
+});
+
+it("a repeated deprecated id never contests itself", () => {
+  new Store(tmp).writeFile(node("a", "a", { deprecatedIds: ["topic:old", "topic:old"] }));
+  const c = new Corpus(tmp, undefined, undefined, undefined, { mode: "collecting" });
+  expect(findings(c)).toEqual([]);
+  expect(ids(c)).toEqual(["topic:a"]);
+  c.flushIndex();
+  const again = new Corpus(tmp, undefined, undefined, undefined, { mode: "collecting" });
+  expect(findings(again)).toEqual([]);
+  expect(ids(again)).toEqual(["topic:a"]);
+  expect(ids(new Corpus(tmp))).toEqual(["topic:a"]);
 });
 
 for (const subset of oracle.subsets) {
@@ -1036,14 +1139,17 @@ it("groups three claimants simultaneously, cached", () => {
   expect(ids(c)).toEqual([]);
 });
 
-it("a candidate evicts the kept claimant it collides with", () => {
+it("a candidate evicts the kept claimant from every index", () => {
   const store = new Store(tmp);
   store.writeFile(node("a", "u"));
-  new Corpus(tmp, undefined, undefined, undefined, { mode: "collecting" }).flushIndex();
+  new Corpus(tmp, undefined, embedder, undefined, { mode: "collecting" }).flushIndex();
   store.writeFile(node("b", "u"));
-  const c = new Corpus(tmp, undefined, undefined, undefined, { mode: "collecting" });
+  const c = new Corpus(tmp, undefined, embedder, undefined, { mode: "collecting" });
   expect(ids(c)).toEqual([]);
   expect(c.index.byUid.size).toBe(0);
+  expect(c.searchIndex.lengths.size).toBe(0);
+  expect(c.vectorIndex?.vectors.size).toBe(0);
+  expect(c.manifest.size).toBe(0);
   expect(findings(c).map((f) => f.ref)).toEqual(["topic/a.md", "topic/b.md"]);
   expect(() => c.get("topic:a")).toThrow(RefError);
 });
@@ -1071,7 +1177,9 @@ class _Claimant(NamedTuple):
 
 
 def _claimant(path: str, node: Node) -> _Claimant:
-    return _Claimant(path, node.uid, node.id, tuple(node.deprecated_ids))
+    # Deduplicate: a document repeating a deprecated id never contests itself, and
+    # snapshot entries hold deprecated ids as a set, so cold and warm must agree.
+    return _Claimant(path, node.uid, node.id, tuple(dict.fromkeys(d for d in node.deprecated_ids if d != node.id)))
 ```
 
 Constructor: add the parameter `mode: ConstructionMode = "strict"` last, and before the snapshot load:
@@ -1135,7 +1243,7 @@ Replace `_parse_member` with the mode-aware version and add the identity stage:
         for c in population:
             if c.path in losers:
                 continue
-            for claim in (c.id, *c.deprecated_ids):
+            for claim in dict.fromkeys((c.id, *c.deprecated_ids)):
                 by_id.setdefault(claim, []).append(c)
         for claim in sorted(by_id):
             group = by_id[claim]
@@ -1213,10 +1321,9 @@ In `_reconcile`, replace the parse line and the changed-file loop:
 
 `check()`: before the registry block, `findings: list[Finding] = list(self._construction_findings)`. Update the docstring: "Construction findings (collecting mode) come first; …".
 
-`add`: after `self.index.assert_addable(node)` and before vector preparation:
+`add`: move the existing `path = self._rel_path(node.id)` up to directly after `self.index.assert_addable(node)` and follow it with:
 
 ```python
-        path = self._rel_path(node.id)
         self._assert_not_reserved(path, node.uid, (node.id, *node.deprecated_ids))
 ```
 
@@ -1257,7 +1364,14 @@ interface Claimant {
   readonly id: string;
   readonly deprecatedIds: readonly string[];
 }
-const claimant = (path: string, node: Node): Claimant => ({ path, uid: node.uid, id: node.id, deprecatedIds: node.deprecatedIds });
+// Deduplicate: a document repeating a deprecated id never contests itself, and snapshot
+// entries hold deprecated ids as a set, so cold and warm must agree.
+const claimant = (path: string, node: Node): Claimant => ({
+  path,
+  uid: node.uid,
+  id: node.id,
+  deprecatedIds: [...new Set(node.deprecatedIds.filter((d) => d !== node.id))],
+});
 ```
 
 Fields and constructor:
@@ -1329,7 +1443,7 @@ Fields and constructor:
     const byId = new Map<string, Claimant[]>();
     for (const c of population) {
       if (losers.has(c.path)) continue;
-      for (const claim of [c.id, ...c.deprecatedIds]) byId.set(claim, [...(byId.get(claim) ?? []), c]);
+      for (const claim of new Set([c.id, ...c.deprecatedIds])) byId.set(claim, [...(byId.get(claim) ?? []), c]);
     }
     for (const claim of [...byId.keys()].sort(compareCodepoints)) {
       const group = byId.get(claim) as Claimant[];
@@ -1407,10 +1521,9 @@ In `reconcile`, replace the parse line and the changed-file loop:
       const prepared = ... // the existing prepare / upsert / commit / manifest lines, unchanged
 ```
 
-`check()`: `const findings: Finding[] = [...this.constructionFindings];` and update the doc comment. `add`: after `this.index.assertAddable(node);`:
+`check()`: `const findings: Finding[] = [...this.constructionFindings];` and update the doc comment. `add`: move the existing `const path = this.relPath(node.id);` (`corpus.ts:209` today) up to directly after `this.index.assertAddable(node);` and follow it with:
 
 ```typescript
-    const path = this.relPath(node.id);
     this.assertNotReserved(path, node.uid, [node.id, ...node.deprecatedIds]);
 ```
 
@@ -1460,7 +1573,7 @@ Export the type from `index.ts`: `export { Corpus, type ConstructionMode, type F
 | §1 (conformance, after the tiers) | Add: *Construction modes.* `Corpus` constructs in `strict` mode by default, refusing the first damaged, misplaced or colliding file with the error §3–§4 name; in `collecting` mode it excludes such files, constructs over the remainder, and reports each exclusion through `check()` (§8.2). Collecting is the documented posture for audit and import boundaries. Reads through the index never reach an excluded file. |
 | §3 collisions bullet | Append: Under collecting construction a uid claimed by more than one well-placed file excludes every claimant, and an id — live or deprecated — claimed by more than one of the remaining files excludes every claimant; each stage groups the whole population before excluding. |
 | §4.1 well-placed clause | Replace "Whether a member is well-placed is not enforced by this clause; §3 governs admission and §8.2 reporting." with: Strict construction refuses a misplaced member (`PlacementError`); collecting construction excludes it (`path-mismatch`). Membership is what the walk yields; **acceptance** is what admission keeps. |
-| §4.2 (new bullet after the required-fields rule) | *Parse floor.* A document is decoded as UTF-8 fatally, BOM preserved, and begins with `---` at byte zero. The frontmatter is a mapping. `id`, `uid`, `kind`, `title` are strings. `related`, `relations`, `deprecated_ids` are absent or lists — `null` is malformed — of strings, mappings, strings respectively. `facets` is absent or a mapping of mappings. `version` is an integer; a relation's `directed` is a boolean, `weight` a number or `null`, `attrs` a mapping. `created` / `updated` are calendar dates, as the ISO string or the date scalar YAML yields for the unquoted spelling — the boundary's only conversion. Nothing is coerced. Every violation raises `ValidationError`, the only error the parse floor raises. |
+| §4.2 (new bullet after the required-fields rule) | *Parse floor.* A document is decoded as UTF-8 fatally, BOM preserved, and begins with `---` at byte zero. The frontmatter is a mapping. `id`, `uid`, `kind`, `title` are strings. `related`, `relations`, `deprecated_ids` are absent or lists — `null` is malformed — of strings, mappings, strings respectively. `facets` is absent or a mapping of mappings. Every mapping key, at any depth, is a string. `null` for any optional field is malformed; only absence defaults. `version` is an integer; a relation's `directed` is a boolean, `weight` a number or `null`, `attrs` a mapping. `created` / `updated` are calendar dates, as the ISO string or the date scalar YAML yields for the unquoted spelling — the boundary's only conversion. Nothing is coerced. Every violation raises `ValidationError`, the only error the parse floor raises. |
 | §6 error table | Add row: `Member's literal path differs from its id's mapped path (strict construction)` → `PlacementError`. Extend the `CollisionError` row: `; excluded-path occupancy and reserved-claim refusal (collecting mutation)`. |
 | §7 `add` bullet | Append: On a collecting corpus, `add` also refuses (`CollisionError`) a mapped path an excluded file occupies, a uid reserved by a file excluded at either identity stage, and an id — live or deprecated — reserved by a file excluded at the id stage; uid and id reservations are separate namespaces. |
 | §7 `rename` bullet | Append: the same refusals apply to the new id and, when it differs from the old, the new mapped path. |

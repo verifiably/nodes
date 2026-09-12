@@ -116,6 +116,13 @@ Both kernels validate shapes before touching them, under one rule set:
   serialized relation. TypeScript today throws a raw `TypeError` on `relations: [null]`;
   Python today reads `related: abc` as the three refs `a`, `b`, `c`.
 - `facets` is absent or a mapping whose values are mappings.
+- Every mapping key, at any depth, is a string: YAML admits other scalars, and
+  TypeScript's object keys would stringify them silently where Python keeps the int.
+  `null` for any optional field — `facets`, `created`, `updated` included — is malformed;
+  only absence defaults.
+- An undefined alias and an impossible unquoted date are YAML-level failures and wrap
+  like any other; nothing below the boundary is caught more broadly than
+  `ValidationError`.
 - Types are exact, never coerced: `version` an integer (a string or boolean is
   malformed); a relation's `directed` a boolean, `weight` a number or `null`, `attrs` a
   mapping; `created` and `updated` calendar dates, accepted as an ISO `YYYY-MM-DD`
@@ -145,7 +152,8 @@ at its first failure:
    group with more than one file is excluded in full, `uid-collision`, `detail` = the
    uid. Grouping completes before any exclusion.
 4. **Identity claims.** Over the survivors of step 3, map every claimed id — live and
-   deprecated — to its claimants. Every id with more than one claimant is contested;
+   deprecated, each file's claims deduplicated first so a repeated deprecated id never
+   contests itself — to its claimants. Every id with more than one claimant is contested;
    the union of their claimants is excluded, with one `id-collision` finding per
    `(path, contested id)` pair. A file contesting two ids reports twice. Two well-placed
    files cannot share a live id, so contests arise only through `deprecated_ids`.
