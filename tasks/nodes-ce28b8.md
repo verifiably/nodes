@@ -1,11 +1,12 @@
 ---
 id: nodes-ce28b8
 title: Implement the remaining Nodes 2.0 redesign contract
-status: todo
+status: done
 priority: 1
 size: xl
 created: 2026-08-31T10:34:10Z
-updated: 2026-09-11T12:33:36Z
+updated: 2026-09-12T10:23:08Z
+completed: 2026-09-12T10:23:08Z
 depends: []
 tags: [migration, redesign, contract, parity]
 spec: docs/designs/2026-09-11-nodes-2.0-remainder-design.md
@@ -16,3 +17,4 @@ Outcome: Nodes ships the reviewed remainder as one parity-safe 2.0 contract acro
 ## Notes
 
 - 2026-09-11T12:33:36Z (nodes-2.0): Umbrella brainstorm done 2026-09-11: integration branch nodes-2.0, seven children D/A/C/B/F/E/G, preferred order D→A→C→B→F→E with G free
+- 2026-09-12T10:23:08Z (main): Merged to main as b0c37b8 (--no-ff over nodes-2.0 at 2416dbd). Closeout gate on the integrated tree: gate 733 Python / 569 TS, tasks check clean, STANDARD free of (2.0) and Pending. Beliefs' roadmap row nodes-remainder is theirs to close against b0c37b8.
