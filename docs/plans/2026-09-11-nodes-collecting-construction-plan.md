@@ -16,7 +16,7 @@
 - Keep STANDARD's `1.2` header and pending line; mark edited clauses `*(2.0)*`. E owns the version bump and marker removal.
 - A content failure is exactly the kernel `ValidationError` raised by decoding and parsing one document; no other exception class is ever caught into a finding. Filesystem failures (`OSError`, `ContainmentError`) propagate in both modes.
 - Findings from construction: `parse-error` (detail `""`), `path-mismatch` (detail = mapped path), `uid-collision` (detail = uid), `id-collision` (detail = contested id); all `severity: "error"`, `ref` = literal root-relative path, one per `(path, detail)`. Messages are human-only.
-- Every mapping key in frontmatter, at any depth, is a string; a non-string key is malformed in both kernels. `null` for an optional field is malformed; only absence defaults.
+- Every mapping key in frontmatter, at any depth, is a string; a non-string key is malformed in both kernels. A cyclic alias is malformed; non-cyclic alias reuse is legal. `null` for a named optional top-level field (`related`, `relations`, `deprecated_ids`, `facets`, `created`, `updated`, `version`) is malformed — only absence defaults; values inside facet and relation-`attrs` payloads are unconstrained, and a relation's `weight` may be `null`.
 - A file's identity claims are deduplicated (live id plus deprecated ids, first occurrence kept) before grouping; a document repeating a deprecated id never contests itself.
 - Grouping completes before exclusion within each identity stage. Uid-stage claimants reserve uids; id-stage claimants reserve uids and their live and deprecated ids. Uid and id reservations are separate namespaces. Parse-failed and misplaced files reserve nothing.
 - Snapshot schema versions: Python `2 → 3`, TypeScript `1 → 2`. Nothing about exclusion is persisted.
@@ -86,7 +86,9 @@
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets: *missing\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated:\n---\n",
-    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nupdated:\n---\n"
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nupdated:\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n  f: &loop\n    self: *loop\n---\n",
+    "---\n__proto__:\n  id: k:a\n  uid: u\n  kind: k\n  title: T\n---\n"
   ],
   "accepted": [
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\nbody\n",
@@ -94,7 +96,9 @@
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: cites\n  target: k:b\n  directed: false\n  weight: 0.5\n  attrs:\n    x: 1\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: 2026-01-01\nupdated: \"2026-02-28\"\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nversion: 2\n---\n",
-    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ndeprecated_ids:\n- k:old\n- k:old\n---\n"
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\ndeprecated_ids:\n- k:old\n- k:old\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n  f: &shared\n    x: 1\n  g: *shared\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  weight: null\n  attrs:\n    n: null\n---\n"
   ]
 }
 ```
@@ -164,7 +168,7 @@ it("treats invalid UTF-8 as a ValidationError and preserves a BOM", () => {
 });
 ```
 
-- [ ] **Step 3: Run `just test-fast`.** Expected: Python red on `related: abc`, `related:` (null), `version: "2"`, `version: true`, `directed: "false"`, `weight: "1"`, bad YAML (`yaml.parser.ParserError`, not `ValidationError`), `title: [1]` (pydantic's error), `relations: [3]` (`AttributeError`), `created: 2026-02-30` (`ValueError` from inside `yaml.safe_load`), `attrs:\n    1: x` (raw pydantic error from `Relation(...)`), and `node_from_bytes` missing. TS red on scalar frontmatter and `relations: [null]` / `[3]` (raw `TypeError`), `facets:\n  f: 1`, `facets: *missing` (`ReferenceError` from `toJS`), `facets:` / `created:` / `updated:` null (accepted), numeric mapping keys (accepted as strings), and `nodeFromBytes` missing.
+- [ ] **Step 3: Run `just test-fast`.** Expected: Python red on `related: abc`, `related:` (null), `version: "2"`, `version: true`, `directed: "false"`, `weight: "1"`, bad YAML (`yaml.parser.ParserError`, not `ValidationError`), `title: [1]` (pydantic's error), `relations: [3]` (`AttributeError`), `created: 2026-02-30` (`ValueError` from inside `yaml.safe_load`), `attrs:\n    1: x` (raw pydantic error from `Relation(...)`), and `node_from_bytes` missing. TS red on scalar frontmatter and `relations: [null]` / `[3]` (raw `TypeError`), `facets:\n  f: 1`, `facets: *missing` (`ReferenceError` from `toJS`), `facets:` / `created:` / `updated:` null (accepted), numeric mapping keys (accepted as strings), the cyclic alias (`RangeError` in TS, `RecursionError` in Python), the `__proto__` document (accepted through the prototype in TS), and `nodeFromBytes` missing.
 
 - [ ] **Step 4: Replace Python's parser.** In `frontmatter.py`, replace `split_frontmatter` and `node_from_markdown` with the following and add `node_from_bytes`. New imports: `import re`, `from datetime import date, datetime`, `from pydantic import ValidationError as PydanticValidationError`.
 
@@ -203,17 +207,26 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     return fm, rest[idx + len(sep):]
 
 
-def _require_string_keys(value: object) -> None:
+def _require_string_keys(value: object, path: set[int] | None = None) -> None:
     """Every mapping key at any depth is a string; YAML admits other scalars, the
-    boundary does not (TypeScript's object keys would silently stringify them)."""
+    boundary does not (TypeScript's object keys would silently stringify them). A
+    cyclic alias is malformed; `path` holds the ids of the containers being walked,
+    so a container reused on a sibling branch (a shared alias) is legal."""
+    if not isinstance(value, (dict, list)):
+        return
+    path = path if path is not None else set()
+    if id(value) in path:
+        raise _malformed("frontmatter contains a cyclic alias")
+    path.add(id(value))
     if isinstance(value, dict):
         for key, item in value.items():
             if not isinstance(key, str):
                 raise _malformed(f"mapping key {key!r} must be a string")
-            _require_string_keys(item)
-    elif isinstance(value, list):
+            _require_string_keys(item, path)
+    else:
         for item in value:
-            _require_string_keys(item)
+            _require_string_keys(item, path)
+    path.remove(id(value))
 
 
 def _require_str(fm: dict, name: str) -> str:
@@ -340,20 +353,30 @@ and add this walker above `splitFrontmatter` (it needs `isMapping`, defined belo
 
 ```typescript
 /** Convert the typed-key tree to plain objects, refusing any non-string mapping key at
- * any depth (Python refuses the same; object keys would otherwise stringify silently). */
-function plain(value: unknown): unknown {
+ * any depth (Python refuses the same; object keys would otherwise stringify silently)
+ * and any cyclic alias. `path` holds the containers being walked, so a container
+ * reused on a sibling branch (a shared alias) is legal. Objects are built through
+ * `Object.fromEntries`, which defines own properties only — an assignment would let a
+ * `__proto__` key reach the prototype setter. */
+function plain(value: unknown, path: Set<object> = new Set()): unknown {
+  if (!(value instanceof Map) && !Array.isArray(value)) return value;
+  if (path.has(value)) throw new ValidationError("malformed frontmatter: frontmatter contains a cyclic alias");
+  path.add(value);
+  let out: unknown;
   if (value instanceof Map) {
-    const out: Record<string, unknown> = {};
+    const entries: Array<[string, unknown]> = [];
     for (const [key, item] of value) {
       if (typeof key !== "string") {
         throw new ValidationError(`malformed frontmatter: mapping key ${JSON.stringify(key)} must be a string`);
       }
-      out[key] = plain(item);
+      entries.push([key, plain(item, path)]);
     }
-    return out;
+    out = Object.fromEntries(entries);
+  } else {
+    out = value.map((item) => plain(item, path));
   }
-  if (Array.isArray(value)) return value.map(plain);
-  return value;
+  path.delete(value);
+  return out;
 }
 ```
 
@@ -1573,7 +1596,7 @@ Export the type from `index.ts`: `export { Corpus, type ConstructionMode, type F
 | §1 (conformance, after the tiers) | Add: *Construction modes.* `Corpus` constructs in `strict` mode by default, refusing the first damaged, misplaced or colliding file with the error §3–§4 name; in `collecting` mode it excludes such files, constructs over the remainder, and reports each exclusion through `check()` (§8.2). Collecting is the documented posture for audit and import boundaries. Reads through the index never reach an excluded file. |
 | §3 collisions bullet | Append: Under collecting construction a uid claimed by more than one well-placed file excludes every claimant, and an id — live or deprecated — claimed by more than one of the remaining files excludes every claimant; each stage groups the whole population before excluding. |
 | §4.1 well-placed clause | Replace "Whether a member is well-placed is not enforced by this clause; §3 governs admission and §8.2 reporting." with: Strict construction refuses a misplaced member (`PlacementError`); collecting construction excludes it (`path-mismatch`). Membership is what the walk yields; **acceptance** is what admission keeps. |
-| §4.2 (new bullet after the required-fields rule) | *Parse floor.* A document is decoded as UTF-8 fatally, BOM preserved, and begins with `---` at byte zero. The frontmatter is a mapping. `id`, `uid`, `kind`, `title` are strings. `related`, `relations`, `deprecated_ids` are absent or lists — `null` is malformed — of strings, mappings, strings respectively. `facets` is absent or a mapping of mappings. Every mapping key, at any depth, is a string. `null` for any optional field is malformed; only absence defaults. `version` is an integer; a relation's `directed` is a boolean, `weight` a number or `null`, `attrs` a mapping. `created` / `updated` are calendar dates, as the ISO string or the date scalar YAML yields for the unquoted spelling — the boundary's only conversion. Nothing is coerced. Every violation raises `ValidationError`, the only error the parse floor raises. |
+| §4.2 (new bullet after the required-fields rule) | *Parse floor.* A document is decoded as UTF-8 fatally, BOM preserved, and begins with `---` at byte zero. The frontmatter is a mapping. `id`, `uid`, `kind`, `title` are strings. `related`, `relations`, `deprecated_ids` are absent or lists — `null` is malformed — of strings, mappings, strings respectively. `facets` is absent or a mapping of mappings. Every mapping key, at any depth, is a string; a cyclic alias is malformed. `null` for a named optional top-level field is malformed — only absence defaults; payload interiors (facets, relation `attrs`) are unconstrained. `version` is an integer; a relation's `directed` is a boolean, `weight` a number or `null`, `attrs` a mapping. `created` / `updated` are calendar dates, as the ISO string or the date scalar YAML yields for the unquoted spelling — the boundary's only conversion. Nothing is coerced. Every violation raises `ValidationError`, the only error the parse floor raises. |
 | §6 error table | Add row: `Member's literal path differs from its id's mapped path (strict construction)` → `PlacementError`. Extend the `CollisionError` row: `; excluded-path occupancy and reserved-claim refusal (collecting mutation)`. |
 | §7 `add` bullet | Append: On a collecting corpus, `add` also refuses (`CollisionError`) a mapped path an excluded file occupies, a uid reserved by a file excluded at either identity stage, and an id — live or deprecated — reserved by a file excluded at the id stage; uid and id reservations are separate namespaces. |
 | §7 `rename` bullet | Append: the same refusals apply to the new id and, when it differs from the old, the new mapped path. |

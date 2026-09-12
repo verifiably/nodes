@@ -118,10 +118,14 @@ Both kernels validate shapes before touching them, under one rule set:
 - `facets` is absent or a mapping whose values are mappings.
 - Every mapping key, at any depth, is a string: YAML admits other scalars, and
   TypeScript's object keys would stringify them silently where Python keeps the int.
-  `null` for any optional field — `facets`, `created`, `updated` included — is malformed;
-  only absence defaults.
+  TypeScript builds objects through own-property construction so a `__proto__` key
+  cannot reach the prototype. `null` for a named optional top-level field — `related`,
+  `relations`, `deprecated_ids`, `facets`, `created`, `updated`, `version` — is
+  malformed; only absence defaults. Values inside facet and relation-`attrs` payloads
+  are unconstrained, and a relation's `weight` may be `null`.
 - An undefined alias and an impossible unquoted date are YAML-level failures and wrap
-  like any other; nothing below the boundary is caught more broadly than
+  like any other; a cyclic alias is malformed, detected while walking, and non-cyclic
+  alias reuse is legal. Nothing below the boundary is caught more broadly than
   `ValidationError`.
 - Types are exact, never coerced: `version` an integer (a string or boolean is
   malformed); a relation's `directed` a boolean, `weight` a number or `null`, `attrs` a
