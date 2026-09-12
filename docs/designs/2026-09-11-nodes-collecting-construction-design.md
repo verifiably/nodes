@@ -1,7 +1,7 @@
 # Collecting construction — design
 
 **Date:** 2026-09-11
-**Status:** draft, revised after three review rounds; implementation has not started
+**Status:** reviewed design (three rounds); implementation has not started
 **Task:** `nodes-c7b371`, sub-task B of `nodes-ce28b8`
 **Sources:** `2026-09-11-nodes-2.0-remainder-design.md` §B;
 `2026-08-03-nodes-under-the-system-redesign-design.md` §2.3;
@@ -220,7 +220,7 @@ never rewrites a document it could not parse.
 
 Reservation keeps §4's guarantee under mutation: a member admitted beside excluded
 files is admitted again after flush and reopen, and the findings are the same, because
-no accepted member can claim what an excluded claimant claims. Strict corpora have no
+no accepted member holds a reserved uid or reserved id. Strict corpora have no
 excluded paths and no reserved claims, so strict mutation is unchanged.
 
 ## 6. Reporting
