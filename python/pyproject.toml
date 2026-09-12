@@ -1,5 +1,5 @@
 [project]
-name = "nodes-core"
+name = "verifiably-nodes"
 import-names = ["nodes.core"]
 import-namespaces = ["nodes"]
 version = "0.1.1"

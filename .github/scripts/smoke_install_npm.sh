@@ -18,7 +18,7 @@ cd "$scratch"
 npm init -y >/dev/null
 npm install --no-audit --no-fund "$TARBALL" >/dev/null
 node --input-type=module -e "
-const core = await import('@nodes-dev/core');
+const core = await import('@verifiably/nodes');
 const keys = Object.keys(core);
 if (keys.length === 0) throw new Error('no exports');
 console.log('npm import smoke ok (' + keys.length + ' exports)');

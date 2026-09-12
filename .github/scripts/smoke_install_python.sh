@@ -12,7 +12,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for artifact in "$DIST"/nodes_core-*-py3-none-any.whl "$DIST"/nodes_core-*.tar.gz; do
+for artifact in "$DIST"/verifiably_nodes-*-py3-none-any.whl "$DIST"/verifiably_nodes-*.tar.gz; do
   scratch="$(mktemp -d)"
   uv venv "$scratch/venv" >/dev/null
   uv pip install --python "$scratch/venv/bin/python" "$artifact" >/dev/null

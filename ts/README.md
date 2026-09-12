@@ -1,4 +1,4 @@
-# @nodes-dev/core (TypeScript)
+# @verifiably/nodes (TypeScript)
 
 TypeScript implementation of Nodes core — behavioral and on-disk-format parity with
 the Python distribution. Core contains the domain-free kernel.

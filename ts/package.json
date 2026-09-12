@@ -1,5 +1,5 @@
 {
-  "name": "@nodes-dev/core",
+  "name": "@verifiably/nodes",
   "version": "0.1.1",
   "description": "Nodes core: a problem-agnostic knowledge substrate (TypeScript)",
   "license": "MIT",

@@ -18,8 +18,8 @@ def main() -> None:
         fail("usage: verify_python_artifacts.py <dist-dir>")
     dist = sys.argv[1]
     entries = sorted(os.listdir(dist))
-    wheels = glob.glob(os.path.join(dist, "nodes_core-*-py3-none-any.whl"))
-    sdists = glob.glob(os.path.join(dist, "nodes_core-*.tar.gz"))
+    wheels = glob.glob(os.path.join(dist, "verifiably_nodes-*-py3-none-any.whl"))
+    sdists = glob.glob(os.path.join(dist, "verifiably_nodes-*.tar.gz"))
     if len(entries) != 2 or len(wheels) != 1 or len(sdists) != 1:
         fail(f"expected exactly one wheel and one sdist, found {entries}")
 
@@ -57,7 +57,7 @@ def main() -> None:
         member = t.extractfile(f"{root}/PKG-INFO")
         assert member is not None
         pkg_info = member.read().decode()
-        for line in ("Name: nodes-core", "License-Expression: MIT"):
+        for line in ("Name: verifiably-nodes", "License-Expression: MIT"):
             if line not in pkg_info:
                 fail(f"sdist PKG-INFO missing {line!r}")
 

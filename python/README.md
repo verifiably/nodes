@@ -1,17 +1,17 @@
-# nodes-core
+# verifiably-nodes
 
 Nodes core: a problem-agnostic knowledge substrate.
 
-`nodes-core` is the Python implementation of the Nodes kernel — a portable
+`verifiably-nodes` is the Python implementation of the Nodes kernel — a portable
 corpus of plain-text nodes with typed relations, structural shapes, and
 derived full-text-search and similarity indexes. A TypeScript implementation
-([`@nodes-dev/core`](https://www.npmjs.com/package/@nodes-dev/core)) passes
+([`@verifiably/nodes`](https://www.npmjs.com/package/@verifiably/nodes)) passes
 the same cross-language conformance fixtures.
 
 ## Install
 
 ```
-pip install nodes-core
+pip install verifiably-nodes
 ```
 
 ## Use
@@ -20,7 +20,7 @@ pip install nodes-core
 import nodes.core
 ```
 
-The `nodes` namespace is a PEP 420 native namespace package; `nodes-core`
+The `nodes` namespace is a PEP 420 native namespace package; `verifiably-nodes`
 ships exactly the `nodes.core` subpackage.
 
 ## Documentation

@@ -28,7 +28,7 @@ REQUIRED = (
 )
 UV_VERSION = "0.11.29"
 EXPECTED_RELEASE_VERSION = "0.1.1"
-PUBLISH_GATE = "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/core/v')"
+PUBLISH_GATE = "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
 DOWNLOAD_ARTIFACT_ACTION = (
     "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
 )
@@ -54,7 +54,7 @@ def test_release_manifests_and_lockfiles_are_lockstep_0_1_1() -> None:
     editable = [
         package
         for package in uv_lock["package"]
-        if package["name"] == "nodes-core" and package.get("source") == {"editable": "."}
+        if package["name"] == "verifiably-nodes" and package.get("source") == {"editable": "."}
     ]
     assert len(editable) == 1
 
@@ -280,8 +280,8 @@ def test_release_pypi_job_signs_validates_and_publishes_default_dist() -> None:
     expected_sequence = [
         (
             "PyPI pre-upload check",
-            "python3 .github/scripts/pypi_upload_check.py pre --project nodes-core "
-            '--version "${GITHUB_REF#refs/tags/core/v}" --dist dist',
+            "python3 .github/scripts/pypi_upload_check.py pre --project verifiably-nodes "
+            '--version "${GITHUB_REF#refs/tags/v}" --dist dist',
         ),
         (
             "Generate PyPI attestations",
@@ -295,12 +295,12 @@ def test_release_pypi_job_signs_validates_and_publishes_default_dist() -> None:
         ),
         (
             "PyPI post-upload check",
-            "python3 .github/scripts/pypi_upload_check.py post --project nodes-core "
-            '--version "${GITHUB_REF#refs/tags/core/v}" --dist dist',
+            "python3 .github/scripts/pypi_upload_check.py post --project verifiably-nodes "
+            '--version "${GITHUB_REF#refs/tags/v}" --dist dist',
         ),
     ]
 
-    assert job["if"] == "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/core/v')"
+    assert job["if"] == "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
     assert job["environment"] == "release"
     assert job["permissions"] == {"contents": "read", "id-token": "write"}
     assert not any(value.startswith("pypa/gh-action-pypi-publish@") for value in uses)
@@ -444,8 +444,8 @@ def test_python_smoke_removes_scratch_directory_after_failure(tmp_path: Path) ->
     env, scratch_parent = _smoke_environment(tmp_path, "uv", 24)
     dist = tmp_path / "dist"
     dist.mkdir()
-    (dist / "nodes_core-0.1.0-py3-none-any.whl").touch()
-    (dist / "nodes_core-0.1.0.tar.gz").touch()
+    (dist / "verifiably_nodes-0.1.0-py3-none-any.whl").touch()
+    (dist / "verifiably_nodes-0.1.0.tar.gz").touch()
 
     result = subprocess.run(
         [str(PYTHON_SMOKE), str(dist)],
