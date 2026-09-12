@@ -275,6 +275,10 @@ Mechanical; lands with this design's plan:
   the future §2.1 implementation plan owns it, and §2.1 landing is the trigger. The fixture
   tests the shipped projection and cannot precede that API.
 
+  *(2026-09-12:)* **landed** on `nodes-2.0` as remainder sub-task F (`nodes-dfee96`):
+  `fixtures/gene-axis.md` and `gene-axis.canonical.json`, asserted by both parity suites,
+  with their §11.2 row.
+
 ## 6. Standard changes summary
 
 STANDARD 1.2 → 1.3 in one amendment commit, per the standard's own policy: the §2

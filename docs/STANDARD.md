@@ -509,6 +509,7 @@ projection-version bump.
 |---------|------|
 | `projection.v1.canonical.json` | byte/text oracle for `projection.v1` RFC 8785 canonical JSON |
 | `gene_phf19.md`, `gene_phf19.canonical.json` | frontmatter parse → canonical JSON projection |
+| `gene-axis.md`, `gene-axis.canonical.json` | *(2.0)* namespaced facet name `biology/gene-axis` projected identically through both `projection.v1` projections: one facet name distinct from `biology`, the slash no path separator; the oracle is RFC 8785 text, read as text and as value |
 | `gene_phf19.py-emit.md`, `gene_phf19.ts-emit.md` | cross-emitted samples: each language re-emits (regenerate-and-diff) and parses the other's |
 | `corpus/`, `corpus.rename.canonical.json`, `write-plan.rename.canonical.json` | rename semantics across referrers (whole-corpus post-rename oracle) and *(2.0)* the captured rename plan, semantically compared, with referrer replaces in uid code-point order (BMP versus non-BMP referrers) |
 | `path-collision.oracle.json` | *(2.0)* mapped-path collision admission and reporting: key groups, refused and admitted mutations, `check` findings; logical descriptions only — the well-placed case pair is constructed in-test |

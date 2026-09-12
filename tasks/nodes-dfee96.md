@@ -1,11 +1,14 @@
 ---
 id: nodes-dfee96
 title: Namespaced-facet projection fixture biology/gene-axis
-status: todo
+status: done
 priority: 2
 size: xs
+owner: nodes-2.0
 created: 2026-09-11T12:33:36Z
-updated: 2026-09-11T12:33:36Z
+updated: 2026-09-12T09:59:06Z
+started: 2026-09-12T09:58:04Z
+completed: 2026-09-12T09:59:06Z
 depends: []
 parent: nodes-ce28b8
 tags: [parity]
