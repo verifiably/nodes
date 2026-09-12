@@ -237,6 +237,13 @@ Mechanical; lands with this design's plan:
   name appears in the ts-kernel, ts-corpus-fingerprints, membership-traversal-and-check,
   package-identity-and-ownership, and this design. The implementation sweep must distinguish
   stale directions from historical statements about the names being replaced.
+
+  *(2026-09-12:)* **corrected** on `nodes-2.0` as remainder sub-task G (`nodes-45445f`).
+  Stale directions rewritten in the ts-kernel, structural-index, fulltext-search,
+  similarity-index, index-persistence, ts-corpus-fingerprints, and
+  membership-traversal-and-check designs; the package-layout and package-identity designs
+  keep the old names as the history of the renames, as does this item. Executed plans keep
+  the paths they were executed against.
 - **README.** Science is listed as a consumer that "builds on the Python kernel" — false
   today; restate as the intended consumer via the redesign. The mindful path is
   `~/d/mindful/v6/`.

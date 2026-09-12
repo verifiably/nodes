@@ -1,11 +1,14 @@
 ---
 id: nodes-45445f
 title: "Docs path reconcile: kernel paths and npm name"
-status: todo
+status: done
 priority: 3
 size: s
+owner: nodes-2.0
 created: 2026-09-11T12:33:36Z
-updated: 2026-09-11T12:33:36Z
+updated: 2026-09-12T10:00:35Z
+started: 2026-09-12T10:00:16Z
+completed: 2026-09-12T10:00:35Z
 depends: []
 parent: nodes-ce28b8
 tags: [hygiene]

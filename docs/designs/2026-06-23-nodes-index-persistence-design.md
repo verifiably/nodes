@@ -33,7 +33,7 @@ time, never correctness.
 Keep the three index classes **pure data with no file I/O**. They gain only pure
 `to_dict()` / `from_dict()` (serialization is not file I/O).
 
-A new module `python/src/nodes/kernel/snapshot.py` owns everything on-disk:
+A new module `python/src/nodes/core/snapshot.py` owns everything on-disk:
 
 - the snapshot file location and atomic write,
 - the `version` / `lang` gate and the **integrity validation**,
@@ -303,12 +303,12 @@ whose deletion merely forces re-embedding).
 
 ## 11. Module / file map
 
-- **Create:** `python/src/nodes/kernel/snapshot.py` — `SNAPSHOT_SCHEMA_VERSION`,
+- **Create:** `python/src/nodes/core/snapshot.py` — `SNAPSHOT_SCHEMA_VERSION`,
   the manifest type, `load_snapshot()`, the file-walk, `reconcile()`/`full_rebuild()`
   helpers, atomic write.
-- **Modify:** `python/src/nodes/kernel/index.py`, `search.py`, `similarity.py` — add
+- **Modify:** `python/src/nodes/core/index.py`, `search.py`, `similarity.py` — add
   `to_dict()` / `from_dict()`; expose the extraction replay needed by structural
   `from_dict`.
-- **Modify:** `python/src/nodes/kernel/corpus.py` — load/reconcile in `__init__`,
+- **Modify:** `python/src/nodes/core/corpus.py` — load/reconcile in `__init__`,
   `flush_index()`, in-memory manifest maintenance across `add` / `delete` / `rename`.
 - **Docs:** extend `docs/STANDARD.md` with an index-persistence subsection.

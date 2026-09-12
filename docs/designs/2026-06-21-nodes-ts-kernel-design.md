@@ -97,7 +97,7 @@ The eight Plan-1 modules in scope: `errors`, `ids`, `relations`, `node`, `frontm
 
 ```jsonc
 {
-  "name": "@nodes/kernel",
+  "name": "@nodes-dev/core",
   "type": "module",
   "engines": { "node": ">=20" },
   "packageManager": "npm@10",
@@ -222,7 +222,7 @@ Python's `uuid4().hex`. `NodeMetadata` Zod schema `{ created: dateStr|null = nul
 dateStr|null = null, version: number = 1 }` where `dateStr` is a `YYYY-MM-DD`-validated string —
 **every field carries a Zod default** so an absent or `{}` metadata parses to `{created:null,
 updated:null, version:1}`, matching Python's Pydantic defaults
-([`node.py:25`](../../python/src/nodes/kernel/node.py)). `Node` Zod schema `{ id, uid =
+([`node.py:25`](../../python/src/nodes/core/node.py)). `Node` Zod schema `{ id, uid =
 newUid(), kind, title, body = "", metadata = {created:null,updated:null,version:1}, relations =
 [], facets = {}, deprecatedIds = [] }` — **all of `metadata`, `relations`, `facets`,
 `deprecatedIds` default via Zod** so minimal TS construction (`{id, kind, title}`) produces a
@@ -257,7 +257,7 @@ unexpected facets (present − (required ∪ optional)) → `FacetError`; then r
 ### 6.7 `shapes.ts`
 `MEMBERSHIP = "membership"`. `Membership` Zod schema `{ shape, members: string[] | Record<string,
 string> = [], edges: Relation[] = [] }` — `members` and `edges` **carry Zod defaults** (`[]`),
-matching Python's `default_factory` ([`shapes.py:15`](../../python/src/nodes/kernel/shapes.py)),
+matching Python's `default_factory` ([`shapes.py:15`](../../python/src/nodes/core/shapes.py)),
 so a membership facet with only `shape` validates. `membershipOf(node)` (missing facet →
 `FacetError`; validate via schema). Invariants: `requireUniqueMembers`, `requireDictKeys`, `requireAcyclic` (DFS with
 visiting/done sets, `InvariantError` on back-edge), `requireSingleParent`. `registerBuiltinShapes`
