@@ -1,7 +1,7 @@
 # Collecting construction — design
 
 **Date:** 2026-09-11
-**Status:** draft, revised after two review rounds; implementation has not started
+**Status:** draft, revised after three review rounds; implementation has not started
 **Task:** `nodes-c7b371`, sub-task B of `nodes-ce28b8`
 **Sources:** `2026-09-11-nodes-2.0-remainder-design.md` §B;
 `2026-08-03-nodes-under-the-system-redesign-design.md` §2.3;
@@ -40,15 +40,18 @@ its ledger row for this work names "audits over damaged corpora".
   needed: on a case-insensitive volume the executor's create precondition already
   refuses the same file, and on a case-sensitive one distinct spellings are distinct
   files.
-- **An excluded identity claimant occupies its identity claims as it occupies its
-  path.** A file excluded for a uid or id collision parsed to a uid, a live id and
-  deprecated ids; mutation refuses (`CollisionError`) a candidate claiming any of them.
-  Otherwise `add` of `topic:c` with the twins' uid would be admitted, and the next
-  reopen would exclude all three — the accepted set changing with no filesystem edit,
-  which §4's reopen guarantee forbids. Rerunning classification on every mutation was
-  rejected as a walk per write. Parse-failed and misplaced files leave the process
-  before identity grouping and reserve nothing: a member admitted beside them is
-  admitted again on reopen.
+- **Excluded identity claimants reserve exactly what admission would contest on
+  reopen, stage by stage.** Otherwise `add` of `topic:c` with the twins' uid would be
+  admitted, and the next reopen would exclude all three — the accepted set changing
+  with no filesystem edit, which §4's reopen guarantee forbids. Files excluded at the
+  uid stage reserve their **uids**; files excluded at the id stage reserve their uids
+  and their **live and deprecated ids**. Uid-stage claimants do not reserve ids: they
+  leave before ids are grouped, so a valid member holding an id one of them lists as
+  deprecated is accepted, and reserving that id would refuse the member's own
+  same-`(uid, id)` replacement. Uids and ids are separate namespaces — an opaque uid
+  spelled `topic:x` reserves no node id. Rerunning classification on every mutation was
+  rejected as a walk per write. Parse-failed and misplaced files leave before identity
+  grouping and reserve nothing.
 - **No type coercion at the Markdown boundary.** Python's pydantic models coerce
   `version: "2"`, `version: true` and `directed: "false"` where TypeScript's schemas
   refuse them. Field types are exact in both kernels; the one conversion is a YAML
@@ -203,11 +206,12 @@ additions, both before referrer preparation, embedding or cache work, or executo
 invocation:
 
 - `add` refuses (`CollisionError`) when the candidate's mapped path is an excluded
-  path, or when its uid, id or any deprecated id is a **reserved claim**: a uid, live
-  id or deprecated id of a file excluded at admission step 3 or 4. Parse-failed and
-  misplaced files reserve nothing (§1).
+  path, when its uid is a **reserved uid** — the uid of any file excluded at admission
+  step 3 or 4 — or when its id or any deprecated id is a **reserved id** — a live or
+  deprecated id of a file excluded at step 4. The two reservation sets are separate
+  namespaces. Parse-failed and misplaced files reserve nothing (§1).
 - `rename` refuses (`CollisionError`) when the new mapped path differs from the old and
-  is an excluded path, or when the new id is a reserved claim.
+  is an excluded path, or when the new id is a reserved id.
 
 `delete` and the exact-path rename branch only ever target live manifest paths, so no
 plan can name an excluded file. The executor's existence precondition stays as the
@@ -253,7 +257,7 @@ checkout-portable: every member path is ASCII and no two differ only in case.
 | `topic/typed.md` | `title: [1]` | `parse-error` (exercises the Python wrapping) |
 | `topic/bytes.md` | valid frontmatter followed by a lone `0xFF` byte | `parse-error` (exercises fatal decoding) |
 | `topic/moved.md` | valid; `id: topic:elsewhere` | `path-mismatch`, detail `topic/elsewhere.md` |
-| `topic/twin-a.md`, `topic/twin-b.md` | valid; same uid | `uid-collision` ×2 |
+| `topic/twin-a.md`, `topic/twin-b.md` | valid; same uid; twin-a lists `topic:good` as deprecated | `uid-collision` ×2; `topic:good` stays a member |
 | `topic/current.md` | valid | `id-collision`, detail `topic:current` |
 | `topic/former.md` | valid; `deprecated_ids: [topic:current]` | `id-collision`, detail `topic:current` |
 
@@ -281,7 +285,9 @@ executor, embedder or cache effect (the recording executor and failing-`prepare`
 from C's harness); `add` of `topic:c` with the twins' uid, `add` of a node listing
 `topic:current` as deprecated, and `add` of a node with `topic/moved.md`'s uid are
 refused, refused, admitted, and after flush and reopen in collecting mode the accepted
-set and findings are unchanged; `add` of a fresh id succeeds and `check()` still carries every
+set and findings are unchanged; `topic/twin-a.md` also lists `topic:good` as deprecated,
+so the accepted `topic:good` is replaced by its own same-`(uid, id)` add and the
+replacement survives reopen; `add` of a fresh id succeeds and `check()` still carries every
 construction finding. A reconciliation case constructs the eviction: one-node snapshot,
 then an external twin with the same uid, then reopen — both excluded, the kept entry
 gone from every index. A three-claimant identity case (A: deprecated `topic:x`; B:
