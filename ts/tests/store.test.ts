@@ -1,14 +1,38 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { RefError } from "../src/errors.js";
+import { ContainmentError, RefError } from "../src/errors.js";
 import { nodeToMarkdown } from "../src/frontmatter.js";
 import { type Node, makeNode } from "../src/node.js";
 import { Store } from "../src/store.js";
 
 let root: string;
 let store: Store;
+
+const SYMLINKS = (() => {
+  const probe = mkdtempSync(join(tmpdir(), "nodes-symlink-probe-"));
+  try {
+    symlinkSync(join(probe, "target"), join(probe, "link"));
+    return true;
+  } catch (e) {
+    if (process.platform === "win32" && (e as NodeJS.ErrnoException).code === "EPERM") return false;
+    throw e;
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
+  }
+})();
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "nodes-store-"));
@@ -61,6 +85,23 @@ describe("Store file mechanics", () => {
     writeFileSync(join(root, ".nodes-index", "cache.md"), "not a node");
     expect(store.allNodes().map((x) => x.id)).toEqual(["topic:a"]);
   });
+});
+
+describe("Store reads address the walked path", () => {
+  it.skipIf(process.platform === "win32" || !SYMLINKS)(
+    "allNodes reads a backslash-named file, not a separator-substituted path",
+    () => {
+      const outside = mkdtempSync(join(tmpdir(), "nodes-store-outside-"));
+      try {
+        writeFileSync(join(outside, "a.md"), nodeToMarkdown(n("topic:leak", "topic")));
+        symlinkSync(outside, join(root, "kind"));
+        writeFileSync(join(root, "kind\\a.md"), nodeToMarkdown(n("kind:a", "kind")));
+        expect(store.allNodes().map((x) => x.id)).toEqual(["kind:a"]);
+      } finally {
+        rmSync(outside, { recursive: true, force: true });
+      }
+    },
+  );
 });
 
 describe("Store.allNodes parse memoization", () => {
@@ -196,5 +237,44 @@ describe("Store stat-fingerprint cache", () => {
     store.deleteFile("topic:a");
     expect(() => store.readFile("topic:a")).toThrow(RefError);
     expect(store.allNodes().map((node) => node.id)).toEqual(["topic:b"]);
+  });
+});
+
+describe("Store containment", () => {
+  it.skipIf(!SYMLINKS)("readFile refuses a symlinked path", () => {
+    store.writeFile(n("topic:real", "topic"));
+    symlinkSync(join(root, "topic", "real.md"), join(root, "topic", "a.md"));
+    expect(() => store.readFile("topic:a")).toThrow(ContainmentError);
+  });
+
+  it.skipIf(!SYMLINKS)("writeFile refuses a symlinked path and leaves the target", () => {
+    mkdirSync(join(root, "topic"));
+    const target = join(root, "protected.txt");
+    writeFileSync(target, "keep");
+    symlinkSync(target, join(root, "topic", "a.md"));
+    expect(() => store.writeFile(n("topic:a", "topic"))).toThrow(ContainmentError);
+    expect(readFileSync(target, "utf-8")).toBe("keep");
+  });
+
+  it.skipIf(!SYMLINKS)("deleteFile refuses a symlinked path and leaves the link", () => {
+    mkdirSync(join(root, "topic"));
+    const target = join(root, "protected.txt");
+    writeFileSync(target, "keep");
+    symlinkSync(target, join(root, "topic", "a.md"));
+    expect(() => store.deleteFile("topic:a")).toThrow(ContainmentError);
+    expect(lstatSync(join(root, "topic", "a.md")).isSymbolicLink()).toBe(true);
+    expect(readFileSync(target, "utf-8")).toBe("keep");
+  });
+
+  it.skipIf(!SYMLINKS)("works through a symlinked root", () => {
+    const real = join(root, "real");
+    mkdirSync(real);
+    const link = join(root, "link-root");
+    symlinkSync(real, link);
+    const linked = new Store(link);
+    linked.writeFile(n("topic:a", "topic"));
+    expect(linked.readFile("topic:a").title).toBe("topic:a");
+    linked.deleteFile("topic:a");
+    expect(existsSync(join(real, "topic", "a.md"))).toBe(false);
   });
 });

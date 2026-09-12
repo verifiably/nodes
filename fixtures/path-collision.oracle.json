@@ -1,0 +1,21 @@
+{
+  "groups": [
+    {"name":"case", "nodes":[{"id":"kind:A","uid":"a"},{"id":"kind:a","uid":"b"}], "rows":[["kind:A","kind/a.md"],["kind:a","kind/a.md"]]},
+    {"name":"exact", "nodes":[{"id":"kind:a:b","uid":"a"},{"id":"kind:a__b","uid":"b"}], "rows":[["kind:a:b","kind/a__b.md"],["kind:a__b","kind/a__b.md"]]},
+    {"name":"three", "nodes":[{"id":"kind:AA","uid":"a"},{"id":"kind:Aa","uid":"b"},{"id":"kind:aa","uid":"c"}], "rows":[["kind:AA","kind/aa.md"],["kind:Aa","kind/aa.md"],["kind:aa","kind/aa.md"]]},
+    {"name":"kinds", "nodes":[{"id":"kind:a","uid":"a"},{"id":"other:a","uid":"b"}], "rows":[]},
+    {"name":"aliases", "nodes":[{"id":"kind:x","uid":"a","deprecated_ids":["kind:A"]},{"id":"kind:a","uid":"b"}], "rows":[]},
+    {"name":"single", "nodes":[{"id":"kind:A","uid":"a"}], "rows":[]}
+  ],
+  "mutations": [
+    {"name":"add-case", "source":"kind:A", "action":"add", "target":"kind:a", "result":"CollisionError"},
+    {"name":"add-exact", "source":"kind:a:b", "action":"add", "target":"kind:a__b", "result":"CollisionError"},
+    {"name":"rename-case", "source":"kind:A", "action":"rename", "target":"kind:a", "result":"CollisionError"},
+    {"name":"rename-exact", "source":"kind:a:b", "action":"rename", "target":"kind:a__b", "result":["replace"]},
+    {"name":"rename-free", "source":"kind:a", "action":"rename", "target":"kind:b", "result":["create","delete"]}
+  ],
+  "case_findings": [
+    {"severity":"warning","code":"path-collision","ref":"kind:A","detail":"kind/a.md"},
+    {"severity":"warning","code":"path-collision","ref":"kind:a","detail":"kind/a.md"}
+  ]
+}

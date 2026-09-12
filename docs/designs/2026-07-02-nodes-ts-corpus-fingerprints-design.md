@@ -161,10 +161,10 @@ Mindful's resident runtime should eventually replace its local broad corpus fing
 implementation with:
 
 ```ts
-import { readCorpusFingerprint, sameCorpusFingerprint } from "@nodes/kernel";
+import { readCorpusFingerprint, sameCorpusFingerprint } from "@nodes-dev/core";
 ```
 
-`@nodes/kernel` is the package name exported by `~/d/nodes/ts/package.json`; the barrel is
+`@nodes-dev/core` is the package name exported by `ts/package.json`; the barrel is
 `ts/src/index.ts`.
 
 Mindful should still own all application-specific policy:

@@ -31,11 +31,11 @@ describe("corpus stat fingerprints", () => {
     expect(readCorpusFingerprint(root)).toEqual({ files: [] });
   });
 
-  it("returns an empty stat list for a missing root", () => {
+  it("throws for a missing root", () => {
     const missing = join(root, "missing");
     expect(existsSync(missing)).toBe(false);
-    expect(listCorpusFileStats(missing)).toEqual([]);
-    expect(readCorpusFingerprint(missing)).toEqual({ files: [] });
+    expect(() => listCorpusFileStats(missing)).toThrow();
+    expect(() => readCorpusFingerprint(missing)).toThrow();
   });
 
   it("lists regular markdown files as sorted root-relative POSIX paths with stat metadata", () => {

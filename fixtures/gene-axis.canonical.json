@@ -1,0 +1,1 @@
+{"body":"Rows are genes; columns are samples.\n","deprecated_ids":[],"facets":{"biology":{"organism":"Homo sapiens"},"biology/gene-axis":{"axis":"rows"}},"id":"dataset:gene-expression-matrix","kind":"dataset","metadata":{"created":null,"updated":null,"version":1},"relations":[],"title":"Gene expression matrix","uid":"4f1a9c2e8b7d4f1a9c2e8b7d4f1a9c2e"}

@@ -28,13 +28,13 @@ canonical markdown files.
 The index is domain-free, so it lives in `nodes.kernel` (the substrate spec lists the derived
 index as kernel scope). Two new modules, plus a slimming of the existing `store.py`:
 
-- **`src/nodes/kernel/index.py` — `Index`.** Pure in-memory maps + resolved relation graph.
+- **`python/src/nodes/core/index.py` — `Index`.** Pure in-memory maps + resolved relation graph.
   Knows nothing about files. Built from a list of `Node`s; supports incremental `upsert` /
   `remove`; answers resolution and graph queries.
-- **`src/nodes/kernel/corpus.py` — `Corpus`.** The coordinator and primary public API. Owns a
+- **`python/src/nodes/core/corpus.py` — `Corpus`.** The coordinator and primary public API. Owns a
   `Store` + an `Index`. Every mutation (`add` / `rename` / `delete`) goes through it: collision
   check against the index, the `Store` file op, then the index update.
-- **`src/nodes/kernel/store.py` — slimmed.** Reduced to pure file mechanics. The cross-corpus
+- **`python/src/nodes/core/store.py` — slimmed.** Reduced to pure file mechanics. The cross-corpus
   logic (`resolve()`'s deprecated scan, `_assert_no_identity_collision`, `rename` +
   `_rewrite_*`, `_id_owner_uid`) **migrates up** into `Corpus` / `Index`. No compatibility shim
   is left behind (greenfield repo, no external consumers).

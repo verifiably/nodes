@@ -1,9 +1,10 @@
 import { type Stats, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { RefError } from "./errors.js";
-import { nodeFromMarkdown, nodeToMarkdown } from "./frontmatter.js";
+import { nodeFromBytes, nodeToMarkdown } from "./frontmatter.js";
 import type { Node } from "./node.js";
-import { hashBytes, listCorpusFileStats, pathForNodeId } from "./snapshot.js";
+import { assertContained, pathForNodeId } from "./paths.js";
+import { hashBytes, listCorpusFileStats } from "./snapshot.js";
 
 interface CachedFile {
   readonly mtimeMs: number;
@@ -36,6 +37,7 @@ export class Store {
 
   writeFile(node: Node): string {
     const rel = pathForNodeId(node.id);
+    assertContained(this.root, rel);
     const path = join(this.root, rel);
     mkdirSync(dirname(path), { recursive: true });
     const data = Buffer.from(nodeToMarkdown(node), "utf-8");
@@ -52,6 +54,7 @@ export class Store {
 
   readFile(nodeId: string): Node {
     const rel = pathForNodeId(nodeId);
+    assertContained(this.root, rel);
     const path = join(this.root, rel);
     let stat: Stats;
     try {
@@ -67,6 +70,7 @@ export class Store {
 
   deleteFile(nodeId: string): void {
     const rel = pathForNodeId(nodeId);
+    assertContained(this.root, rel);
     const path = join(this.root, rel);
     let stat: Stats;
     try {
@@ -100,7 +104,7 @@ export class Store {
     if (cached !== undefined && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) return cached;
     const data = readFileSync(join(this.root, rel));
     const sha256 = hashBytes(data);
-    const node = cached?.sha256 === sha256 ? cached.node : nodeFromMarkdown(data.toString("utf-8"));
+    const node = cached?.sha256 === sha256 ? cached.node : nodeFromBytes(data);
     return { mtimeMs: stat.mtimeMs, size: stat.size, sha256, node };
   }
 }

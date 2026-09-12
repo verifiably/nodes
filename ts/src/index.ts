@@ -1,11 +1,13 @@
 export {
   CollisionError,
+  ContainmentError,
   EmbedderRequiredError,
   ExecutionError,
   FacetError,
   IdError,
   InvariantError,
   NodesError,
+  PlacementError,
   PlanRefusedError,
   RefError,
   UnknownKindError,
@@ -30,7 +32,7 @@ export {
   makeNode,
   newUid,
 } from "./node.js";
-export { nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "./frontmatter.js";
+export { nodeFromBytes, nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "./frontmatter.js";
 export {
   PROJECTION_VERSION,
   type JsonValue,
@@ -72,7 +74,8 @@ export {
   RESERVED_NAMESPACE,
   validatePlan,
 } from "./write-plan.js";
-export { Corpus, type Finding } from "./corpus.js";
+export { assertCachePath, assertContained, isPortableRelativePath, pathForNodeId } from "./paths.js";
+export { Corpus, type ConstructionMode, type Finding } from "./corpus.js";
 export {
   type CorpusFile,
   type CorpusFileStat,
@@ -80,12 +83,12 @@ export {
   type ManifestEntry,
   type Snapshot,
   SNAPSHOT_LANG,
+  SNAPSHOT_REL_PATH,
   SNAPSHOT_SCHEMA_VERSION,
   hashBytes,
   iterCorpusFiles,
   listCorpusFileStats,
   loadSnapshot,
-  pathForNodeId,
   readCorpusFingerprint,
   readJson,
   sameCorpusFingerprint,

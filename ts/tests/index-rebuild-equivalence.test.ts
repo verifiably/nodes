@@ -22,6 +22,13 @@ function canonicalAttrs(attrs: Record<string, unknown>): string {
 // The key MUST embed the relation payload, not just (ref, role, sourceUid): a stale
 // predicate/directed/weight/attrs would otherwise pass undetected, and comparing Relation
 // OBJECTS directly gives false negatives (live vs rebuild hold distinct references).
+function danglingRefs(c: Corpus): string[][] {
+  return c
+    .check()
+    .filter((f) => f.code === "dangling-ref")
+    .map((f) => [f.ref, f.detail]);
+}
+
 function relationSignature(o: OutRef): string | null {
   const rel = o.relation;
   if (rel === undefined) return null;
@@ -82,11 +89,11 @@ describe("Index rebuild equivalence", () => {
 
     c.delete("topic:a"); // strands inbound refs from topic:c and graph:g → must stay dangling
     assertEquivalent(c);
-    expect(c.dangling().length).toBeGreaterThanOrEqual(1);
+    expect(danglingRefs(c)).toContainEqual(["topic:c", "topic:a"]);
 
     c.add(makeNode({ id: "topic:a", kind: "topic", title: "A again" })); // reconverges dangling refs
     assertEquivalent(c);
-    expect(c.dangling()).toEqual([]);
+    expect(danglingRefs(c)).toEqual([]);
     expect(c.outbound("topic:c").every((e) => e.targetUid !== null)).toBe(true);
   });
 

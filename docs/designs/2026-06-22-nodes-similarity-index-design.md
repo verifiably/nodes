@@ -44,7 +44,7 @@ the corpus, computed from dense vector embeddings of each node.
 
 ## 2. Architecture
 
-One new kernel module, `python/src/nodes/kernel/similarity.py`, domain-free and
+One new kernel module, `python/src/nodes/core/similarity.py`, domain-free and
 parity-clean. It contributes three units plus one new error:
 
 | Unit | Responsibility |
@@ -60,7 +60,7 @@ embedder + a `VectorCache` and keeps the `VectorIndex` current on
 
 **Prerequisite refactor — shared ranking primitive.** `score_key` (the
 parity-critical half-up-to-6-dp rounding) is extracted from `search.py` into a
-new `python/src/nodes/kernel/ranking.py`, imported by **both** `search.py` and
+new `python/src/nodes/core/ranking.py`, imported by **both** `search.py` and
 `similarity.py`. This gives the two derived-index facets one source of truth for
 the rounding without coupling the vector index to full-text search. The barrel
 export and the existing search tests are updated to import from `ranking`; the

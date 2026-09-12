@@ -44,7 +44,7 @@ consumer being Mindful v6.
 A new derived index, sibling to the structural `Index`, in the **kernel** (spec
 §2: the kernel owns the derived index).
 
-- **New module `python/src/nodes/kernel/search.py`**, containing:
+- **New module `python/src/nodes/core/search.py`**, containing:
   - `tokenize(text: str) -> list[str]` — the canonical tokenizer (§3).
   - `SearchIndex` — the inverted index + BM25F scorer (§4–5).
   - `SearchHit` — the result dataclass (§6).

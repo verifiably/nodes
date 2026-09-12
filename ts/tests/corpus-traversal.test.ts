@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { Corpus } from "../src/corpus.js";
 import { RefError } from "../src/errors.js";
 import { makeNode } from "../src/node.js";
+import { relatesTo } from "../src/relations.js";
 import { MEMBERSHIP } from "../src/shapes.js";
 
 function tmpRoot(): string {
@@ -47,30 +48,45 @@ describe("Corpus — membership traversal", () => {
     expect(seeded().containers("set:box")).toEqual(["set:crate"]);
   });
 
-  it("descendants walks nesting transitively and skips dangling", () => {
-    expect(seeded().descendants("set:crate")).toEqual(["note:renamed", "note:tidy", "set:box"]);
-  });
-
-  it("ancestors walks containers transitively", () => {
-    expect(seeded().ancestors("note:renamed")).toEqual(["set:box", "set:crate"]);
-  });
-
-  it("cycles terminate and transitive results exclude the start node", () => {
+  it("containment cycles are legal one hop", () => {
     const c = new Corpus(tmpRoot());
     c.add(setNode("set:loop-a", ["set:loop-b"]));
     c.add(setNode("set:loop-b", ["set:loop-a"]));
     c.add(setNode("set:selfie", ["set:selfie"]));
-    expect(c.descendants("set:loop-a")).toEqual(["set:loop-b"]);
-    expect(c.ancestors("set:loop-b")).toEqual(["set:loop-a"]);
+    expect(c.members("set:loop-a")).toEqual(["set:loop-b"]);
+    expect(c.containers("set:loop-a")).toEqual(["set:loop-b"]);
     expect(c.members("set:selfie")).toEqual(["set:selfie"]);
-    expect(c.descendants("set:selfie")).toEqual([]);
-    expect(c.ancestors("set:selfie")).toEqual([]);
+    expect(c.containers("set:selfie")).toEqual(["set:selfie"]);
   });
 
-  it("all four methods reject an unresolvable input ref", () => {
+  it("both methods reject an unresolvable input ref", () => {
     const c = seeded();
-    for (const fn of ["members", "containers", "descendants", "ancestors"] as const) {
+    for (const fn of ["members", "containers"] as const) {
       expect(() => c[fn]("note:ghost")).toThrow(RefError);
     }
   });
+});
+
+it("orders neighbor nodes by uid code points before and after reload", () => {
+  // U+E000 and U+10000 sort oppositely under UTF-16 code units; code points are the contract.
+  const root = mkdtempSync(join(tmpdir(), "nodes-neighbors-"));
+  const c = new Corpus(root);
+  for (const [slug, uid] of [
+    ["bmp", "\uE000"],
+    ["nonbmp", "\u{10000}"],
+  ]) {
+    c.add(makeNode({ id: `kind:${slug}`, uid, kind: "kind", title: slug }));
+  }
+  c.add(
+    makeNode({
+      id: "kind:center",
+      uid: "center",
+      kind: "kind",
+      title: "Center",
+      relations: [relatesTo("kind:center", "kind:nonbmp"), relatesTo("kind:center", "kind:bmp")],
+    }),
+  );
+  expect(c.neighbors("kind:center").map((n) => n.uid)).toEqual(["\uE000", "\u{10000}"]);
+  c.flushIndex();
+  expect(new Corpus(root).neighbors("kind:center").map((n) => n.uid)).toEqual(["\uE000", "\u{10000}"]);
 });

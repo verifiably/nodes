@@ -73,3 +73,18 @@ def test_python_parses_ts_emit_to_oracle():
     assert to_canonical(node_from_markdown(TS_EMIT.read_text(encoding="utf-8"))) == json.loads(
         ORACLE.read_text(encoding="utf-8")
     )
+
+
+GENE_AXIS_SOURCE = FIXTURES / "gene-axis.md"
+GENE_AXIS_ORACLE = FIXTURES / "gene-axis.canonical.json"
+
+
+def test_namespaced_facet_key_projects_identically():
+    # `biology/gene-axis` is one facet name, distinct from `biology`: the slash is not a
+    # path separator. The oracle is RFC 8785 text, so it pins both projections at once.
+    node = node_from_markdown(GENE_AXIS_SOURCE.read_text(encoding="utf-8"))
+    text = GENE_AXIS_ORACLE.read_text(encoding="utf-8")
+    assert set(node.facets) == {"biology", "biology/gene-axis"}
+    assert to_canonical_json(node) + "\n" == text
+    assert to_canonical(node) == json.loads(text)
+    assert to_canonical(node_from_markdown(node_to_markdown(node))) == json.loads(text)

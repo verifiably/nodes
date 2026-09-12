@@ -147,7 +147,12 @@ describe("Corpus — graph queries", () => {
     const out = c.outbound("topic:r");
     expect(out).toHaveLength(1);
     expect(out[0].targetUid).toBeNull();
-    expect(c.dangling()).toHaveLength(1);
+    expect(
+      c
+        .check()
+        .filter((f) => f.code === "dangling-ref")
+        .map((f) => [f.ref, f.detail]),
+    ).toEqual([["topic:r", "topic:t"]]);
     expect(() => c.inbound("topic:t")).toThrow(RefError); // the target no longer resolves
   });
 

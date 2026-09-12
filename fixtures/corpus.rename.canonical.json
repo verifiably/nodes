@@ -18,6 +18,32 @@
     "deprecated_ids": []
   },
   {
+    "id": "note:bmp",
+    "uid": "\ue000",
+    "kind": "note",
+    "title": "BMP",
+    "body": "",
+    "metadata": { "created": null, "updated": null, "version": 1 },
+    "relations": [
+      { "source": "note:bmp", "predicate": "relatesTo", "target": "topic:new", "directed": true, "weight": null, "attrs": {} }
+    ],
+    "facets": {},
+    "deprecated_ids": []
+  },
+  {
+    "id": "note:nonbmp",
+    "uid": "\ud800\udc00",
+    "kind": "note",
+    "title": "NonBMP",
+    "body": "",
+    "metadata": { "created": null, "updated": null, "version": 1 },
+    "relations": [
+      { "source": "note:nonbmp", "predicate": "relatesTo", "target": "topic:new", "directed": true, "weight": null, "attrs": {} }
+    ],
+    "facets": {},
+    "deprecated_ids": []
+  },
+  {
     "id": "note:r",
     "uid": "22222222222222222222222222222222",
     "kind": "note",

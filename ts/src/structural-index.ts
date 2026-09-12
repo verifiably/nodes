@@ -1,6 +1,7 @@
 import { CollisionError, IdError, RefError } from "./errors.js";
 import { NodeId } from "./ids.js";
 import type { Node } from "./node.js";
+import { pathCollisionKey, pathForNodeId } from "./paths.js";
 import { type Relation, RelationSchema } from "./relations.js";
 import { EDGES, KEYS, MEMBERSHIP, ORDER } from "./shapes.js";
 
@@ -157,6 +158,9 @@ export class Index {
   idToUid = new Map<string, string>();
   deprecatedToUid = new Map<string, string>();
   inRefs = new Map<string, InRef[]>();
+  // Derived: collision key (folded mapped path) -> live uids claiming it. Never
+  // serialized; rebuilt from entries on restore.
+  private pathUids = new Map<string, Set<string>>();
 
   static build(nodes: Iterable<Node>): Index {
     const idx = new Index();
@@ -164,7 +168,9 @@ export class Index {
       if (idx.byUid.has(node.uid)) {
         throw new CollisionError(`duplicate uid ${JSON.stringify(node.uid)} in corpus`);
       }
-      idx.assertAddable(node); // fail-early on a corrupt corpus (collision contract)
+      // Construction checks identity only: a path-collided corpus is legal on the
+      // volume that holds it and is reported by check(), not refused here.
+      idx.assertIdentityClaims(node);
       idx.upsert(node);
     }
     return idx;
@@ -174,10 +180,16 @@ export class Index {
     return this.idToUid.get(ref) ?? this.deprecatedToUid.get(ref) ?? null;
   }
 
-  // The collision gate. `upsert` is mechanical and never raises; this is what `build`
-  // and `Corpus.add` call before `upsert`. `Corpus.rename` does NOT call it (rename
-  // changes a uid's live id, which the second clause would reject mid-commit).
+  // The mutation gate: identity claims, then mapped-path admission. `upsert` is
+  // mechanical and never raises; `Corpus.add` calls this before `upsert`. Construction
+  // calls `assertIdentityClaims` alone; `Corpus.rename` calls `assertPathAvailable`
+  // alone (rename changes a uid's live id, which the identity check would reject).
   assertAddable(node: Node): void {
+    this.assertIdentityClaims(node);
+    this.assertPathAvailable(node.uid, node.id);
+  }
+
+  assertIdentityClaims(node: Node): void {
     const existing = this.byUid.get(node.uid);
     if (existing !== undefined && existing.id !== node.id) {
       throw new CollisionError(
@@ -194,6 +206,28 @@ export class Index {
     }
   }
 
+  /** Mutation admission: refuse a mapped path whose collision key another live uid
+   * already claims. A uid re-claiming its own exact mapped path changes nothing. */
+  assertPathAvailable(candidateUid: string, candidateId: string): void {
+    const candidatePath = pathForNodeId(candidateId);
+    const existing = this.byUid.get(candidateUid);
+    if (existing !== undefined && pathForNodeId(existing.id) === candidatePath) return;
+    const key = pathCollisionKey(candidateId);
+    if (this.pathUids.has(key)) {
+      throw new CollisionError(`mapped path for ${JSON.stringify(candidateId)} collides at ${JSON.stringify(key)}`);
+    }
+  }
+
+  /** Every [live id, collision key] in a bucket claimed by more than one uid. */
+  pathCollisions(): Array<[string, string]> {
+    const rows: Array<[string, string]> = [];
+    for (const [key, uids] of this.pathUids) {
+      if (uids.size < 2) continue;
+      for (const uid of uids) rows.push([(this.byUid.get(uid) as IndexEntry).id, key]);
+    }
+    return rows;
+  }
+
   upsert(node: Node): void {
     if (this.byUid.has(node.uid)) this.drop(node.uid);
     const entry: IndexEntry = {
@@ -204,6 +238,7 @@ export class Index {
       outRefs: extractOutRefs(node),
     };
     this.byUid.set(node.uid, entry);
+    this.claimPath(entry);
     this.idToUid.set(node.id, node.uid);
     for (const dep of node.deprecatedIds) this.deprecatedToUid.set(dep, node.uid);
     for (const oref of entry.outRefs) {
@@ -267,7 +302,9 @@ export class Index {
         if (!(key in e)) throw new Error(`structural snapshot: entry missing ${key}`);
       }
       const { uid, id: entryId, kind } = e;
-      if (typeof uid !== "string") throw new Error("structural snapshot: entry uid must be a string");
+      if (typeof uid !== "string" || uid.length === 0) {
+        throw new Error("structural snapshot: entry uid must be a non-empty string");
+      }
       if (typeof entryId !== "string") throw new Error("structural snapshot: entry id must be a string");
       if (typeof kind !== "string") throw new Error("structural snapshot: entry kind must be a string");
       let parsed: NodeId;
@@ -311,6 +348,7 @@ export class Index {
         }
       }
       idx.byUid.set(uid, entry);
+      idx.claimPath(entry);
       idx.idToUid.set(entry.id, uid);
       for (const dep of entry.deprecatedIds) idx.deprecatedToUid.set(dep, uid);
       for (const oref of outRefs) {
@@ -326,10 +364,21 @@ export class Index {
     this.drop(uid);
   }
 
+  private claimPath(entry: IndexEntry): void {
+    const key = pathCollisionKey(entry.id);
+    const bucket = this.pathUids.get(key) ?? new Set<string>();
+    bucket.add(entry.uid);
+    this.pathUids.set(key, bucket);
+  }
+
   private drop(uid: string): void {
     const entry = this.byUid.get(uid);
     if (entry === undefined) return;
     this.byUid.delete(uid);
+    const key = pathCollisionKey(entry.id);
+    const bucket = this.pathUids.get(key) as Set<string>;
+    bucket.delete(uid);
+    if (bucket.size === 0) this.pathUids.delete(key);
     if (this.idToUid.get(entry.id) === uid) this.idToUid.delete(entry.id);
     for (const dep of entry.deprecatedIds) {
       if (this.deprecatedToUid.get(dep) === uid) this.deprecatedToUid.delete(dep);
@@ -424,25 +473,6 @@ export class Index {
       }
     }
     return containers;
-  }
-
-  /** Transitive membership closure (BFS). The visited set is seeded with the start uid,
-   * which is excluded from the result even when a membership cycle reaches it. */
-  membershipClosure(uid: string, direction: "members" | "containers"): Set<string> {
-    const step = direction === "members" ? this.membersOf.bind(this) : this.containersOf.bind(this);
-    const visited = new Set<string>([uid]);
-    const queue: string[] = [uid];
-    let head = 0;
-    while (head < queue.length) {
-      const current = queue[head++];
-      for (const next of step(current)) {
-        if (visited.has(next)) continue;
-        visited.add(next);
-        queue.push(next);
-      }
-    }
-    visited.delete(uid);
-    return visited;
   }
 
   /** Every unresolved membership ref, deduped by (container uid, ref). */

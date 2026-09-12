@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ValidationError } from "../src/errors.js";
-import { nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "../src/frontmatter.js";
+import { nodeFromBytes, nodeFromMarkdown, nodeToMarkdown, splitFrontmatter } from "../src/frontmatter.js";
 import { makeNode } from "../src/node.js";
+import { toCanonical } from "../src/projection.js";
 
 const DOC = "---\nid: topic:x\nuid: abc\nkind: topic\ntitle: X\n---\nhello body\n";
 
@@ -81,4 +84,33 @@ describe("frontmatter", () => {
       ),
     ).toThrow(ValidationError);
   });
+});
+
+const malformed = JSON.parse(
+  readFileSync(fileURLToPath(new URL("../../fixtures/frontmatter.malformed.json", import.meta.url)), "utf-8"),
+) as { rejected: string[]; accepted: string[] };
+
+for (const text of malformed.rejected) {
+  it(`rejects ${JSON.stringify(text.slice(0, 48))} with ValidationError`, () => {
+    expect(() => nodeFromMarkdown(text)).toThrow(ValidationError);
+  });
+}
+for (const text of malformed.accepted) {
+  it(`round-trips ${JSON.stringify(text.slice(0, 48))}`, () => {
+    const node = nodeFromMarkdown(text);
+    expect(toCanonical(nodeFromMarkdown(nodeToMarkdown(node)))).toEqual(toCanonical(node));
+  });
+}
+it("parses unquoted and quoted dates identically", () => {
+  const a = nodeFromMarkdown("---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: 2026-01-01\n---\n");
+  const b = nodeFromMarkdown('---\nid: k:a\nuid: u\nkind: k\ntitle: T\ncreated: "2026-01-01"\n---\n');
+  expect(toCanonical(a)).toEqual(toCanonical(b));
+});
+it("treats invalid UTF-8 as a ValidationError and preserves a BOM", () => {
+  const valid = Buffer.from("---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n", "utf-8");
+  expect(() => nodeFromBytes(Buffer.concat([valid, Buffer.from([0xff])]))).toThrow(ValidationError);
+  expect(() => nodeFromBytes(Buffer.from("﻿---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n", "utf-8"))).toThrow(
+    ValidationError,
+  );
+  expect(nodeFromBytes(valid).id).toBe("k:a");
 });

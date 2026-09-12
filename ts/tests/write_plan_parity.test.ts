@@ -41,6 +41,15 @@ describe("cross-language write-plan parity", () => {
     });
     c.rename("topic:old", "topic:new");
     expect(captured[0].plans).toHaveLength(1);
+    // Referrer replaces follow uid code-point order: ASCII, then U+E000, then U+10000.
+    expect(captured[0].plans[0].map((op) => op.path)).toEqual([
+      "topic/new.md",
+      "topic/old.md",
+      "note/r.md",
+      "graph/g.md",
+      "note/bmp.md",
+      "note/nonbmp.md",
+    ]);
     const oracle = JSON.parse(readFileSync(join(FIXTURES, "write-plan.rename.canonical.json"), "utf-8"));
     expect(projectPlan(captured[0].plans[0])).toEqual(oracle);
   });

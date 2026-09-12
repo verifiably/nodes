@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from nodes.core.errors import ValidationError
+from nodes.core.frontmatter import node_from_markdown, node_to_markdown
 from nodes.core.node import Node, new_uid
+
+UID_ORACLE = json.loads((Path(__file__).parents[2] / "fixtures/uid.oracle.json").read_text(encoding="utf-8"))
 
 
 def test_node_minimal_defaults():
@@ -34,3 +40,18 @@ def test_id_kind_mismatch_rejected():
 def test_id_must_be_wellformed():
     with pytest.raises(ValidationError):
         Node(id="nocolon", kind="nocolon", title="Bad")
+
+
+@pytest.mark.parametrize("uid", UID_ORACLE["accepted"])
+def test_opaque_uid(uid):
+    node = Node(id="kind:a", uid=uid, kind="kind", title="A")
+    assert node.uid == uid
+    assert node_from_markdown(node_to_markdown(node)).uid == uid
+
+
+@pytest.mark.parametrize("uid", UID_ORACLE["rejected"])
+def test_empty_uid_refused(uid):
+    with pytest.raises(ValidationError):
+        Node(id="kind:a", uid=uid, kind="kind", title="A")
+    with pytest.raises(ValidationError):
+        node_from_markdown('---\nid: kind:a\nuid: ""\nkind: kind\ntitle: A\n---\n')

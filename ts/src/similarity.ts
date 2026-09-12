@@ -1,8 +1,7 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { CollisionError } from "./errors.js";
+import { CollisionError, ContainmentError } from "./errors.js";
 import type { Node } from "./node.js";
+import { RESERVED_NAMESPACE, readJson, writeJsonAtomic } from "./paths.js";
 import { scoreKey } from "./ranking.js";
 
 export type Vector = number[];
@@ -96,27 +95,28 @@ export class VectorCache {
     this.root = root;
   }
 
-  private pathFor(namespace: string, hash: string): string {
+  private relFor(namespace: string, hash: string): string {
     validateNamespace(namespace);
     validateTextHash(hash);
-    return join(this.root, ".nodes-index", "vectors", namespace, `${hash}.json`);
+    return `${RESERVED_NAMESPACE}/vectors/${namespace}/${hash}.json`;
   }
 
   get(namespace: string, hash: string): Vector | null {
-    const path = this.pathFor(namespace, hash);
-    if (!existsSync(path)) return null;
+    const rel = this.relFor(namespace, hash);
     let data: unknown;
     try {
-      data = JSON.parse(readFileSync(path, "utf-8"));
+      data = readJson(this.root, rel);
     } catch (e) {
-      throw new TypeError(`corrupt cache file ${path}: ${(e as Error).message}`);
+      if (e instanceof ContainmentError) throw e;
+      throw new TypeError(`corrupt cache file ${rel}: ${(e as Error).message}`);
     }
+    if (data === null) return null;
     if (typeof data !== "object" || data === null || !("dim" in data) || !("vector" in data)) {
-      throw new TypeError(`corrupt cache file ${path}: missing dim/vector`);
+      throw new TypeError(`corrupt cache file ${rel}: missing dim/vector`);
     }
     const { dim, vector } = data as { dim: unknown; vector: unknown };
     if (!Array.isArray(vector) || vector.length !== dim) {
-      throw new TypeError(`corrupt cache file ${path}: dim/vector length mismatch`);
+      throw new TypeError(`corrupt cache file ${rel}: dim/vector length mismatch`);
     }
     validateFinite(vector);
     return [...(vector as number[])];
@@ -124,12 +124,7 @@ export class VectorCache {
 
   put(namespace: string, hash: string, vector: Vector): void {
     validateFinite(vector);
-    const path = this.pathFor(namespace, hash);
-    mkdirSync(dirname(path), { recursive: true });
-    const payload = JSON.stringify({ dim: vector.length, vector });
-    const tmp = `${path}.tmp`;
-    writeFileSync(tmp, payload, "utf-8");
-    renameSync(tmp, path);
+    writeJsonAtomic(this.root, this.relFor(namespace, hash), { dim: vector.length, vector });
   }
 }
 

@@ -34,7 +34,10 @@ function results(c: Corpus): unknown {
   return {
     searchGamma: c.search("gamma").map((h) => [h.id, h.uid]),
     outboundA: c.outbound("topic:a").map((e) => [e.relation.target, e.targetUid]),
-    dangling: c.dangling().length,
+    dangling: c
+      .check()
+      .filter((f) => f.code === "dangling-ref")
+      .map((f) => [f.ref, f.detail]),
   };
 }
 

@@ -245,7 +245,7 @@ Per language, three layers:
   seven nodes" assertions in both languages become thirteen.
 
 Gates: `npm run check && npm run typecheck && npm test` under `ts/`, `uv run pytest`
-under `python/`. Because mindful v6 consumes the TS kernel via its `@nodes/kernel`
+under `python/`. Because mindful v6 consumes the TS kernel via its `@nodes-dev/core`
 symlink to `ts/` built output, finish with a TS `npm run build` and run mindful's suite
 as a downstream smoke check.
 

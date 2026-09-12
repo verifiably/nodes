@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from nodes.core.errors import CollisionError
 from nodes.core.structural_index import Index
 from nodes.core.node import Node
 from nodes.core.relations import Relation, relates_to
@@ -324,3 +325,44 @@ def test_from_dict_rejects_structural_ref_non_string_ref():
     d["entries"][0]["structural_refs"] = [{"ref": 123, "role": "membership_member"}]
     with pytest.raises(ValueError, match="structural snapshot:"):
         Index.from_dict(d)
+
+
+def test_collision_buckets_follow_upsert_remove_and_restore():
+    a = Node(id="kind:A", uid="a", kind="kind", title="A")
+    b = Node(id="kind:a", uid="b", kind="kind", title="B")
+    index = Index.build([a, b])
+    expected = [("kind:A", "kind/a.md"), ("kind:a", "kind/a.md")]
+    assert sorted(index.path_collisions()) == expected
+    index = Index.from_dict(index.to_dict())
+    assert sorted(index.path_collisions()) == expected
+    index.assert_addable(a)  # same claim in an already-collided bucket
+    with pytest.raises(CollisionError):
+        index.assert_addable(Node(id="kind:a", uid="new", kind="kind", title="New"))
+    moved = b.model_copy(update={"id": "kind:b", "deprecated_ids": ["kind:a"]})
+    index.assert_path_available(b.uid, moved.id)
+    index.upsert(moved)  # _drop must remove b from the old bucket
+    assert index.path_collisions() == []
+    index.remove(a.uid)
+    index.assert_path_available("new", "kind:A")  # empty bucket was removed
+    assert Index.from_dict(index.to_dict()).path_collisions() == []
+
+
+def test_opaque_uid_resolution_and_invalid_empty_restore():
+    node = Node(id="kind:a", uid="not a digest", kind="kind", title="A", deprecated_ids=["kind:old"])
+    index = Index.from_dict(Index.build([node]).to_dict())
+    assert index.resolve_uid("kind:a") == node.uid
+    assert index.resolve_uid("kind:old") == node.uid
+    with pytest.raises(CollisionError):
+        index.assert_addable(Node(id="kind:old", uid="other", kind="kind", title="Other"))
+    doc = index.to_dict()
+    doc["entries"][0]["uid"] = ""
+    with pytest.raises(ValueError):
+        Index.from_dict(doc)
+
+
+def test_resolution_uses_none_not_truthiness():
+    # Maps set directly to isolate the sentinel: absence is None, never falsiness.
+    index = Index()
+    index.id_to_uid["kind:a"] = ""
+    index.deprecated_to_uid["kind:a"] = "alias-owner"
+    assert index.resolve_uid("kind:a") == ""

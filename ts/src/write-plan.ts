@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { ExecutionError, PlanRefusedError } from "./errors.js";
+import { ContainmentError, ExecutionError, PlanRefusedError } from "./errors.js";
+import { RESERVED_NAMESPACE, assertContained, isPortableRelativePath } from "./paths.js";
 
-export const RESERVED_NAMESPACE = ".nodes-index";
+export { RESERVED_NAMESPACE };
 
 /** Write `content` at an absent `path`. */
 export interface CreateOp {
@@ -38,30 +39,16 @@ export interface WritePlanExecutor {
   execute(plan: WritePlan): void;
 }
 
-function pathEscapes(path: string): boolean {
-  if (path === "" || path.startsWith("/")) return true;
-  const normalized: string[] = [];
-  for (const segment of path.split("/")) {
-    if (segment === "" || segment === ".") continue;
-    if (segment === "..") {
-      if (normalized.length === 0) return true;
-      normalized.pop();
-      continue;
-    }
-    normalized.push(segment);
-  }
-  return normalized.length === 0;
-}
-
 /** Refuse a lexically malformed plan (`PlanRefusedError`) before any effect:
- * unknown operation kind, escaping path, or reserved-namespace path. */
+ * unknown operation kind, a non-portable root-relative `.md` path, or a
+ * reserved-namespace path. */
 export function validatePlan(plan: WritePlan): void {
   for (const op of plan) {
     if (op.op !== "create" && op.op !== "replace" && op.op !== "delete") {
       throw new PlanRefusedError(`unknown operation kind: ${JSON.stringify(op)}`);
     }
-    if (pathEscapes(op.path)) {
-      throw new PlanRefusedError(`path escapes the corpus root: ${JSON.stringify(op.path)}`);
+    if (!isPortableRelativePath(op.path)) {
+      throw new PlanRefusedError(`not a portable root-relative .md path: ${JSON.stringify(op.path)}`);
     }
     if (op.path.split("/", 1)[0] === RESERVED_NAMESPACE) {
       throw new PlanRefusedError(`path in reserved namespace: ${JSON.stringify(op.path)}`);
@@ -69,10 +56,11 @@ export function validatePlan(plan: WritePlan): void {
   }
 }
 
-/** Best-effort ordered writes: checks each operation's existence precondition
- * when it reaches that operation and stops at the first failure, leaving the
- * applied prefix. Carries but does not enforce `expectedDigest`. Provides no
- * serialization; the deployment retains the single-writer obligation. */
+/** Best-effort ordered writes. A whole-plan containment preflight runs before any
+ * effect; then each operation's existence precondition is checked when it is reached
+ * and execution stops at the first failure, leaving the applied prefix. Carries but
+ * does not enforce `expectedDigest`. Provides no serialization; the deployment retains
+ * the single-writer obligation. */
 export class DefaultExecutor implements WritePlanExecutor {
   readonly root: string;
 
@@ -82,6 +70,14 @@ export class DefaultExecutor implements WritePlanExecutor {
 
   execute(plan: WritePlan): void {
     validatePlan(plan);
+    plan.forEach((op, index) => {
+      try {
+        assertContained(this.root, op.path);
+      } catch (e) {
+        if (!(e instanceof ContainmentError)) throw e;
+        throw new ExecutionError(`operation ${index} not contained: ${e.message}`, index, 0, { cause: e });
+      }
+    });
     for (let index = 0; index < plan.length; index++) {
       const op = plan[index];
       const target = join(this.root, op.path);

@@ -5,6 +5,7 @@ import pytest
 from nodes.core.corpus import Corpus
 from nodes.core.errors import RefError
 from nodes.core.node import Node
+from nodes.core.relations import relates_to
 from nodes.core.shapes import MEMBERSHIP
 
 
@@ -43,28 +44,32 @@ def test_containers_reports_direct_containers_only(tmp_path):
     assert _seeded(tmp_path).containers("set:box") == ["set:crate"]
 
 
-def test_descendants_walks_nesting_and_skips_dangling(tmp_path):
-    assert _seeded(tmp_path).descendants("set:crate") == ["note:renamed", "note:tidy", "set:box"]
-
-
-def test_ancestors_walks_containers_transitively(tmp_path):
-    assert _seeded(tmp_path).ancestors("note:renamed") == ["set:box", "set:crate"]
-
-
-def test_cycles_terminate_and_exclude_start(tmp_path):
+def test_containment_cycles_are_legal_one_hop(tmp_path):
     c = Corpus(tmp_path)
     c.add(_set_node("set:loop-a", ["set:loop-b"]))
     c.add(_set_node("set:loop-b", ["set:loop-a"]))
     c.add(_set_node("set:selfie", ["set:selfie"]))
-    assert c.descendants("set:loop-a") == ["set:loop-b"]
-    assert c.ancestors("set:loop-b") == ["set:loop-a"]
+    assert c.members("set:loop-a") == ["set:loop-b"]
+    assert c.containers("set:loop-a") == ["set:loop-b"]
     assert c.members("set:selfie") == ["set:selfie"]
-    assert c.descendants("set:selfie") == []
-    assert c.ancestors("set:selfie") == []
+    assert c.containers("set:selfie") == ["set:selfie"]
 
 
-def test_all_four_reject_unresolvable_input_ref(tmp_path):
+def test_both_reject_unresolvable_input_ref(tmp_path):
     c = _seeded(tmp_path)
-    for fn in (c.members, c.containers, c.descendants, c.ancestors):
+    for fn in (c.members, c.containers):
         with pytest.raises(RefError):
             fn("note:ghost")
+
+
+def test_neighbor_uid_codepoint_order_survives_reload(tmp_path):
+    # U+E000 and U+10000 sort oppositely under UTF-16 code units; code points are the contract.
+    c = Corpus(tmp_path)
+    for slug, uid in [("bmp", "\uE000"), ("nonbmp", "\U00010000")]:
+        c.add(Node(id=f"kind:{slug}", uid=uid, kind="kind", title=slug))
+    c.add(Node(id="kind:center", uid="center", kind="kind", title="Center", relations=[
+        relates_to("kind:center", "kind:nonbmp"), relates_to("kind:center", "kind:bmp"),
+    ]))
+    assert [n.uid for n in c.neighbors("kind:center")] == ["\uE000", "\U00010000"]
+    c.flush_index()
+    assert [n.uid for n in Corpus(tmp_path).neighbors("kind:center")] == ["\uE000", "\U00010000"]

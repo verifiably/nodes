@@ -1,6 +1,8 @@
 # Nodes write-plan/executor seam design
 
 **Date:** 2026-08-17
+**Status:** §7's two amendments landed in STANDARD 2.0 on branch `nodes-2.0`
+(2026-09-12); the design is otherwise a historical record of the seam.
 
 ## 1. Why and status
 
@@ -25,8 +27,8 @@ exercised by a landed consumer requires that consumer's sign-off, recorded in
 is pinned by the tier-1 fixture `fixtures/write-plan.rename.canonical.json`,
 which fixes referrer replace operations in uid order — the deterministic order
 position-wise equality requires and §2 left to the fixture. The §7 amendments
-remain pending on the trailing review's version verdict; the standard still
-describes 1.2 and gained no seam text.
+remained pending on the trailing review's version verdict until STANDARD 2.0
+(2026-09-12), which carries both.
 
 ## 2. The write plan
 
@@ -73,7 +75,12 @@ at implementation time as a tier-1 obligation: this is mutation semantics.
 Rename emits `create` for the new document, then `delete` for the old document,
 then `replace` operations for referrers, matching today's write-new → delete-old
 → referrers commit order (`~/d/nodes/python/src/nodes/core/corpus.py:254-316`).
-Under the best-effort class, a crash leaves an applied prefix:
+*(2026-09-11, C:)* when the old and new ids map to the same exact path
+(`kind:a:b` → `kind:a__b`), rename instead emits one `replace` of that document
+in place and no `delete`; both kernels already did so. Referrer replaces follow
+ascending uid Unicode code-point order in both kernels, which the tier-1 fixture
+pins with BMP and non-BMP referrer uids. Under the best-effort class, a crash
+leaves an applied prefix:
 
 - Before the create, no operation has applied. After it and before the delete,
   two files carry the uid. This is the acknowledged invalid prefix: strict
@@ -117,17 +124,18 @@ applies a plan all-or-nothing; `nodes` depends on `atoms` in neither language.
 
 | Executor | Atomicity and preconditions | Serialization |
 | --- | --- | --- |
-| `DefaultExecutor` | Checks each operation's existence precondition when it reaches that operation and stops at the first failure, leaving the applied prefix. It carries but does not enforce `expected_digest`. | Provides no serialization; the deployment retains the standard §7 single-writer obligation. |
+| `DefaultExecutor` | *(amended 2026-09-11)* Preflights every operation's containment over the whole plan before any effect, refusing with `ExecutionError(index=i, applied=0)`; then checks each operation's existence precondition when it reaches that operation and stops at the first failure, leaving the applied prefix. It carries but does not enforce `expected_digest`. | Provides no serialization; the deployment retains the standard §7 single-writer obligation. |
 | Durable executor | Refuses a failed precondition before any effect: the transaction aborts and nothing applies. | Owns serialization. |
 
 The kernel never coordinates concurrency. Each executor declares whether it
 serializes or passes the single-writer obligation through to the deployment.
 
 The plan builder never emits a path outside the corpus root or in a reserved
-namespace. Both executor classes additionally reject, before any effect, a
-malformed plan containing a lexically escaping path (absolute, or containing
-`..` after lexical normalization), a reserved-namespace path, or an unknown
-operation kind. They raise `PlanRefusedError` for that lexically decidable
+namespace. *(amended 2026-09-11)* Both executor classes additionally reject, before
+any effect, a malformed plan containing a path that is not a portable root-relative
+`.md` path (standard §4.1: no leading `/`, no empty/`.`/`..` segment, no `\` or `:`,
+`.md` suffix — no normalization), a reserved-namespace path, or an unknown operation
+kind. They raise `PlanRefusedError` for that lexically decidable
 refusal. A durable executor's authoritative rooted resolution can additionally
 refuse path or deployment topology; that is an execution failure, not malformed
 plan syntax, and raises `ExecutionError(index=None, applied=0)`.
@@ -253,9 +261,11 @@ Science supplies a root-taking executor factory to `Corpus`; that factory closes
 over the engine handles and lets `Corpus` provide the root. The composition root
 exclusively owns the executor choice.
 
-## 7. Pending standard amendments
+## 7. Standard amendments
 
-Exactly these two amendments are pending:
+*(2026-09-12:)* both landed in STANDARD 2.0 — item 1 as §7's single-writer
+obligation, item 2 as §3's rename preparation and crash state. Recorded as pending
+below, as written:
 
 1. **Standard §7 — single-writer attribution (pending).** Replace the current
    single-writer paragraph with: “The kernel performs no coordination. Each
@@ -265,9 +275,11 @@ Exactly these two amendments are pending:
    writer at a time. A durable executor owns serialization. Readers may run
    concurrently at the cost of possibly-stale derived indexes.”
 2. **Standard §3 — rename crash state (pending).** After rename's preparation
-   and validation rule, state: “Execution orders the rename plan as create the
-   new document, delete the old document, then replace referrers. Under
-   `DefaultExecutor`, a crash leaves an applied prefix. After create and before
+   and validation rule, state: “Execution replaces the renamed document in place
+   when the exact mapped paths match; otherwise it creates the new document and
+   deletes the old document, then in either case replaces referrers in ascending
+   uid Unicode code-point order. Under `DefaultExecutor`, a crash leaves an
+   applied prefix. After create and before
    delete, two files carry the same uid; this prefix is invalid, is not
    forward-resolvable, and strict construction refuses it with `CollisionError`.
    After delete and before a referrer replacement, unchanged referrers still
@@ -275,8 +287,8 @@ Exactly these two amendments are pending:
    applies the complete plan all-or-nothing.” This specified invalid prefix
    replaces every “crash-atomic” or blanket forward-resolvable characterization.
 
-Both entries land only in the standard amendment—1.3 or 2.0, per the trailing
-review's version verdict—and change nothing until that amendment lands.
+Both entries were bound to the standard amendment—1.3 or 2.0, per the trailing
+review's version verdict—and changed nothing until it landed.
 
 ## 8. Amendment record
 
@@ -294,6 +306,10 @@ unexercised.
 | 2026-08-18 | §§3–4 | Made `ExecutionError.index` and `.applied` optional, with `applied=None` meaning restoration unproved; narrowed `PlanRefusedError` to lexically decidable malformedness and made durable resolution-time refusals `ExecutionError(None, 0)`; replaced the blanket durable crash claim with the persistent, evidence-preserving halt carve-out. | `nodes`-side review | n/a — no landed consumer exercises these parts |
 | 2026-08-18 | §1 | Recorded the implementation landing and the fixture-pinned uid order of referrer replaces; status note only, no contract change. | `nodes`-side review | n/a — status note only |
 | 2026-08-18 | §6 | Consumer-note addendum: science's landed adapter derives `CreateDirectory` effects for missing parents inside the same transaction; the note's derivability claim stands and no contract part changed. | `nodes`-side review | n/a — status note only |
+| 2026-09-11 | §3 | `DefaultExecutor` whole-plan symlink preflight refusing with `ExecutionError(index=i, applied=0)` before any effect; `validate_plan` applies the portable root-relative path rule (canonical segments, no `\` or `:`, `.md` suffix) instead of normalizing. | `nodes`-side review | Science: **pending** |
+| 2026-09-11 | §8 process | Implementation proceeds on branch `nodes-2.0` before Science's sign-off on the row above — a maintainer decision departing from §1's rule. Evidence offered, not sign-off: every plan the cut-4 adapter produces today targets a canonical `.md` path and no symlink, so its observed behaviour is unchanged. The row above stays pending until Science records its response. | maintainer | n/a — process record |
+| 2026-09-11 | §2; §7 item 2 | exact-path rename replacement and code-point referrer order, including the pending STANDARD amendment | `nodes`-side review | rename unexercised by recorded Science add-only slice |
+| 2026-09-12 | §7 | Both pending amendments applied to STANDARD 2.0 (§7 single-writer obligation; §3 rename crash state) on branch `nodes-2.0`; wording as recorded here, no contract change. | `nodes`-side review | n/a — wording already reviewed; no exercised part changed |
 
 Record each amendment as: `date | part | change | reviewer | consumer sign-off`
 (consumer sign-off is required when the part is exercised; otherwise record

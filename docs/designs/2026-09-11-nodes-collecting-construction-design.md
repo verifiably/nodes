@@ -1,0 +1,346 @@
+# Collecting construction — design
+
+**Date:** 2026-09-11
+**Status:** implemented on branch `nodes-2.0` (2026-09-11); normative as of STANDARD 2.0 (2026-09-12)
+**Task:** `nodes-c7b371`, sub-task B of `nodes-ce28b8`
+**Sources:** `2026-09-11-nodes-2.0-remainder-design.md` §B;
+`2026-08-03-nodes-under-the-system-redesign-design.md` §2.3;
+`2026-09-11-nodes-digest-id-hazards-design.md` §2, §5 (well-placed, `path-collision`).
+**Baseline:** `007f593` on branch `nodes-2.0`; A and C are implemented.
+**Consumer read:** beliefs opens corpora through `ReadView.opened_at(root)`, which
+builds `Corpus(Path(root))` and requires `type(corpus) is Corpus` exactly; its audit
+reads members through `all()` and folds `check()` findings into its own envelope, and
+its ledger row for this work names "audits over damaged corpora".
+
+## 1. Decisions and alternatives
+
+- **Mode is a constructor flag on `Corpus`**, strict by default. A subclass or a second
+  class would not pass beliefs' exact-type check; a module-level function would not
+  give the audit a mutable handle. Python: `Corpus(root, ..., mode="collecting")`;
+  TypeScript: a fifth `options` parameter `{ mode?: "strict" | "collecting" }`, so the
+  four existing positional parameters keep their meaning.
+- **A content failure is exactly the kernel `ValidationError` raised by decoding and
+  parsing one document.** Python's floor today leaks `yaml.YAMLError`, pydantic's own
+  `ValidationError` and `AttributeError`; TypeScript substitutes U+FFFD for invalid
+  UTF-8 where Python raises `UnicodeDecodeError`. B closes both: Python's frontmatter
+  wraps every parse failure, and both kernels decode fatally. This is tier-1 parity
+  that strict construction needs as much as collecting does; catching a broad exception
+  class instead would turn programming errors into findings.
+- **Every construction finding is path-anchored, one per claimant, and every claimant
+  of a collision is excluded.** The umbrella's "one corpus-level `uid-collision`" has no
+  `ref` to anchor to and no member list; the per-claimant shape is what C chose for
+  `path-collision`, and the `detail` joins the group. Live-beats-deprecated winner
+  selection for `id-collision` was rejected: it is an ordering rule, and exclusion of
+  every claimant never half-admits.
+- **Strict construction refuses a misplaced member with a new `PlacementError`.**
+  Reusing `ValidationError` would say the content is wrong when the location is;
+  `CollisionError` names identity, not placement. A caller repairs the two differently.
+- **An excluded path is occupied at its exact literal spelling.** `add` and `rename`
+  refuse it with `CollisionError` before any preparation. Case-folded occupancy is not
+  needed: on a case-insensitive volume the executor's create precondition already
+  refuses the same file, and on a case-sensitive one distinct spellings are distinct
+  files.
+- **Excluded identity claimants reserve exactly what admission would contest on
+  reopen, stage by stage.** Otherwise `add` of `topic:c` with the twins' uid would be
+  admitted, and the next reopen would exclude all three — the accepted set changing
+  with no filesystem edit, which §4's reopen guarantee forbids. Files excluded at the
+  uid stage reserve their **uids**; files excluded at the id stage reserve their uids
+  and their **live and deprecated ids**. Uid-stage claimants do not reserve ids: they
+  leave before ids are grouped, so a valid member holding an id one of them lists as
+  deprecated is accepted, and reserving that id would refuse the member's own
+  same-`(uid, id)` replacement. Uids and ids are separate namespaces — an opaque uid
+  spelled `topic:x` reserves no node id. Rerunning classification on every mutation was
+  rejected as a walk per write. Parse-failed and misplaced files leave before identity
+  grouping and reserve nothing.
+- **No type coercion at the Markdown boundary.** Python's pydantic models coerce
+  `version: "2"`, `version: true` and `directed: "false"` where TypeScript's schemas
+  refuse them. Field types are exact in both kernels; the one conversion is a YAML
+  timestamp scalar for `created` / `updated`.
+- **One admission algorithm serves cold build and reconciliation, and collisions are
+  grouped simultaneously within each stage.** Every uid group is computed over the whole
+  candidate-plus-kept population before any uid exclusion, and every contested id over
+  the survivors before any id exclusion; sequential exclusion would admit a third
+  claimant after removing the one it conflicted with.
+  Findings re-derive on every open; nothing about exclusion is serialized. A strict
+  open of a snapshot written by a collecting corpus still raises, because the excluded
+  files are absent from that snapshot's manifest and are parsed as new.
+- **Both snapshot schema versions bump.** A snapshot written before B records
+  documents its writer's looser floor accepted — TypeScript's U+FFFD substitution,
+  Python's `related: abc` — and reconciliation keeps an unchanged file without
+  re-parsing it, so warm construction would admit what cold construction excludes.
+  Discarding pre-B snapshots once is cheaper and more certain than revalidating kept
+  documents on every open, which would defeat the cache.
+- **Frontmatter shapes are specified, not inferred from the parser.** Wrapping
+  exceptions cannot reject `related: abc`, which Python today reads as three refs, or
+  settle `related: null`, which the two kernels treat differently. §2 fixes each
+  field's admitted shape; both kernels validate before access; a shared malformed-input
+  oracle pins them.
+- **`all()` and registry-backed `check()` iterate the accepted set** — manifest paths
+  in Unicode code-point order, not a fresh walk and not the manifest's insertion order,
+  which reconciliation and mutation perturb. Under the single-writer rule this equals
+  today's walk order for a strict corpus, and the manifest is the only way excluded
+  files stay out.
+- **The finding code, not the `ref` spelling, says whether `ref` is a path or an id.**
+  A observes literal filenames, and a POSIX file may be named `topic:a.md`; the two
+  namespaces are not disjoint.
+- **The committed damaged corpus does not carry `path-collision`.** The umbrella asked
+  for it, but C established that a case-variant tree is not checkout-portable; that
+  finding stays in C's in-test construction, and the new fixture pins the four
+  construction codes together with the interplay findings that excluded members cause.
+
+## 2. Modes and the parse floor
+
+`mode` is `"strict"` (default) or `"collecting"`; any other value is a programmer error
+(`ValueError` / `TypeError`). The mode is fixed for the handle's life and is not
+persisted.
+
+Both kernels decode a walked file as UTF-8 fatally and parse it with
+`node_from_markdown` / `nodeFromMarkdown`. Every failure of that step — undecodable
+bytes, malformed YAML, frontmatter that is not a mapping, a missing required field, a
+field of the wrong shape, a malformed relation row, an id that fails the grammar or
+disagrees with `kind` — raises the kernel `ValidationError`. `Store.read_file` keeps raising
+`ValidationError` on a damaged document: reads through the index never reach an
+excluded file, so that path stays an error, never a finding.
+
+Both kernels validate shapes before touching them, under one rule set:
+
+- The document begins with `---` at byte zero. A leading BOM is a content failure —
+  nodes never writes one and the standard does not normalize; TypeScript decodes with
+  `ignoreBOM: true` so U+FEFF reaches the same check Python's decoder already feeds.
+- The frontmatter is a mapping; a scalar or sequence document is malformed. TypeScript
+  today throws a raw `TypeError` on a scalar.
+- `id`, `uid`, `kind`, `title` are present strings (`uid` non-empty, per C).
+- `related`, `relations`, `deprecated_ids` are absent or lists; `null` is malformed —
+  the kernels disagree today and the writer never emits it. `related` and
+  `deprecated_ids` hold strings; `relations` holds mappings, each validated as a
+  serialized relation. TypeScript today throws a raw `TypeError` on `relations: [null]`;
+  Python today reads `related: abc` as the three refs `a`, `b`, `c`.
+- `facets` is absent or a mapping whose values are mappings.
+- Every mapping key, at any depth, is a string: YAML admits other scalars, and
+  TypeScript's object keys would stringify them silently where Python keeps the int.
+  TypeScript builds objects through own-property construction so a `__proto__` key
+  cannot reach the prototype. `null` for a named optional top-level field — `related`,
+  `relations`, `deprecated_ids`, `facets`, `created`, `updated`, `version` — is
+  malformed; only absence defaults. Values inside facet and relation-`attrs` payloads
+  are unconstrained, and a relation's `weight` may be `null`.
+- An undefined alias and an impossible unquoted date are YAML-level failures and wrap
+  like any other; a cyclic alias is malformed, detected while walking, and non-cyclic
+  alias reuse is legal. Nothing below the boundary is caught more broadly than
+  `ValidationError`.
+- Types are exact, never coerced: `version` an integer (a string or boolean is
+  malformed); a relation's `directed` a boolean, `weight` a number or `null`, `attrs` a
+  mapping; `created` and `updated` calendar dates, accepted as an ISO `YYYY-MM-DD`
+  string or as the date scalar a YAML parser yields for the unquoted spelling — the
+  one conversion the boundary performs, so the two spellings parse identically in both
+  kernels. Python validates the boundary strictly rather than through model coercion.
+
+Python's frontmatter wraps the YAML parser, pydantic and its own checks into the kernel
+error; TypeScript switches its two construction decodes and the store's read to a fatal
+`TextDecoder`. A shared `frontmatter.malformed.json` oracle (§7) lists the texts both
+kernels must refuse and the texts both must accept.
+
+Filesystem failures — an unreadable directory, a vanished file, a symlink on an
+inspected prefix — propagate as `OSError` / `ContainmentError` in both modes. A
+content failure is never one of these and one of these is never a finding.
+
+## 3. Admission
+
+Construction classifies every walked file in this order, and a file leaves the process
+at its first failure:
+
+1. **Parse.** `ValidationError` → excluded, `parse-error`, `detail` `""`. The message is
+   human-only; error text differs between languages and is not oracle-pinned.
+2. **Placement.** The literal root-relative path must equal `path_for_node_id(id)`
+   exactly (C §2). Otherwise → excluded, `path-mismatch`, `detail` = the mapped path.
+3. **Uid.** Over the survivors together with the kept set (§4), group by uid. Every
+   group with more than one file is excluded in full, `uid-collision`, `detail` = the
+   uid. Grouping completes before any exclusion.
+4. **Identity claims.** Over the survivors of step 3, map every claimed id — live and
+   deprecated, each file's claims deduplicated first so a repeated deprecated id never
+   contests itself — to its claimants. Every id with more than one claimant is contested;
+   the union of their claimants is excluded, with one `id-collision` finding per
+   `(path, contested id)` pair. A file contesting two ids reports twice. Two well-placed
+   files cannot share a live id, so contests arise only through `deprecated_ids`.
+   Grouping completes before any exclusion, so with A claiming deprecated `topic:x`, B
+   claiming `topic:x` and `topic:y`, and C claiming `topic:y`, all three are excluded
+   and B carries two findings.
+5. **Index.** The remainder builds through `Index.build` / identity-only reconciliation
+   exactly as today. Path-collided well-placed members are ordinary members in both
+   modes (C §5).
+
+Strict mode raises at the first failure instead of excluding: `ValidationError` at
+step 1, `PlacementError` at step 2, `CollisionError` at steps 3 and 4 (the existing
+messages). Under collecting, the finding's `ref` is the file's literal root-relative
+path. Whether a `ref` denotes a path or an id is determined by the finding code alone:
+a POSIX filename may be `topic:a.md`, so the spellings are not disjoint.
+
+The corpus handle keeps the **excluded paths** and their **construction findings** —
+a path may carry several. Neither is a member list: excluded files are absent from the
+index, the search index, the vector index, the manifest, `all()`, `get()`, and every
+graph query. A reference into one is dangling and reports as such.
+
+## 4. One algorithm for cold build and reconciliation
+
+Admission takes a **kept** set and a **candidate** list. Cold build: kept is empty,
+candidates are every walked file. Reconciliation: kept is the snapshot-loaded index
+restricted to files whose digest is unchanged; candidates are the new and changed
+files, parsed. Files that disappeared are dropped first, as today.
+
+The kept set is internally consistent — a snapshot only ever records accepted members,
+whichever mode wrote it — so kept-against-kept never conflicts, and the grouping in §3
+runs over kept entries (id, deprecated ids and uid from the index, path from the old
+manifest by uid) and candidates together. A candidate that collides with a kept entry
+**evicts** it: the entry leaves the index, the search index, the vector index and the
+manifest, and both files are excluded with their findings. This is what makes the
+audit's view the same whether or not a cache exists, which C required of identity
+checks and B now requires of exclusion.
+
+Consistency of the kept set holds only for snapshots written under B's floor. A
+snapshot written earlier records documents a looser parser admitted, and an unchanged
+file is never re-parsed, so a pre-B snapshot would let warm construction accept what
+cold construction excludes. Both kernels therefore bump their snapshot schema version
+(Python 2 → 3, TypeScript 1 → 2); a pre-B snapshot fails the version check, is
+discarded, and the corpus rebuilds cold under the new floor. A migration case pins it:
+a corpus holding an invalid-UTF-8 document with a snapshot at the old version opens
+cold, and reports or refuses the document by mode.
+
+Excluded files are never in the manifest, so every open re-walks and re-parses them;
+their findings re-derive and nothing is persisted. `flush_index` writes the accepted
+set. Reopening in collecting mode over that snapshot reproduces the same findings;
+reopening in strict mode raises on the first excluded file, which is the contract.
+A file that was excluded and has since been repaired is admitted on the next open; a
+file that was accepted and has since been damaged is dropped by digest and excluded.
+
+## 5. Mutation and occupancy
+
+Mutation on a collecting corpus is allowed and unchanged for accepted members. Two
+additions, both before referrer preparation, embedding or cache work, or executor
+invocation:
+
+- `add` refuses (`CollisionError`) when the candidate's mapped path is an excluded
+  path, when its uid is a **reserved uid** — the uid of any file excluded at admission
+  step 3 or 4 — or when its id or any deprecated id is a **reserved id** — a live or
+  deprecated id of a file excluded at step 4. The two reservation sets are separate
+  namespaces. Parse-failed and misplaced files reserve nothing (§1).
+- `rename` refuses (`CollisionError`) when the new mapped path differs from the old and
+  is an excluded path, or when the new id is a reserved id.
+
+`delete` and the exact-path rename branch only ever target live manifest paths, so no
+plan can name an excluded file. The executor's existence precondition stays as the
+backstop. Repairing an excluded file is a filesystem edit followed by reopen; nodes
+never rewrites a document it could not parse.
+
+Reservation keeps §4's guarantee under mutation: a member admitted beside excluded
+files is admitted again after flush and reopen, and the findings are the same, because
+no accepted member holds a reserved uid or reserved id. Strict corpora have no
+excluded paths and no reserved claims, so strict mutation is unchanged.
+
+## 6. Reporting
+
+`check()` is the single reporting surface. It emits every finding in `excluded`, then
+registry findings over accepted members read through the manifest, then the existing
+structural findings including C's `path-collision`, and sorts by `(ref, code, detail)`
+in code-point order. The four construction findings:
+
+| Code | Severity | `ref` | `detail` |
+| --- | --- | --- | --- |
+| `parse-error` | error | root-relative path | `""` |
+| `path-mismatch` | error | root-relative path | mapped path of the document's id |
+| `uid-collision` | error | root-relative path, one per claimant | the uid |
+| `id-collision` | error | root-relative path, one per claimant | the contested id |
+
+`all()` returns accepted members ordered by literal manifest path in Unicode code-point
+order, read from disk as today; registry-backed `check()` iterates the same sequence.
+The manifest's own insertion order is not that order — reconciliation appends changed
+files last and adds and renames append — so the sort is explicit. Both change from
+"walk the directory" to "read the manifest", which is behavior-preserving under §7's
+single-writer rule and removes the re-raise that a damaged file would otherwise cause
+mid-report.
+
+## 7. Fixtures and verification
+
+Add `fixtures/damaged-corpus/` and `fixtures/damaged.oracle.json`. The tree is
+checkout-portable: every member path is ASCII and no two differ only in case.
+
+| File | Content | Expected |
+| --- | --- | --- |
+| `topic/good.md` | valid; `related: [topic:garbled, topic:twin-a]` | member; `dangling-ref` ×2 |
+| `topic/garbled.md` | unterminated YAML flow sequence | `parse-error` |
+| `topic/typed.md` | `title: [1]` | `parse-error` (exercises the Python wrapping) |
+| `topic/bytes.md` | valid frontmatter followed by a lone `0xFF` byte | `parse-error` (exercises fatal decoding) |
+| `topic/moved.md` | valid; `id: topic:elsewhere` | `path-mismatch`, detail `topic/elsewhere.md` |
+| `topic/twin-a.md`, `topic/twin-b.md` | valid; same uid; twin-a lists `topic:good` as deprecated | `uid-collision` ×2; `topic:good` stays a member |
+| `topic/current.md` | valid | `id-collision`, detail `topic:current` |
+| `topic/former.md` | valid; `deprecated_ids: [topic:current]` | `id-collision`, detail `topic:current` |
+
+The oracle pins the collecting `check()` output over the whole tree with no registry,
+the accepted member ids from `all()`, and strict's refusal: `ValidationError`, since
+parse failures precede everything and `topic/bytes.md` is first in walk order among
+them. Three logical single-fault subsets — misplaced only, twins only, former/current
+only — are constructed in-test from the same documents and pin `PlacementError`,
+`CollisionError`, `CollisionError` respectively.
+
+Add `fixtures/frontmatter.malformed.json`: an `accepted` list and a `rejected` list of
+document texts, each parsed by both kernels' `node_from_markdown`. Rejected covers a
+leading BOM, scalar and sequence frontmatter, `related: abc`, `related: null`,
+`relations: [null]`, `relations: [3]`, `deprecated_ids: x`, `facets: [1]`, `title: [1]`,
+`version: "2"`, `version: true`, `weight: "1"`, a relation with `directed: "false"`, and
+an unterminated flow sequence; accepted covers absent optional fields, empty lists, a
+typed relation row, and `created` both quoted and unquoted. The invalid-byte case cannot be a JSON string and stays in
+the damaged corpus.
+
+Cross-language harnesses over the committed tree also pin: `flush_index` then
+collecting reopen reproduces the oracle; strict reopen over that snapshot raises;
+repairing `topic/moved.md` in place (rename the file) admits it on reopen; `add` of
+`topic:garbled` and `rename` of `topic:good` → `topic:garbled` are refused with no
+executor, embedder or cache effect (the recording executor and failing-`prepare` spy
+from C's harness); `add` of `topic:c` with the twins' uid, `add` of a node listing
+`topic:current` as deprecated, and `add` of a node with `topic/moved.md`'s uid are
+refused, refused, admitted, and after flush and reopen in collecting mode the accepted
+set and findings are unchanged; `topic/twin-a.md` also lists `topic:good` as deprecated,
+so the accepted `topic:good` is replaced by its own same-`(uid, id)` add and the
+replacement survives reopen; `add` of a fresh id succeeds and `check()` still carries every
+construction finding. A reconciliation case constructs the eviction: one-node snapshot,
+then an external twin with the same uid, then reopen — both excluded, the kept entry
+gone from every index. A three-claimant identity case (A: deprecated `topic:x`; B:
+`topic:x`, `topic:y`; C: `topic:y`) runs cold and cached — A and C in the snapshot,
+which do not conflict with each other, then B arriving externally — and expects all
+three excluded with four findings. The migration case in §4 runs in both languages against a snapshot document
+written at the previous schema version. Ordering runs after a reconciliation that
+changes an earlier-sorting file and after an `add` and a `rename`, expecting `all()` in
+code-point path order each time.
+
+Python frontmatter gains unit cases for each wrapped failure class; TypeScript gains the
+fatal-decode case. The existing `check-corpus` oracle is unchanged; strict construction
+over it must still succeed. No Python-only finding, error, or persisted field is added.
+
+## 8. Normative and process closeout
+
+B is tier 1 (construction modes, the parse floor, placement refusal, occupancy) plus
+tier 2 (findings). Implementation, tests, fixtures and STANDARD amendments land in one
+commit on `nodes-2.0`:
+
+- §1 or §7: the two construction modes, strict as default, collecting as the documented
+  posture for audit and import boundaries.
+- §3: construction under collecting excludes every claimant of a uid or identity
+  collision; the parse floor is `ValidationError` in both kernels, decoding included.
+- §4.1: membership (the walk) versus **acceptance**; strict refuses a misplaced member
+  (`PlacementError`); C's "not enforced by this clause" sentence is replaced.
+- §6: `PlacementError` row; excluded-path occupancy under `CollisionError`.
+- §7: `all()` and registry `check()` iterate accepted members; mutation on a
+  collecting corpus; excluded paths as refused targets.
+- §8.2: the four finding rows; path-anchored `ref` with the code as the discriminator;
+  exhaustive structural inventory updated; "MUST NOT raise on content" now holds from
+  the parse floor up.
+- §4.2: the admitted frontmatter shapes and exact types, the BOM rule, and fatal
+  decoding.
+- §7: reserved identity claims of excluded claimants, beside excluded-path occupancy.
+- §10: a snapshot records accepted members only; exclusion is never persisted; the
+  schema versions bump and a pre-B snapshot is discarded, not migrated.
+- §11.2: `damaged-corpus/`, `damaged.oracle.json` and `frontmatter.malformed.json`.
+
+Mark edited clauses `*(2.0)*`, retaining header 1.2 and the pending note for E. Amend
+the umbrella's §B at closeout with the decided shapes and the `path-collision` fixture
+deviation, and C's design §2 note that B "must enforce placement on both disk-admission
+paths" to record that it does. `just gate`, `tasks check` and the marker inspection run
+before the commit. E still owns the version bump and marker removal.

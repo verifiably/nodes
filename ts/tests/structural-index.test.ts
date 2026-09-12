@@ -225,38 +225,6 @@ describe("Index — membership traversal", () => {
     expect(idx.containersOf(plain.uid)).toEqual(new Set());
   });
 
-  it("membershipClosure walks nesting transitively in both directions", () => {
-    const leaf = node("note:leaf", "note");
-    const box = setNode("set:box", ["note:leaf"]);
-    const crate = setNode("set:crate", ["set:box"]);
-    const idx = Index.build([leaf, box, crate]);
-    expect(idx.membershipClosure(crate.uid, "members")).toEqual(new Set([box.uid, leaf.uid]));
-    expect(idx.membershipClosure(leaf.uid, "containers")).toEqual(new Set([box.uid, crate.uid]));
-  });
-
-  it("membershipClosure terminates on cycles and always excludes the start node", () => {
-    const a = setNode("set:a", ["set:b"]);
-    const b = setNode("set:b", ["set:a"]);
-    const selfie = setNode("set:selfie", ["set:selfie"]);
-    const idx = Index.build([a, b, selfie]);
-    expect(idx.membershipClosure(a.uid, "members")).toEqual(new Set([b.uid]));
-    expect(idx.membershipClosure(selfie.uid, "members")).toEqual(new Set());
-    expect(idx.membershipClosure(selfie.uid, "containers")).toEqual(new Set());
-  });
-
-  it("membershipClosure covers broad fan-out with a cycle", () => {
-    const count = 2_000;
-    const leaves = Array.from({ length: count }, (_, i) => node(`note:n${i}`, "note"));
-    const root = setNode("set:root", [...leaves.map((leaf) => leaf.id), "set:root"]);
-    const idx = Index.build([root, ...leaves]);
-
-    const closure = idx.membershipClosure(root.uid, "members");
-
-    expect(closure.size).toBe(count);
-    expect(closure.has(root.uid)).toBe(false);
-    expect(closure).toEqual(new Set(leaves.map((leaf) => leaf.uid)));
-  });
-
   it("danglingMembers reports unresolved membership refs deduped per container", () => {
     const box = setNode("set:box", ["note:ghost", "note:ghost"]);
     const other = setNode("set:other", ["note:ghost"]);

@@ -12,6 +12,8 @@ const SOURCE = join(FIXTURES, "gene_phf19.md");
 const ORACLE = join(FIXTURES, "gene_phf19.canonical.json");
 const CANONICAL_TEXT = join(FIXTURES, "projection.v1.canonical.json");
 const TS_EMIT = join(FIXTURES, "gene_phf19.ts-emit.md");
+const GENE_AXIS_SOURCE = join(FIXTURES, "gene-axis.md");
+const GENE_AXIS_ORACLE = join(FIXTURES, "gene-axis.canonical.json");
 
 const oracle = () => JSON.parse(readFileSync(ORACLE, "utf-8"));
 const sourceNode = () => nodeFromMarkdown(readFileSync(SOURCE, "utf-8"));
@@ -71,5 +73,16 @@ describe("cross-language parity (TS side)", () => {
 
   it("the committed ts-emit fixture is current (regenerate-and-diff guard)", () => {
     expect(readFileSync(TS_EMIT, "utf-8")).toBe(nodeToMarkdown(sourceNode()));
+  });
+
+  it("projects a namespaced facet key identically through both projections", () => {
+    // `biology/gene-axis` is one facet name, distinct from `biology`: the slash is not a
+    // path separator. The oracle is RFC 8785 text, so it pins both projections at once.
+    const node = nodeFromMarkdown(readFileSync(GENE_AXIS_SOURCE, "utf-8"));
+    const text = readFileSync(GENE_AXIS_ORACLE, "utf-8");
+    expect(Object.keys(node.facets).sort()).toEqual(["biology", "biology/gene-axis"]);
+    expect(`${toCanonicalJson(node)}\n`).toBe(text);
+    expect(toCanonical(node)).toEqual(JSON.parse(text));
+    expect(toCanonical(nodeFromMarkdown(nodeToMarkdown(node)))).toEqual(JSON.parse(text));
   });
 });

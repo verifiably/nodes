@@ -96,5 +96,63 @@
       "deprecated_ids": []
     },
     "expected_digest": "13cdbefe93b7f8d33e55639ad216067b21c575c1961fdeb0664a56f07eee3ab1"
+  },
+  {
+    "op": "replace",
+    "path": "note/bmp.md",
+    "content": {
+      "id": "note:bmp",
+      "uid": "\ue000",
+      "kind": "note",
+      "title": "BMP",
+      "body": "",
+      "metadata": {
+        "created": null,
+        "updated": null,
+        "version": 1
+      },
+      "relations": [
+        {
+          "source": "note:bmp",
+          "predicate": "relatesTo",
+          "target": "topic:new",
+          "directed": true,
+          "weight": null,
+          "attrs": {}
+        }
+      ],
+      "facets": {},
+      "deprecated_ids": []
+    },
+    "expected_digest": "d43a38204eda7ecbc065b0ed7f403b68f80cb332eb59f6a64c3e6a13fe91aab2"
+  },
+  {
+    "op": "replace",
+    "path": "note/nonbmp.md",
+    "content": {
+      "id": "note:nonbmp",
+      "uid": "\ud800\udc00",
+      "kind": "note",
+      "title": "NonBMP",
+      "body": "",
+      "metadata": {
+        "created": null,
+        "updated": null,
+        "version": 1
+      },
+      "relations": [
+        {
+          "source": "note:nonbmp",
+          "predicate": "relatesTo",
+          "target": "topic:new",
+          "directed": true,
+          "weight": null,
+          "attrs": {}
+        }
+      ],
+      "facets": {},
+      "deprecated_ids": []
+    },
+    "expected_digest": "8f548c5714e228379eb2f1cddaaf94ebbebb532761d4b90480d4171264d8ef7b"
   }
 ]

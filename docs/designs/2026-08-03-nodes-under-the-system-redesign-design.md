@@ -1,7 +1,7 @@
 # Nodes under the system redesign — design
 
 **Date:** 2026-08-03
-**Status:** Detailed review complete 2026-08-17 — §2.1 landed 2026-08-20; §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; other deltas await implementation
+**Status:** Landed — §2.1 on 2026-08-20; §4 frozen into 2026-08-17-nodes-write-plan-executor-seam-design.md; §§2.2–2.4, 3, 5 and 6 landed on branch `nodes-2.0` as STANDARD 2.0 (2026-09-12, umbrella `nodes-ce28b8`, per 2026-09-11-nodes-2.0-remainder-design.md; §6's 1.3 verdict was superseded by the traversal withdrawal's major bump)
 **Authority:** `docs/STANDARD.md` remains normative; this document records rationale and implementation status.
 **Consumer requirements:** science's four system-redesign designs of 2026-08-02 (epistemic
 kernel, substrate consolidation, world addressing, computation & reproducibility).
@@ -237,6 +237,13 @@ Mechanical; lands with this design's plan:
   name appears in the ts-kernel, ts-corpus-fingerprints, membership-traversal-and-check,
   package-identity-and-ownership, and this design. The implementation sweep must distinguish
   stale directions from historical statements about the names being replaced.
+
+  *(2026-09-12:)* **corrected** on `nodes-2.0` as remainder sub-task G (`nodes-45445f`).
+  Stale directions rewritten in the ts-kernel, structural-index, fulltext-search,
+  similarity-index, index-persistence, ts-corpus-fingerprints, and
+  membership-traversal-and-check designs; the package-layout and package-identity designs
+  keep the old names as the history of the renames, as does this item. Executed plans keep
+  the paths they were executed against.
 - **README.** Science is listed as a consumer that "builds on the Python kernel" — false
   today; restate as the intended consumer via the redesign. The mindful path is
   `~/d/mindful/v6/`.
@@ -254,6 +261,8 @@ Mechanical; lands with this design's plan:
 
   *(2026-08-17:)* **stands.** STANDARD still contains no “corpus-state identity” boundary;
   the implementation amendment must add the sentence above.
+
+  *(2026-09-12:)* **corrected.** STANDARD §11.1 carries the identity boundary as of 2.0.
 - **Release follow-ups.** First-publish-recovery §4's post-tag steps (npm 0.0.0
   deprecation, attestation verification, credential revocation) get a status note
   recording whether they happened.
@@ -275,6 +284,10 @@ Mechanical; lands with this design's plan:
   the future §2.1 implementation plan owns it, and §2.1 landing is the trigger. The fixture
   tests the shipped projection and cannot precede that API.
 
+  *(2026-09-12:)* **landed** on `nodes-2.0` as remainder sub-task F (`nodes-dfee96`):
+  `fixtures/gene-axis.md` and `gene-axis.canonical.json`, asserted by both parity suites,
+  with their §11.2 row.
+
 ## 6. Standard changes summary
 
 STANDARD 1.2 → 1.3 in one amendment commit, per the standard's own policy: the §2
@@ -294,3 +307,6 @@ the retained `dangling-ref` and `dangling-member` findings through `check.oracle
 the convenience API itself. Under §12, the surviving pinned traversal removal requires a
 major bump. **1.3 (minor)** is available only if every surviving withdrawal leaves pinned
 surfaces untouched, which this inventory does not.
+
+*(2026-09-12:)* **landed as 2.0.** STANDARD §12's history entry names the pinned traversal
+removal as the major cause and inventories the rest.

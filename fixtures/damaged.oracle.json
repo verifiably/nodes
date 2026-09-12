@@ -1,0 +1,21 @@
+{
+  "findings": [
+    {"severity":"error","code":"parse-error","ref":"topic/bytes.md","detail":""},
+    {"severity":"error","code":"id-collision","ref":"topic/current.md","detail":"topic:current"},
+    {"severity":"error","code":"id-collision","ref":"topic/former.md","detail":"topic:current"},
+    {"severity":"error","code":"parse-error","ref":"topic/garbled.md","detail":""},
+    {"severity":"error","code":"path-mismatch","ref":"topic/moved.md","detail":"topic/elsewhere.md"},
+    {"severity":"error","code":"uid-collision","ref":"topic/twin-a.md","detail":"t"},
+    {"severity":"error","code":"uid-collision","ref":"topic/twin-b.md","detail":"t"},
+    {"severity":"error","code":"parse-error","ref":"topic/typed.md","detail":""},
+    {"severity":"warning","code":"dangling-ref","ref":"topic:good","detail":"topic:garbled"},
+    {"severity":"warning","code":"dangling-ref","ref":"topic:good","detail":"topic:twin-a"}
+  ],
+  "accepted": ["topic:good"],
+  "strict_raises": "ValidationError",
+  "subsets": [
+    {"name":"misplaced","files":["topic/moved.md"],"strict_raises":"PlacementError"},
+    {"name":"twins","files":["topic/twin-a.md","topic/twin-b.md"],"strict_raises":"CollisionError"},
+    {"name":"contested","files":["topic/current.md","topic/former.md"],"strict_raises":"CollisionError"}
+  ]
+}

@@ -3,7 +3,7 @@ from __future__ import annotations
 from nodes.core.corpus import Corpus
 from nodes.core.node import Node
 from nodes.core.relations import relates_to
-from nodes.core.snapshot import iter_corpus_files, load_snapshot, read_json, snapshot_path
+from nodes.core.snapshot import SNAPSHOT_REL_PATH, iter_corpus_files, load_snapshot, read_json, snapshot_path
 
 
 class FixedEmbedder:
@@ -23,7 +23,7 @@ def _manifest_matches_disk(c: Corpus) -> bool:
 def _results(c: Corpus):
     return (
         sorted((h.id, h.uid) for h in c.search("gamma")),
-        sorted((e.relation.source, e.relation.target) for e in c.dangling()),
+        [(f.ref, f.detail) for f in c.check() if f.code == "dangling-ref"],
         sorted(c.index.id_to_uid),
     )
 
@@ -123,7 +123,7 @@ def test_delete_last_embedder_node_flushes_self_usable_snapshot(tmp_path):
     c.add(Node(id="topic:a", kind="topic", title="A", body="gamma"))
     c.delete("topic:a")
     c.flush_index()
-    doc = read_json(snapshot_path(tmp_path))
+    doc = read_json(tmp_path, SNAPSHOT_REL_PATH)
     assert doc["vectors"]["vectors"] == {}
     assert doc["vectors"]["dim"] is None
 

@@ -2,20 +2,22 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NamedTuple
 
 from pydantic import BaseModel
 
-from nodes.core.errors import CollisionError, EmbedderRequiredError, RefError
-from nodes.core.frontmatter import node_from_markdown, node_to_markdown
+from nodes.core.errors import CollisionError, EmbedderRequiredError, PlacementError, RefError, ValidationError
+from nodes.core.frontmatter import node_from_bytes, node_to_markdown
 from nodes.core.ids import NodeId
 from nodes.core.structural_index import Index, ResolvedEdge
 from nodes.core.node import Node
+from nodes.core.paths import path_for_node_id
 from nodes.core.registry import Registry
 from nodes.core.search import SearchHit, SearchIndex
 from nodes.core.shapes import EDGES, KEYS, MEMBERSHIP, ORDER
 from nodes.core.similarity import Embedder, SimilarHit, Vector, VectorCache, VectorIndex
 from nodes.core.snapshot import (
+    CorpusFile,
     ManifestEntry,
     Snapshot,
     hash_bytes,
@@ -73,6 +75,24 @@ class Finding(BaseModel):
     message: str
 
 
+ConstructionMode = Literal["strict", "collecting"]
+
+
+class _Claimant(NamedTuple):
+    """One parsed, well-placed file's identity claims, for admission grouping."""
+
+    path: str
+    uid: str
+    id: str
+    deprecated_ids: tuple[str, ...]
+
+
+def _claimant(path: str, node: Node) -> _Claimant:
+    # Deduplicate: a document repeating a deprecated id never contests itself, and
+    # snapshot entries hold deprecated ids as a set, so cold and warm must agree.
+    return _Claimant(path, node.uid, node.id, tuple(dict.fromkeys(d for d in node.deprecated_ids if d != node.id)))
+
+
 class Corpus:
     """Coordinator over a `Store` + an in-memory `Index`. The primary kernel API."""
 
@@ -82,6 +102,7 @@ class Corpus:
         registry: Registry | None = None,
         embedder: Embedder | None = None,
         executor_factory: Callable[[Path], WritePlanExecutor] | None = None,
+        mode: ConstructionMode = "strict",
     ) -> None:
         self.store = Store(root)
         # Root-taking factory, never a pre-bound executor: the corpus supplies its own root.
@@ -91,6 +112,14 @@ class Corpus:
         self.embedder = embedder
         self.vector_cache: VectorCache | None = VectorCache(root) if embedder is not None else None
         self.manifest: dict[str, ManifestEntry] = {}
+        if mode not in ("strict", "collecting"):
+            raise ValueError(f"unknown construction mode {mode!r}")
+        self.mode: ConstructionMode = mode
+        # Collecting-mode state. Strict corpora leave all four empty.
+        self._excluded_paths: set[str] = set()
+        self._construction_findings: list[Finding] = []
+        self._reserved_uids: set[str] = set()
+        self._reserved_ids: set[str] = set()
         namespace = embedder.cache_namespace if embedder is not None else None
         snap = load_snapshot(self.store.root, namespace)
         if snap is None:
@@ -104,13 +133,87 @@ class Corpus:
     def _record_manifest(self, path: str, data: bytes, uid: str) -> None:
         self.manifest[path] = ManifestEntry(path=path, sha256=hash_bytes(data), uid=uid)
 
+    def _assert_not_reserved(self, path: str | None, uid: str | None, claims: tuple[str, ...]) -> None:
+        """Excluded files occupy their paths; excluded identity claimants reserve their
+        uids and (at the id stage) their ids. Strict corpora reserve nothing."""
+        if path is not None and path in self._excluded_paths:
+            raise CollisionError(f"path {path!r} is occupied by an excluded document")
+        if uid is not None and uid in self._reserved_uids:
+            raise CollisionError(f"uid {uid!r} is reserved by an excluded document")
+        for claim in claims:
+            if claim in self._reserved_ids:
+                raise CollisionError(f"id {claim!r} is reserved by an excluded document")
+
+    def _exclude(self, path: str, code: str, detail: str, message: str) -> None:
+        self._excluded_paths.add(path)
+        self._construction_findings.append(
+            Finding(severity="error", code=code, ref=path, detail=detail, message=message)
+        )
+
+    def _parse_member(self, f: CorpusFile) -> Node | None:
+        """Admission steps 1–2. Strict raises; collecting excludes and returns None."""
+        try:
+            node = node_from_bytes(f.data)
+        except ValidationError as exc:
+            if self.mode == "strict":
+                raise
+            self._exclude(f.path, "parse-error", "", f"{f.path}: {exc}")
+            return None
+        expected = path_for_node_id(node.id)
+        if f.path != expected:
+            message = f"{f.path!r} holds {node.id!r}, whose mapped path is {expected!r}"
+            if self.mode == "strict":
+                raise PlacementError(message)
+            self._exclude(f.path, "path-mismatch", expected, message)
+            return None
+        return node
+
+    def _admit_identities(self, kept: list[_Claimant], candidates: list[_Claimant]) -> tuple[set[str], set[str]]:
+        """Admission steps 3–4 over kept + candidates, each stage grouped in full before
+        any exclusion. Returns (excluded paths, evicted kept uids). Strict raises."""
+        population = [*kept, *candidates]
+        losers: dict[str, _Claimant] = {}
+        by_uid: dict[str, list[_Claimant]] = {}
+        for c in population:
+            by_uid.setdefault(c.uid, []).append(c)
+        for uid, group in by_uid.items():
+            if len(group) < 2:
+                continue
+            if self.mode == "strict":
+                raise CollisionError(f"duplicate uid {uid!r} in corpus")
+            for c in group:
+                losers[c.path] = c
+                self._reserved_uids.add(c.uid)
+                self._exclude(c.path, "uid-collision", uid, f"{c.path}: uid {uid!r} is claimed by another document")
+        by_id: dict[str, list[_Claimant]] = {}
+        for c in population:
+            if c.path in losers:
+                continue
+            for claim in dict.fromkeys((c.id, *c.deprecated_ids)):
+                by_id.setdefault(claim, []).append(c)
+        for claim in sorted(by_id):
+            group = by_id[claim]
+            if len(group) < 2:
+                continue
+            if self.mode == "strict":
+                raise CollisionError(f"identity claim {claim!r} is made by more than one document")
+            for c in group:
+                losers[c.path] = c
+                self._reserved_uids.add(c.uid)
+                self._reserved_ids.update((c.id, *c.deprecated_ids))
+                self._exclude(c.path, "id-collision", claim, f"{c.path}: id {claim!r} is claimed by another document")
+        kept_paths = {c.path for c in kept}
+        return set(losers), {c.uid for p, c in losers.items() if p in kept_paths}
+
     def _full_rebuild(self) -> None:
-        nodes: list[Node] = []
-        manifest: dict[str, ManifestEntry] = {}
+        parsed: list[tuple[CorpusFile, Node]] = []
         for f in iter_corpus_files(self.store.root):
-            node = node_from_markdown(f.data.decode("utf-8"))
-            nodes.append(node)
-            manifest[f.path] = ManifestEntry(path=f.path, sha256=f.sha256, uid=node.uid)
+            node = self._parse_member(f)
+            if node is not None:
+                parsed.append((f, node))
+        excluded, _ = self._admit_identities([], [_claimant(f.path, node) for f, node in parsed])
+        accepted = [(f, node) for f, node in parsed if f.path not in excluded]
+        nodes = [node for _, node in accepted]
         self.index = Index.build(nodes)
         self.search_index = SearchIndex.build(nodes)
         if self.embedder is not None:
@@ -118,7 +221,7 @@ class Corpus:
             self.vector_index: VectorIndex | None = VectorIndex.build(nodes, self.embedder, self.vector_cache)
         else:
             self.vector_index = None
-        self.manifest = manifest
+        self.manifest = {f.path: ManifestEntry(path=f.path, sha256=f.sha256, uid=node.uid) for f, node in accepted}
 
     def _reconcile(self, snap: Snapshot) -> None:
         self.index = snap.index
@@ -137,7 +240,9 @@ class Corpus:
                 continue
             if prev is not None:
                 drops.append(prev.uid)
-            changed.append((f.path, f.sha256, node_from_markdown(f.data.decode("utf-8"))))
+            node = self._parse_member(f)
+            if node is not None:
+                changed.append((f.path, f.sha256, node))
         for path, m in old.items():
             if path not in current:
                 drops.append(m.uid)
@@ -146,10 +251,23 @@ class Corpus:
             self.search_index.remove(uid)
             if self.vector_index is not None:
                 self.vector_index.remove(uid)
+        # Kept = every entry still in the index (unchanged files); its path is in the old manifest.
+        path_by_uid = {m.uid: m.path for m in snap.manifest}
+        kept = [
+            _Claimant(path_by_uid[uid], uid, e.id, tuple(sorted(e.deprecated_ids)))
+            for uid, e in self.index.by_uid.items()
+        ]
+        excluded, evicted = self._admit_identities(kept, [_claimant(p, n) for p, _, n in changed])
+        for uid in evicted:
+            self.index.remove(uid)
+            self.search_index.remove(uid)
+            if self.vector_index is not None:
+                self.vector_index.remove(uid)
+            new_manifest.pop(path_by_uid[uid], None)
         for path, sha, node in changed:
-            if node.uid in self.index.by_uid:
-                raise CollisionError(f"duplicate uid {node.uid!r} in corpus")
-            self.index.assert_addable(node)
+            if path in excluded:
+                continue
+            self.index.assert_identity_claims(node)  # holds by construction; guards the invariant
             prepared = None
             if self.vector_index is not None:
                 assert self.embedder is not None and self.vector_cache is not None
@@ -169,11 +287,12 @@ class Corpus:
         if self.registry is not None:
             self.registry.validate(node)
         self.index.assert_addable(node)
+        path = self._rel_path(node.id)
+        self._assert_not_reserved(path, node.uid, (node.id, *node.deprecated_ids))
         prepared = None
         if self.vector_index is not None:
             assert self.embedder is not None and self.vector_cache is not None
             prepared = self.vector_index.prepare(node, self.embedder, self.vector_cache)
-        path = self._rel_path(node.id)
         data = node_to_markdown(node).encode("utf-8")
         # assert_addable guarantees a live uid holds this same id: matching pair → replace.
         plan: list[WriteOp]
@@ -211,7 +330,9 @@ class Corpus:
         self.manifest.pop(path, None)
 
     def all(self) -> list[Node]:
-        return self.store.all_nodes()
+        """Accepted members, ordered by manifest path in Unicode code-point order."""
+        entries = sorted(self.manifest.values(), key=lambda m: m.path)
+        return [self.store.read_file(self.index.by_uid[m.uid].id) for m in entries]
 
     def _require_uid(self, ref: str) -> str:
         uid = self.index.resolve_uid(ref)
@@ -224,9 +345,6 @@ class Corpus:
 
     def inbound(self, ref: str) -> list[ResolvedEdge]:
         return self.index.inbound_edges(self._require_uid(ref))
-
-    def dangling(self) -> list[ResolvedEdge]:
-        return self.index.dangling_edges()
 
     def neighbors(self, ref: str) -> list[Node]:
         uid = self._require_uid(ref)
@@ -248,12 +366,6 @@ class Corpus:
 
     def containers(self, ref: str) -> list[str]:
         return self._sorted_live_ids(self.index.containers_of(self._require_uid(ref)))
-
-    def descendants(self, ref: str) -> list[str]:
-        return self._sorted_live_ids(self.index.membership_closure(self._require_uid(ref), "members"))
-
-    def ancestors(self, ref: str) -> list[str]:
-        return self._sorted_live_ids(self.index.membership_closure(self._require_uid(ref), "containers"))
 
     def search(self, query: str, limit: int | None = None) -> list[SearchHit]:
         return self.search_index.search(query, limit)
@@ -281,11 +393,16 @@ class Corpus:
             raise CollisionError(f"target id {new_id!r} already in use")
 
         uid = self.index.id_to_uid[old_id]
+        # Path admission before any preparation: a differently spelled same-key
+        # destination is refused; the source's own exact mapped path is a replace.
+        self.index.assert_path_available(uid, new_id)
+        new_rel_path = self._rel_path(new_id)
+        old_rel_path = self._rel_path(old_id)
+        self._assert_not_reserved(new_rel_path if new_rel_path != old_rel_path else None, None, (new_id,))
         referrer_uids = {ir.source_uid for ir in self.index.in_refs.get(old_id, [])}
 
         # --- prepare: rewrite every node that will change, in memory ---
         node = self.store.read_file(old_id)
-        old_rel_path = self._rel_path(old_id)
         node.id = new_id
         node.kind = NodeId.parse(new_id).kind
         if old_id not in node.deprecated_ids:
@@ -316,7 +433,6 @@ class Corpus:
                 prepared_referrers.append(self.vector_index.prepare(referrer, self.embedder, self.vector_cache))
 
         # --- plan: create new → delete old → replace referrers ---
-        new_rel_path = self._rel_path(new_id)
         node_data = node_to_markdown(node).encode("utf-8")
         plan: list[WriteOp] = []
         if new_rel_path != old_rel_path:
@@ -356,14 +472,15 @@ class Corpus:
     def check(self, registry: Registry | None = None) -> list[Finding]:
         """Report corpus-validity findings; never raises on content.
 
-        Registry violations (when a registry is configured or passed) are errors;
-        unresolved top-level relation targets and unresolved membership member refs
-        are warnings. Sorted by (ref, code, detail) — `message` is human-only.
+        Construction findings (collecting mode) come first. Registry violations (when a registry is configured or passed) are errors;
+        unresolved top-level relation targets, unresolved membership member refs and
+        mapped-path collisions (a portability hazard, registry or not) are warnings.
+        Sorted by (ref, code, detail) — `message` is human-only.
         """
         reg = registry if registry is not None else self.registry
-        findings: list[Finding] = []
+        findings: list[Finding] = list(self._construction_findings)
         if reg is not None:
-            for node in self.store.all_nodes():
+            for node in self.all():
                 for v in reg.check(node):
                     findings.append(
                         Finding(severity="error", code=v.code, ref=node.id, detail=v.detail, message=v.message)
@@ -388,6 +505,16 @@ class Corpus:
                     ref=container_id,
                     detail=ref,
                     message=f"{container_id}: member {ref!r} resolves to no live node",
+                )
+            )
+        for live_id, key in self.index.path_collisions():
+            findings.append(
+                Finding(
+                    severity="warning",
+                    code="path-collision",
+                    ref=live_id,
+                    detail=key,
+                    message=f"{live_id}: mapped path collides at {key!r}",
                 )
             )
         findings.sort(key=lambda f: (f.ref, f.code, f.detail))

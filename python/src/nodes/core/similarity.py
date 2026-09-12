@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import math
-import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -12,6 +10,7 @@ from typing import Protocol
 
 from nodes.core.errors import CollisionError
 from nodes.core.node import Node
+from nodes.core.paths import RESERVED_NAMESPACE, read_json, write_json_atomic
 from nodes.core.ranking import score_key
 
 Vector = tuple[float, ...]
@@ -99,36 +98,31 @@ class VectorCache:
     def __init__(self, root: Path | str) -> None:
         self.root = Path(root)
 
-    def _path(self, namespace: str, text_hash: str) -> Path:
+    def _rel(self, namespace: str, text_hash: str) -> str:
         validate_namespace(namespace)
         validate_text_hash(text_hash)
-        return self.root / ".nodes-index" / "vectors" / namespace / f"{text_hash}.json"
+        return f"{RESERVED_NAMESPACE}/vectors/{namespace}/{text_hash}.json"
 
     def get(self, namespace: str, text_hash: str) -> Vector | None:
-        path = self._path(namespace, text_hash)
-        if not path.exists():
-            return None
+        rel = self._rel(namespace, text_hash)
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError) as exc:
-            raise ValueError(f"corrupt cache file {path}: {exc}") from exc
+            data = read_json(self.root, rel)
+        except (ValueError, OSError) as exc:
+            raise ValueError(f"corrupt cache file {rel}: {exc}") from exc
+        if data is None:
+            return None
         if not isinstance(data, dict) or "dim" not in data or "vector" not in data:
-            raise ValueError(f"corrupt cache file {path}: missing dim/vector")
+            raise ValueError(f"corrupt cache file {rel}: missing dim/vector")
         raw = data["vector"]
         if not isinstance(raw, list) or len(raw) != data["dim"]:
-            raise ValueError(f"corrupt cache file {path}: dim/vector length mismatch")
+            raise ValueError(f"corrupt cache file {rel}: dim/vector length mismatch")
         raw_tuple = tuple(raw)
         _validate_finite(raw_tuple)
         return tuple(float(x) for x in raw_tuple)
 
     def put(self, namespace: str, text_hash: str, vector: Vector) -> None:
         _validate_finite(vector)
-        path = self._path(namespace, text_hash)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps({"dim": len(vector), "vector": list(vector)}, allow_nan=False)
-        tmp = path.parent / f"{text_hash}.json.tmp"
-        tmp.write_text(payload, encoding="utf-8")
-        os.replace(tmp, path)
+        write_json_atomic(self.root, self._rel(namespace, text_hash), {"dim": len(vector), "vector": list(vector)})
 
 
 @dataclass(frozen=True)

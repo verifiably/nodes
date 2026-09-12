@@ -27,9 +27,9 @@ function results(c: Corpus): unknown {
       .map((h) => [h.id, h.uid])
       .sort(),
     c
-      .dangling()
-      .map((e) => [e.relation.source, e.relation.target])
-      .sort(),
+      .check()
+      .filter((f) => f.code === "dangling-ref")
+      .map((f) => [f.ref, f.detail]),
     [...c.index.idToUid.keys()].sort(),
   ];
 }

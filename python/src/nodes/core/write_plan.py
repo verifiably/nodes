@@ -5,9 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Protocol, TypeAlias
 
-from nodes.core.errors import ExecutionError, PlanRefusedError
-
-RESERVED_NAMESPACE = ".nodes-index"
+from nodes.core.errors import ContainmentError, ExecutionError, PlanRefusedError
+from nodes.core.paths import RESERVED_NAMESPACE as RESERVED_NAMESPACE, assert_contained, is_portable_relative_path
 
 
 @dataclass(frozen=True)
@@ -46,45 +45,36 @@ class WritePlanExecutor(Protocol):
     def execute(self, plan: WritePlan) -> None: ...
 
 
-def _path_escapes(path: str) -> bool:
-    if path == "" or path.startswith("/"):
-        return True
-    normalized: list[str] = []
-    for segment in path.split("/"):
-        if segment in ("", "."):
-            continue
-        if segment == "..":
-            if not normalized:
-                return True
-            normalized.pop()
-            continue
-        normalized.append(segment)
-    return not normalized
-
-
 def validate_plan(plan: WritePlan) -> None:
     """Refuse a lexically malformed plan (`PlanRefusedError`) before any effect:
-    unknown operation kind, escaping path, or reserved-namespace path."""
+    unknown operation kind, a non-portable root-relative `.md` path, or a
+    reserved-namespace path."""
     for op in plan:
         if not isinstance(op, (CreateOp, ReplaceOp, DeleteOp)):
             raise PlanRefusedError(f"unknown operation kind: {op!r}")
-        if _path_escapes(op.path):
-            raise PlanRefusedError(f"path escapes the corpus root: {op.path!r}")
+        if not is_portable_relative_path(op.path):
+            raise PlanRefusedError(f"not a portable root-relative .md path: {op.path!r}")
         if op.path.split("/", 1)[0] == RESERVED_NAMESPACE:
             raise PlanRefusedError(f"path in reserved namespace: {op.path!r}")
 
 
 class DefaultExecutor:
-    """Best-effort ordered writes: checks each operation's existence precondition
-    when it reaches that operation and stops at the first failure, leaving the
-    applied prefix. Carries but does not enforce `expected_digest`. Provides no
-    serialization; the deployment retains the single-writer obligation."""
+    """Best-effort ordered writes. A whole-plan containment preflight runs before any
+    effect; then each operation's existence precondition is checked when it is reached
+    and execution stops at the first failure, leaving the applied prefix. Carries but
+    does not enforce `expected_digest`. Provides no serialization; the deployment
+    retains the single-writer obligation."""
 
     def __init__(self, root: Path) -> None:
         self.root = Path(root)
 
     def execute(self, plan: WritePlan) -> None:
         validate_plan(plan)
+        for index, op in enumerate(plan):
+            try:
+                assert_contained(self.root, op.path)
+            except ContainmentError as exc:
+                raise ExecutionError(f"operation {index} not contained: {exc}", index=index, applied=0) from exc
         for index, op in enumerate(plan):
             target = self.root / op.path
             if isinstance(op, CreateOp):

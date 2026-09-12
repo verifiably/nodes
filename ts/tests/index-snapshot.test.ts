@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CollisionError } from "../src/errors.js";
 import { makeNode } from "../src/node.js";
 import { relatesTo } from "../src/relations.js";
 import { Index, type OutRef } from "../src/structural-index.js";
@@ -123,4 +124,48 @@ describe("structural Index snapshot", () => {
     expect(allRoles).toContain("order_member");
     expect(allRoles).toContain("keys_value");
   });
+});
+
+it("maintains collision buckets through replacement, removal and restore", () => {
+  const a = makeNode({ id: "kind:A", uid: "a", kind: "kind", title: "A" });
+  const b = makeNode({ id: "kind:a", uid: "b", kind: "kind", title: "B" });
+  let index = Index.build([a, b]);
+  const expected = [
+    ["kind:A", "kind/a.md"],
+    ["kind:a", "kind/a.md"],
+  ];
+  expect(index.pathCollisions().sort()).toEqual(expected);
+  index = Index.fromDict(index.toDict());
+  expect(index.pathCollisions().sort()).toEqual(expected);
+  index.assertAddable(a);
+  expect(() =>
+    index.assertAddable(
+      makeNode({
+        id: "kind:a",
+        uid: "new",
+        kind: "kind",
+        title: "New",
+      }),
+    ),
+  ).toThrow(CollisionError);
+  const moved = { ...b, id: "kind:b", deprecatedIds: ["kind:a"] };
+  index.assertPathAvailable(b.uid, moved.id);
+  index.upsert(moved);
+  expect(index.pathCollisions()).toEqual([]);
+  index.remove(a.uid);
+  index.assertPathAvailable("new", "kind:A");
+  expect(Index.fromDict(index.toDict()).pathCollisions()).toEqual([]);
+});
+
+it("resolves opaque uid claims and rejects an empty restored uid", () => {
+  const node = makeNode({ id: "kind:a", uid: "not a digest", kind: "kind", title: "A", deprecatedIds: ["kind:old"] });
+  const index = Index.fromDict(Index.build([node]).toDict());
+  expect(index.resolveUid("kind:a")).toBe(node.uid);
+  expect(index.resolveUid("kind:old")).toBe(node.uid);
+  expect(() => index.assertAddable(makeNode({ id: "kind:old", uid: "other", kind: "kind", title: "Other" }))).toThrow(
+    CollisionError,
+  );
+  const doc = index.toDict();
+  doc.entries[0].uid = "";
+  expect(() => Index.fromDict(doc)).toThrow("non-empty");
 });
