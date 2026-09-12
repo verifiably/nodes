@@ -7,7 +7,7 @@ size: m
 complexity: mid
 owner: main
 created: 2026-09-07T16:01:08Z
-updated: 2026-09-12T19:19:08Z
+updated: 2026-09-12T19:58:15Z
 started: 2026-09-12T16:59:27Z
 completed: 2026-09-12T17:10:40Z
 depends: [nodes-463301]
@@ -33,3 +33,4 @@ Consumers to update in the same change: beliefs/python/pyproject.toml declares n
 - 2026-09-12T17:02:16Z (main): Decisions: release tag prefix becomes v* (repo is one layer now; core/ namespacing came from the nodes-dev/core monorepo option). PyPI nodes-core 0.1.1 is left in place, no farewell release; archiving it on PyPI is an optional user step. Scope finding: mind6 names @nodes-dev/core in every import (~80 src/test files, link-core.mjs, check-core-freshness.mjs, bundledDependencies), not only the package.json name keys.
 - 2026-09-12T17:10:40Z (main): Renamed to verifiably-nodes (PyPI) and @verifiably/nodes (npm); release tag prefix is now v*; verify/smoke scripts, tests, READMEs and both lockfiles follow. PyPI nodes-core 0.1.1 left in place (no farewell release; archiving is optional). Consumers updated in beliefs (pyproject + uv.lock) and mind6 (both package.json, ~80 import sites, link/freshness scripts, lockfile); all three gates green. Left for the user: repoint the GitHub release environment tag policy core/v* -> v*, add a PyPI pending publisher for verifiably-nodes and remove nodes-core's, and bump the lockstep version before the first v* tag.
 - 2026-09-12T19:19:08Z (main): Registry setup completed by the user 2026-09-12: release env tag policy repointed to v* (policy id 59809952); PyPI pending publisher added for verifiably-nodes and both nodes-core publishers removed; @verifiably/nodes@0.0.0 bootstrap published by hand from a clean HEAD build (PUT 200, propagation lag caused a transient 404), trusted publisher attached, publishing access set to 2FA-only. Left: bump to 0.2.0, tag v0.2.0, then npm deprecate 0.0.0.
+- 2026-09-12T19:58:15Z (main): v0.2.0 released 2026-09-12 (run 34714105641): PyPI verifiably-nodes 0.2.0 with provenance, npm @verifiably/nodes 0.2.0 with SLSA provenance; hashes match CI artefacts. The run went red on the PyPI post-upload check racing propagation; filed as its own task.
