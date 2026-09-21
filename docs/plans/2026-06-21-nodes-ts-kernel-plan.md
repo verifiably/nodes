@@ -37,7 +37,7 @@ Treat code snippets below as the original greenfield implementation sequence, no
 - **Boundary parsers wrap Zod errors into the kernel error hierarchy** (`ValidationError`/`FacetError`), never leaking raw. The boundary parsers are `makeNode`, `nodeFromMarkdown`, and `membershipOf` — the functions that ingest untrusted external input. Low-level schema helpers (`fromSerialized`, `relatesTo`, direct `RelationSchema.parse`) may surface raw Zod errors, mirroring Python where `Relation(...)`/`Relation.from_serialized` surface raw Pydantic errors. Callers reach disk through the boundary parsers, which catch and re-wrap.
 - **Tooling:** ESM (`"type":"module"`), `strict:true`, target ES2022, `NodeNext` resolution; relative imports use the `.js` extension. `engines.node` `>=20`, `packageManager` `npm@11.11.0` (refines the spec's illustrative `npm@10` to the installed npm).
 - **Command convention.** `rtk` is a token-optimizing proxy for *tool* commands whose output it can trim — `git`, `npm`, `npx`, `uv`, `node`, `grep` — so those are shown `rtk`-prefixed. Shell builtins (`cd`) and filesystem primitives (`mkdir`, `mv`, `rmdir`) have nothing for `rtk` to optimize and are shown bare. Every command — including `cd` — sits on **its own line**; no `&&` chaining. Python commands run from `python/`; TS commands run from `ts/`.
-- **Docs use `~/d/` paths**, never `/home/keith/...` or `/mnt/ssd/...`.
+- **Docs use `~/d/` paths**, never the absolute home or mount path.
 - **Final gate:** TS — `vitest run` green, `tsc --noEmit` clean, `biome check` clean. Python — full suite green (≥112), `ruff check` clean, `pyright` clean, both run from `python/`.
 
 ---

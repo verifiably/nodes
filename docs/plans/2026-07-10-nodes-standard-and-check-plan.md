@@ -21,7 +21,7 @@
 - Only kernel content errors convert to findings: `FacetError` → `facet-invalid`, `InvariantError` → `invariant-violated`. Any other exception from an invariant propagates.
 - Finding order is `(ref, code, detail)` ascending; `message` is human-only, never sorted on, never in the oracle.
 - Docs sweeps MUST NOT touch the two 2026-07-10 files (this plan and its design doc) — they intentionally reference the old paths they change.
-- Filepaths written into docs use `~/d/nodes/...` (never `/home/keith/...` or `/mnt/ssd/Dropbox/...`).
+- Filepaths written into docs use `~/d/nodes/...` (never the absolute home or sync-root path).
 
 ---
 

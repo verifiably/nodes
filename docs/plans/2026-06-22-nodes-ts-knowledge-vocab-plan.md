@@ -37,7 +37,7 @@ Every task's requirements implicitly include this section.
 - **Faithful port:** mirror the current Python `nodes.vocab` semantics exactly, including the truthiness of `requireIdentifiableSource`'s "at least one of" check.
 - **No compatibility layers / no "Unified" prefixes / no "legacy" shims.**
 - **Commands:** `rtk` prefixes `git`/`npm`/`npx`/`uv`/`node`; shell builtins (`cd`) and filesystem primitives (`mkdir`) are shown bare; one command per line (no `&&` chains).
-- **Docs/code paths** use `~/d/` (never `/home/keith/d/` or `/mnt/ssd/Dropbox/`). No `Co-Authored-By` trailers in commits.
+- **Docs/code paths** use `~/d/` (never the absolute home or sync-root path). No `Co-Authored-By` trailers in commits.
 
 ---
 

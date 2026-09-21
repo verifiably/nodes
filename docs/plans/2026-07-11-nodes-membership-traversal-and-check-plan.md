@@ -18,7 +18,7 @@
 - Gates before every commit — TypeScript (from `ts/`): `rtk npm test`, `rtk npm run typecheck`, `rtk npm run check`; Python (from `python/`): `uv run --frozen pytest -q`, `uv run --frozen ruff check .`, `uv run --frozen pyright src`.
 - Exact normative values (copy verbatim, do not improvise): finding code `dangling-member`, severity `warning`, `ref` = container's live id, `detail` = the unresolved member ref, deduplicated per `(container, member ref)`; traversal returns **sorted (Unicode code point), uid-deduplicated live ids**; transitive results always exclude the start node, even when a cycle reaches it; dangling member refs are silently skipped by traversal; `RefError` only for an unresolvable *input* ref.
 - Fixture uids are 32-char strings; the new ones are pinned in Task 5 — do not regenerate them.
-- Use `~/d/` (never `/home/keith/…` or `/mnt/ssd/Dropbox/…`) for any path written into docs.
+- Use `~/d/` (never the absolute home or sync-root path) for any path written into docs.
 
 ---
 

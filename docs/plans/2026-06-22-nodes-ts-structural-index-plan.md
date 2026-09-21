@@ -39,7 +39,7 @@ Every task's requirements implicitly include this section.
 - **Faithful port:** mirror the current Python `Corpus`/`Index`/slim `Store` semantics exactly. The knowledge vocab is NOT ported in this plan — registry-integration tests use `registerBuiltinShapes` (the only registry surface TS has), not the Python `register_knowledge_vocab`.
 - **No compatibility layers / no "Unified" prefixes / no "legacy" shims.**
 - **Commands:** `rtk` prefixes `git`/`npm`/`npx`/`uv`/`node`; shell builtins (`cd`) and filesystem primitives (`mkdir`/`mv`/`rmdir`) are shown bare; one command per line (no `&&` chains).
-- **Docs/code paths** use `~/d/` (never `/home/keith/d/` or `/mnt/ssd/Dropbox/`). No `Co-Authored-By` trailers in commits.
+- **Docs/code paths** use `~/d/` (never the absolute home or sync-root path). No `Co-Authored-By` trailers in commits.
 
 ---
 

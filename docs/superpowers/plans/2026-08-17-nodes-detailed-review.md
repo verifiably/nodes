@@ -15,7 +15,7 @@
 - **No code changes in the `nodes` repository.** If a task believes a code change is needed here, it reports BLOCKED; it does not make the change. The science follow-up may update existing documentation-guard metadata/allowlists when a required documentation citation triggers that guard; that guard update belongs in the same science docs commit.
 - **Gates before every commit** (AGENTS.md): from `python/`: `uv run --frozen pytest -q`, `uv run --frozen ruff check .`, `uv run --frozen pyright src`; from `ts/`: `npm test`, `npm run typecheck`, `npm run check`.
 - **Conventional commits; no AI-attribution trailers.**
-- **Filepaths in docs use `~/d/nodes/...`** (AGENTS.md); never write `/home/keith` or `/mnt/ssd/Dropbox` into a document.
+- **Filepaths in docs use `~/d/nodes/...`** (AGENTS.md); never write the absolute home or sync-root path into a document.
 - **The seam design is pre-normative** (spec §2.1): frozen as a contract about the future standard amendment; it must never claim present normative authority over shipped code, and STANDARD.md is not edited anywhere in this plan.
 - **Verdict vocabulary** (spec §4): every redesign-design delta gets exactly one of **stands / stands amended / withdrawn**, as a dated parenthetical annotation at its site, in the document's existing style (see its 2026-08-08 notes for the form).
 - **Two landings, in order** (spec §2): the seam design merges to `main` before any trailing-review commit lands there. Merges are user checkpoints — stop and use superpowers:finishing-a-development-branch.
