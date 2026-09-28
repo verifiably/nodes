@@ -6,7 +6,7 @@ priority: 2
 size: m
 complexity: mid
 created: 2026-09-04T21:44:54Z
-updated: 2026-09-12T16:43:24Z
+updated: 2026-09-28T08:35:52Z
 depends: [ops-31f038]
 tags: [testing]
 ---
@@ -22,3 +22,5 @@ Piece of ops-65837b (the cross-project audit in the ops hub). 1. Measure: full-s
 - 2026-09-05T11:21:27Z (main): step 1 merged to main at 6f678f6; branch and worktree removed after tt-report showed no fallback log. Step 2 is calendar time: let a week of runs accumulate, then add a note reading 'baseline 2026-09-12: <tt-report --project nodes numbers>' before moving to step 3.
 - 2026-09-07T12:34:38Z (main): Correction: step 1's merge commit is 85bb065, not the 6f678f6 cited above. origin/main had never received the local trailer-stripping rewrite, so it still carried Claude-Session URLs on two commits; local main already held the clean equivalents (same trees, same parent) and was force-pushed on 2026-09-07. The old shas are gone from the branch.
 - 2026-09-12T16:43:24Z (main): complexity mid: step 1 landed and hygiene needs nothing; steps 2-4 of the ops design §5 remain with one open choice, the ts test-fast placeholder (vitest --changed measured no faster than the full suite)
+- 2026-09-28T08:34:21Z (main): baseline 2026-09-28 (tt-report --project nodes --since 2026-09-05 --until 2026-09-24; 12 active days, before step 3): test 45 runs median 4.6s p90 5.0s fail 0.00, 3 min total; test-fast 46 runs median 3.2s p90 4.7s fail 0.46 empty 2, 2 min total; check 60 runs median 6.4s p90 7.0s fail 0.25, 6 min total; hook-pre-commit 58 runs median 6.5s p90 7.7s fail 0.02, 6 min total; hook-pre-push 13 runs median 12.4s p90 13.6s fail 0.00, 3 min total; front-door total 0.35 h (2 min per active day), ad-hoc targets 0 min; fast/full by agents 1.00; bypasses 12
+- 2026-09-28T08:35:52Z (main): Baseline window 2026-09-05..09-24 closes the day before ops host-budget worker sizing (09-25), the first timing change after step 1; no step-3 change had landed. Front-door total counts wrapper seconds of test, test-fast, check and both hooks. Next: step 3 (gates to ops design §4.6, the AGENTS.md inner-loop line, hygiene the numbers point at), then an after-window read with tt-report --since/--until.
