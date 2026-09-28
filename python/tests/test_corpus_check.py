@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import shutil
+from pathlib import Path
+
+import pytest
+
 from nodes.core.corpus import Corpus
+from nodes.core.errors import RefError, ValidationError
 from nodes.core.node import Node
-from nodes.core.registry import Registry
+from nodes.core.registry import KindSpec, Registry
 from nodes.core.relations import Relation
 from nodes.core.shapes import MEMBERSHIP, register_builtin_shapes
+from nodes.core.store import Store
 from tests._fixtures_profile import SOURCE, register_fixtures_profile
 
 
@@ -91,3 +98,115 @@ def test_dangling_member_orders_with_other_findings(tmp_path):
         ("warning", "dangling-member", "set:box", "note:ghost"),
         ("warning", "dangling-ref", "set:box", "topic:gone"),
     ]
+
+
+def test_read_and_check_keeps_file_values_and_reads_afresh(tmp_path):
+    seen = []
+
+    def mutate(node):
+        node.title = "callback"
+        node.facets["payload"]["items"].append("callback")
+        seen.append(node)
+
+    def observe(node):
+        assert node is seen[-1]
+        assert node.title == "callback"
+
+    reg = Registry()
+    reg.register(KindSpec(name="note", optional_facets={"payload"}, invariants=[mutate, observe]))
+    store = Store(tmp_path)
+    original = Node(id="note:x", kind="note", title="file", facets={"payload": {"items": []}})
+    store.write_file(original)
+    c = Corpus(tmp_path, registry=reg)
+    expected = c.all()[0].model_dump()
+    nodes, findings = c.read_and_check()
+    assert findings == []
+    assert nodes[0].model_dump() == expected
+    seen[0].facets["payload"]["items"].append("retained callback")
+    assert nodes[0].facets["payload"]["items"] == []
+    store.write_file(original.model_copy(update={"title": "edited"}))
+    assert c.get("note:x").title == c.all()[0].title == "edited"
+    assert c.read_and_check()[0][0].title == "edited"
+    assert nodes[0].title == "file"
+
+
+@pytest.mark.parametrize("fixture,mode", [("check-corpus", "strict"), ("damaged-corpus", "collecting")])
+def test_read_and_check_preserves_all_findings_and_order(tmp_path, fixture, mode, monkeypatch):
+    root = tmp_path / "corpus"
+    shutil.copytree(Path(__file__).parents[2] / "fixtures" / fixture, root)
+    store = Store(root)
+    for slug in ("case", "CASE"):
+        store.write_file(Node(id=f"note:{slug}", kind="note", title=slug))
+    store.write_file(Node(id="set:box", kind="set", title="Box", facets={
+        MEMBERSHIP: {"members": ["note:missing"]}}))
+    c = Corpus(root, registry=_registry(), mode=mode)
+    expected_nodes = c.all()
+    expected_findings = c.check()
+    assert {"path-collision", "dangling-member"} <= {f.code for f in expected_findings}
+    original_all = c.all
+    calls = []
+
+    def counted_all():
+        calls.append(True)
+        return original_all()
+
+    monkeypatch.setattr(c, "all", counted_all)
+    nodes, findings = c.read_and_check()
+    assert calls == [True]
+    assert [n.model_dump() for n in nodes] == [n.model_dump() for n in expected_nodes]
+    assert [f.model_dump() for f in findings] == [f.model_dump() for f in expected_findings]
+
+
+def test_read_and_check_without_registry_reads_but_never_copies(tmp_path, monkeypatch):
+    c = Corpus(tmp_path)
+    c.add(Node(id="note:x", kind="note", title="X", relations=[
+        Relation(source="note:x", predicate="about", target="note:missing")]))
+    expected = c.check()
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("unexpected copy or read")
+
+    monkeypatch.setattr(Node, "model_copy", forbidden)
+    nodes, findings = c.read_and_check()
+    assert [n.id for n in nodes] == ["note:x"]
+    assert findings == expected
+    monkeypatch.setattr(c, "all", forbidden)
+    assert c.check() == expected
+
+
+def test_read_and_check_explicit_registry_overrides_configured(tmp_path):
+    c = Corpus(tmp_path, registry=_registry())
+    c.add(Node(id="note:x", kind="note", title="X"))
+    empty = Registry()
+    assert c.read_and_check()[1] == []
+    assert c.read_and_check(empty)[1] == c.check(empty)
+    assert [f.code for f in c.read_and_check(empty)[1]] == ["unknown-kind"]
+
+
+@pytest.mark.parametrize("damage,error", [("delete", RefError), ("malformed", ValidationError)])
+def test_read_and_check_fresh_read_failures(tmp_path, damage, error):
+    c = Corpus(tmp_path, registry=_registry())
+    c.add(Node(id="note:x", kind="note", title="X"))
+    nodes, _ = c.read_and_check()
+    path = c.store.path_for("note:x")
+    if damage == "delete":
+        path.unlink()
+    else:
+        path.write_text("---\ntitle: [\n---\n")
+    for read in (c.all, c.check, c.read_and_check):
+        with pytest.raises(error):
+            read()
+    assert nodes[0].title == "X"
+
+
+def test_read_and_check_propagates_callback_bugs(tmp_path):
+    def broken(node):
+        raise RuntimeError("callback bug")
+
+    reg = Registry()
+    reg.register(KindSpec(name="note", invariants=[broken]))
+    Store(tmp_path).write_file(Node(id="note:x", kind="note", title="X"))
+    c = Corpus(tmp_path, registry=reg)
+    for check in (c.check, c.read_and_check):
+        with pytest.raises(RuntimeError, match="callback bug"):
+            check()

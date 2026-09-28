@@ -137,3 +137,10 @@ def test_invalid_utf8_is_a_validation_error_and_bom_is_preserved():
     with pytest.raises(ValidationError):
         node_from_bytes("﻿---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n".encode("utf-8"))
     assert node_from_bytes(b"---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n").id == "k:a"
+
+
+def test_existing_yaml_edge_acceptance():
+    header = b"---\nid: note:x\nuid: x\nkind: note\n"
+    assert node_from_bytes(header + b'title: "\\uD800"\n---\n').title == "\ud800"
+    with pytest.raises(ValidationError):
+        node_from_bytes(header + b"title: \tbad\n---\n")

@@ -4,6 +4,8 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
+
 from nodes.core.corpus import Corpus
 from nodes.core.registry import Registry
 from nodes.core.shapes import register_builtin_shapes
@@ -14,7 +16,8 @@ CORPUS = FIXTURES / "check-corpus"
 ORACLE = FIXTURES / "check.oracle.json"
 
 
-def test_check_findings_match_committed_oracle(tmp_path):
+@pytest.mark.parametrize("method", ["check", "read_and_check"])
+def test_check_findings_match_committed_oracle(tmp_path, method):
     # Cross-language freeze: Corpus.check over the committed fixture corpus must
     # reproduce the committed findings oracle exactly (severity, code, ref, detail).
     # The TypeScript kernel asserts the same fixture + oracle.
@@ -26,7 +29,8 @@ def test_check_findings_match_committed_oracle(tmp_path):
     corpus = Corpus(corpus_dir, registry=reg)
     oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
     assert oracle, "oracle must not be empty"
-    actual = [{"severity": f.severity, "code": f.code, "ref": f.ref, "detail": f.detail} for f in corpus.check()]
+    findings = corpus.check() if method == "check" else corpus.read_and_check()[1]
+    actual = [{"severity": f.severity, "code": f.code, "ref": f.ref, "detail": f.detail} for f in findings]
     assert actual == oracle
 
 

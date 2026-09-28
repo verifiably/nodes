@@ -478,9 +478,26 @@ class Corpus:
         Sorted by (ref, code, detail) — `message` is human-only.
         """
         reg = registry if registry is not None else self.registry
+        return self._check_nodes(self.all() if reg is not None else (), reg)
+
+    def read_and_check(self, registry: Registry | None = None) -> tuple[list[Node], list[Finding]]:
+        """Read accepted members once and return their file values plus check findings.
+
+        Inspect the findings before using the nodes: invalid nodes are still returned.
+        Registry callbacks run on per-node deep copies, preserving the returned values.
+        Without an effective registry, no copies are made. Each call reads afresh;
+        reads are sequential, not atomic, and structural findings use existing indexes.
+        Read errors and programmer errors from callbacks propagate as in all()/check().
+        """
+        reg = registry if registry is not None else self.registry
+        nodes = self.all()
+        checked = (node.model_copy(deep=True) for node in nodes) if reg is not None else ()
+        return nodes, self._check_nodes(checked, reg)
+
+    def _check_nodes(self, nodes: Iterable[Node], reg: Registry | None) -> list[Finding]:
         findings: list[Finding] = list(self._construction_findings)
         if reg is not None:
-            for node in self.all():
+            for node in nodes:
                 for v in reg.check(node):
                     findings.append(
                         Finding(severity="error", code=v.code, ref=node.id, detail=v.detail, message=v.message)
