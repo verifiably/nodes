@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: feat/sp64b-search
 created: 2026-10-04T08:59:33Z
-updated: 2026-10-04T09:01:34Z
+updated: 2026-10-04T09:06:36Z
 started: 2026-10-04T09:00:35Z
 completed: 2026-10-04T09:01:33Z
 depends: []
@@ -26,3 +26,5 @@ Expose SearchIndex, tokenize, and STOP_WORDS through @verifiably/nodes/search; w
 - 2026-10-04T09:01:33Z (feat/sp64b-search): RED: recorded focused test-fast failed ERR_PACKAGE_PATH_NOT_EXPORTED. GREEN: same command passed 1 browser-graph test; just gate passed Python 743 and TypeScript 570 tests; checks zero errors/warnings.
 - 2026-10-04T09:01:33Z (feat/sp64b-search): done
 - 2026-10-04T09:01:33Z (feat/sp64b-search): Expose browser-safe @verifiably/nodes/search subpath with transitive built-import boundary check.
+- 2026-10-04T09:05:19Z (feat/sp64b-search): review: impl round 1 — verdict: revise; findings: Important 1; reviewer: codex/gpt-6.1-sol
+- 2026-10-04T09:06:36Z (feat/sp64b-search): Review correction: replaced static-import regex with installed TypeScript parser; fixture graph traverses multiline relative imports/re-exports into multiline node:fs edges. RED 2 failed/1 passed; GREEN 3 passed; just gate passed Python 743 and TypeScript 572.
