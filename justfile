@@ -26,7 +26,7 @@ ts_check_cmd := "(cd ts && npm run typecheck && npm run check)"
 
 fast_cmd := py_fast_cmd + " && " + ts_fast_cmd
 test_cmd := py_test_cmd + " && " + ts_test_cmd
-check_cmd := "python3 tools/ops-check && " + py_check_cmd + " && " + ts_check_cmd + " && tasks check"
+check_cmd := "python3 tools/ops-check && python3 tools/ops-docs check && " + py_check_cmd + " && " + ts_check_cmd + " && tasks check"
 
 # Affected-only: the inner loop. An empty selection is a result, not a failure.
 test-fast:
@@ -41,6 +41,12 @@ check:
     {{tt}} check -- sh -c '{{check_cmd}}'
 
 gate: check test
+
+# Render the generated regions of README.md and AGENTS.md from identity.toml and
+# tools/family.toml. The only thing that edits those regions; `check` refuses a commit
+# while they are out of date.
+docs:
+    {{tt}} docs -- python3 tools/ops-docs write
 
 # What the pre-commit hook runs: `check`'s command under its own hook target.
 hook-pre-commit:
