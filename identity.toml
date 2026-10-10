@@ -1,0 +1,11 @@
+# What this project is. `tools/ops-docs write` renders it into the identity region of
+# README.md and AGENTS.md; `tools/ops-docs check` refuses a commit while they differ.
+# Design: ops docs/specs/2026-09-22-project-guides-design.md §3.
+name = "nodes"
+aliases = []
+purpose = "A problem-agnostic knowledge substrate: typed markdown nodes"
+abstract = """
+Entities as markdown files, typed relations, structural shapes and rebuildable derived indexes, implemented in Python and TypeScript over one shared on-disk format. The kernel is domain-free; domain profiles such as beliefs and mindful v6 register their own kinds on it.
+"""
+authority = ["docs/STANDARD.md"]
+subsystems = []
