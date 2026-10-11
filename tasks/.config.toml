@@ -1,1 +1,4 @@
 prefix = "nodes"
+
+[git]
+commit = true
