@@ -230,6 +230,8 @@ export function nodeToMarkdown(node: Node): string {
       if (typeof node.value === "string" && TAB_LEADING_LINE.test(node.value)) node.type = "QUOTE_DOUBLE";
     },
   });
-  const yamlText = doc.toString().trimEnd();
+  // JSON-style double quotes never fold: yaml 2.9's folding double-quoted emitter turns
+  // a one-space line into a backslash and can split a surrogate pair.
+  const yamlText = doc.toString({ doubleQuotedAsJSON: true }).trimEnd();
   return `---\n${yamlText}\n---\n${node.body}`;
 }

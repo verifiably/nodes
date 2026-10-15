@@ -594,10 +594,10 @@ fingerprint nor the path-keyed snapshot manifest (§10) may be extended toward t
   (`"\uD800"`, which neither `projection.v1` could represent) and a frontmatter line
   beginning with U+FEFF; an escaped surrogate pair, which the two languages read as
   different values, is refused too, and both writers refuse a surrogate. Python also
-  refuses a block scalar whose first content line has a tab in its leading whitespace,
-  which the TypeScript writer emitted for such strings and now double-quotes. Relaxed in the
-  same change: a tab may separate tokens on a line, as TypeScript already allowed.
-  Python parses with libyaml.
+  refuses a block scalar whose first non-empty content line has a tab in its leading
+  whitespace, which the TypeScript writer emitted for such strings and now writes
+  double-quoted, JSON-style. Relaxed in the same change: a tab may separate tokens on a
+  line, as TypeScript already allowed. Python parses with libyaml.
 
 ## 13. Known limitations
 
