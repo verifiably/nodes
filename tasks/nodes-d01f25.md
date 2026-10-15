@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T13:26:02Z
+updated: 2026-10-15T13:37:09Z
 started: 2026-10-15T12:00:52Z
 completed: 2026-10-15T13:26:02Z
 depends: []
@@ -43,3 +43,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
   provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-15T13:26:02Z (perf/csafe-frontmatter): Python parses frontmatter with libyaml (CSafeLoader); spec 3.0: surrogates refused by both readers and writers, line-leading U+FEFF refused, tabs between tokens settled; TS writer double-quotes tab-led strings JSON-style. Gate: 755 py / 592 ts; fuzz 20k long values 0 failures both readers; 3 review rounds, final accept
   provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-15T13:37:09Z (main): upstream eemeli/yaml, rechecked 2026-10-15 against 2.9.1, 3.0.0-2 and main: both emitter bugs reproduce and are unreported (closest: #692 / PR #708, block scalars with a leading space, a different path). (1) doubleQuotedString (src/stringify/stringifyString.ts:60-63 and :125-126) escapes a space that both follows a folded newline and precedes \n twice, emitting \\ ; minimal: stringify('a'.repeat(32)+'\n \nb', {defaultStringType:'QUOTE_DOUBLE'}) parses back with the space line as a backslash. (2) foldFlowLines (src/stringify/foldFlowLines.ts:145) folds between UTF-16 units, splitting a surrogate pair: stringify({k:'😀'.repeat(60)}, {defaultStringType:'QUOTE_DOUBLE'}) holds lone surrogates; parse() rejoins them in memory, but a UTF-8 round trip yields two U+FFFD. doubleQuotedAsJSON avoids both. Their CONTRIBUTING requires issue text be the reporter's own writing (no LLM), so the user writes the issues; agent repro scripts in /tmp/yaml-upstream/scripts
