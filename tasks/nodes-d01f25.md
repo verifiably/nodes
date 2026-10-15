@@ -6,9 +6,9 @@ priority: 1
 size: xs
 complexity: low
 process: direct
-owner: main
+owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T12:00:52Z
+updated: 2026-10-15T12:00:59Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -20,4 +20,6 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
 ## Notes
 
 - 2026-10-15T12:00:52Z (main): started
+  provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-15T12:00:59Z (perf/csafe-frontmatter): resumed
   provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
