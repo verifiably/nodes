@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T12:53:20Z
+updated: 2026-10-15T13:10:28Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -34,3 +34,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
 - 2026-10-15T12:38:50Z (perf/csafe-frontmatter): I4 remainder filed as nodes-8fa8ff; I2 resolved by bumping to 3.0 (the line-start BOM refusal rejects documents both kernels read under 2.0, so minor was not defensible); minor (deferred): M2 accepted rows prove self round-trip only, M3 libyaml guard test is a proxy, M4 Python raw-surrogate refusal is incidental to _yaml's strict encode, M5 raw RecursionError on deep nesting (pre-existing), M6 plain Error for a missing source token (unreachable)
 - 2026-10-15T12:49:33Z (perf/csafe-frontmatter): review: impl round 2 — verdict: revise; findings: critical 0, important 2, minor 3; reviewer: claude-code/claude-opus-5-5
 - 2026-10-15T12:53:20Z (perf/csafe-frontmatter): minor (deferred, round 2): writer surrogate walk covers dict/list only (Python tuple/set, TS Map/Set slip through); libyaml-only acceptances not listed (comment right after a block header, tab-led flow continuation)
+- 2026-10-15T13:10:28Z (perf/csafe-frontmatter): review: impl round 3 — verdict: revise; findings: critical 1, important 1, minor 4; reviewer: claude-code/claude-opus-5-5
