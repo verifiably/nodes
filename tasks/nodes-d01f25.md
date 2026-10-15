@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T13:10:28Z
+updated: 2026-10-15T13:11:16Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -35,3 +35,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
 - 2026-10-15T12:49:33Z (perf/csafe-frontmatter): review: impl round 2 — verdict: revise; findings: critical 0, important 2, minor 3; reviewer: claude-code/claude-opus-5-5
 - 2026-10-15T12:53:20Z (perf/csafe-frontmatter): minor (deferred, round 2): writer surrogate walk covers dict/list only (Python tuple/set, TS Map/Set slip through); libyaml-only acceptances not listed (comment right after a block header, tab-led flow continuation)
 - 2026-10-15T13:10:28Z (perf/csafe-frontmatter): review: impl round 3 — verdict: revise; findings: critical 1, important 1, minor 4; reviewer: claude-code/claude-opus-5-5
+- 2026-10-15T13:11:16Z (perf/csafe-frontmatter): upstream (eemeli/yaml) searched 2026-10-15: issues for double quoted / backslash space newline / emoji / fold surrogate, v2.9.1 notes (merge-alias limits, quoted-string parsing): no report or fix for the double-quoted emitter turning a one-space line into a backslash past doubleQuotedMinMultiLineLength, nor for folding through a surrogate pair. Remedy: doubleQuotedAsJSON (a supported option, never folds); an upstream issue to be prepared for user approval
