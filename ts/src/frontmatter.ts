@@ -1,4 +1,4 @@
-import { CST, parseDocument, stringify, visit } from "yaml";
+import { CST, Document, parseDocument, visit } from "yaml";
 import { z } from "zod";
 import { ValidationError } from "./errors.js";
 import { type Node, makeNode } from "./node.js";
@@ -43,6 +43,9 @@ const LONE_SURROGATE = /\p{Cs}/u;
 /** libyaml skips U+FEFF at the start of any line; PyYAML's own reader and `yaml` do
  * not, so the parse floor refuses it there (STANDARD §4.2). */
 const LINE_START_BOM = /(?:^|\n)\uFEFF/;
+
+/** A line whose leading whitespace holds a tab. */
+const TAB_LEADING_LINE = /(?:^|\n) *\t/;
 
 /** The reader refuses every surrogate, so the writer must not emit one: `yaml` would
  * write a lone surrogate as a `\u` escape no kernel reads back. */
@@ -219,6 +222,14 @@ export function nodeToMarkdown(node: Node): string {
   if (node.deprecatedIds.length > 0) fm.deprecated_ids = node.deprecatedIds;
 
   refuseSurrogates(fm);
-  const yamlText = stringify(fm, { sortMapEntries: false }).trimEnd();
+  const doc = new Document(fm, { sortMapEntries: false });
+  visit(doc, {
+    // A block scalar would put the tab in its line's leading whitespace, which libyaml
+    // (the Python reader) refuses; a double-quoted scalar escapes it.
+    Scalar(_, node) {
+      if (typeof node.value === "string" && TAB_LEADING_LINE.test(node.value)) node.type = "QUOTE_DOUBLE";
+    },
+  });
+  const yamlText = doc.toString().trimEnd();
   return `---\n${yamlText}\n---\n${node.body}`;
 }

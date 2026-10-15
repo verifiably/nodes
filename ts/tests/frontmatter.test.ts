@@ -121,3 +121,12 @@ it.each([
   // The reader refuses every surrogate (STANDARD §4.2), so the writer must not emit one.
   expect(() => nodeToMarkdown(node)).toThrow(ValidationError);
 });
+it.each(["\tcol1\tcol2\nrow", "a\n\tb", "\n\tlead", "\t", " \t\n"])(
+  "writes %j with no tab in a line's leading whitespace, which libyaml refuses",
+  (value) => {
+    const text = nodeToMarkdown(makeNode({ id: "k:a", kind: "k", title: "T", facets: { f: { x: value } } }));
+    const frontmatter = text.slice(0, text.indexOf("\n---\n", 4));
+    expect(frontmatter.split("\n").filter((line) => /^[ ]*\t/.test(line))).toEqual([]);
+    expect(nodeFromMarkdown(text).facets.f.x).toBe(value);
+  },
+);
