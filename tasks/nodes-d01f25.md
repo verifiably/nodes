@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T12:35:59Z
+updated: 2026-10-15T12:38:50Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -31,3 +31,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
   provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-15T12:20:19Z (perf/csafe-frontmatter): scope grew with user approval 2026-10-15: CSafeLoader in Python, standard §4.2 rule that frontmatter strings are valid Unicode (lone surrogates malformed), TS check to match, both edge cases in fixtures; stays direct: the approach is settled
 - 2026-10-15T12:35:59Z (perf/csafe-frontmatter): review: impl round 1 — verdict: revise; findings: critical 0, important 5, minor 6; reviewer: claude-code/claude-opus-5-5
+- 2026-10-15T12:38:50Z (perf/csafe-frontmatter): I4 remainder filed as nodes-8fa8ff; I2 resolved by bumping to 3.0 (the line-start BOM refusal rejects documents both kernels read under 2.0, so minor was not defensible); minor (deferred): M2 accepted rows prove self round-trip only, M3 libyaml guard test is a proxy, M4 Python raw-surrogate refusal is incidental to _yaml's strict encode, M5 raw RecursionError on deep nesting (pre-existing), M6 plain Error for a missing source token (unreachable)
