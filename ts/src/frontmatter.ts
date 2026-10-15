@@ -1,4 +1,4 @@
-import { parseDocument, stringify } from "yaml";
+import { CST, Document, parseDocument, visit } from "yaml";
 import { z } from "zod";
 import { ValidationError } from "./errors.js";
 import { type Node, makeNode } from "./node.js";
@@ -35,6 +35,48 @@ function plain(value: unknown, path: Set<object> = new Set()): unknown {
   return out;
 }
 
+/** No surrogate code point reaches a frontmatter string (STANDARD §4.2), as libyaml
+ * refuses on the Python side. Under the `u` flag a well-formed pair is one astral code
+ * point, so this matches only lone surrogates. */
+const LONE_SURROGATE = /\p{Cs}/u;
+
+/** libyaml skips U+FEFF at the start of any line; PyYAML's own reader and `yaml` do
+ * not, so the parse floor refuses it there (STANDARD §4.2). */
+const LINE_START_BOM = /(?:^|\n)\uFEFF/;
+
+/** A line whose leading whitespace holds a tab. */
+const TAB_LEADING_LINE = /(?:^|\n) *\t/;
+
+/** The reader refuses every surrogate, so the writer must not emit one: `yaml` would
+ * write a lone surrogate as a `\u` escape no kernel reads back. */
+function refuseSurrogates(value: unknown): void {
+  if (typeof value === "string") {
+    if (LONE_SURROGATE.test(value)) {
+      throw new ValidationError("node cannot be written: a string holds a surrogate code point");
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) refuseSurrogates(item);
+  } else if (typeof value === "object" && value !== null) {
+    for (const [key, item] of Object.entries(value)) {
+      refuseSurrogates(key);
+      refuseSurrogates(item);
+    }
+  }
+}
+
+/** Whether a double-quoted scalar's source holds a `\u` or `\U` escape naming a
+ * surrogate, alone or as half of a pair `yaml` would otherwise join. */
+function escapesSurrogate(raw: string): boolean {
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] !== "\\") continue;
+    const width = raw[i + 1] === "u" ? 4 : raw[i + 1] === "U" ? 8 : 0;
+    const code = Number.parseInt(raw.slice(i + 2, i + 2 + width), 16);
+    if (width > 0 && code >= 0xd800 && code <= 0xdfff) return true;
+    i++; // the escaped character, so `\\` never starts an escape
+  }
+  return false;
+}
+
 export function splitFrontmatter(text: string): [Record<string, unknown>, string] {
   let nl: string;
   if (text.startsWith("---\r\n")) nl = "\r\n";
@@ -46,10 +88,26 @@ export function splitFrontmatter(text: string): [Record<string, unknown>, string
   const idx = rest.indexOf(sep);
   if (idx === -1) return [{}, text];
 
-  const doc = parseDocument(rest.slice(0, idx));
+  const source = rest.slice(0, idx);
+  if (LINE_START_BOM.test(source)) {
+    throw new ValidationError("malformed frontmatter: a frontmatter line begins with U+FEFF");
+  }
+  if (LONE_SURROGATE.test(source)) {
+    throw new ValidationError("malformed frontmatter: frontmatter contains a surrogate code point");
+  }
+  const doc = parseDocument(source, { keepSourceTokens: true });
   if (doc.errors.length > 0) {
     throw new ValidationError(`invalid frontmatter YAML: ${doc.errors[0].message}`);
   }
+  visit(doc, {
+    Scalar(_, node) {
+      if (node.type !== "QUOTE_DOUBLE") return;
+      if (!CST.isScalar(node.srcToken)) throw new Error("yaml kept no source token for a quoted scalar");
+      if (escapesSurrogate(node.srcToken.source)) {
+        throw new ValidationError("malformed frontmatter: a string escapes a surrogate code point");
+      }
+    },
+  });
   let raw: unknown;
   try {
     // mapAsMap keeps key scalars typed, so a numeric key is visible; toJS also resolves
@@ -163,6 +221,17 @@ export function nodeToMarkdown(node: Node): string {
   if (Object.keys(node.facets).length > 0) fm.facets = node.facets;
   if (node.deprecatedIds.length > 0) fm.deprecated_ids = node.deprecatedIds;
 
-  const yamlText = stringify(fm, { sortMapEntries: false }).trimEnd();
+  refuseSurrogates(fm);
+  const doc = new Document(fm, { sortMapEntries: false });
+  visit(doc, {
+    // A block scalar would put the tab in its line's leading whitespace, which libyaml
+    // (the Python reader) refuses; a double-quoted scalar escapes it.
+    Scalar(_, node) {
+      if (typeof node.value === "string" && TAB_LEADING_LINE.test(node.value)) node.type = "QUOTE_DOUBLE";
+    },
+  });
+  // JSON-style double quotes never fold: yaml 2.9's folding double-quoted emitter turns
+  // a one-space line into a backslash and can split a surrogate pair.
+  const yamlText = doc.toString({ doubleQuotedAsJSON: true }).trimEnd();
   return `---\n${yamlText}\n---\n${node.body}`;
 }

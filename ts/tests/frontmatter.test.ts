@@ -114,3 +114,26 @@ it("treats invalid UTF-8 as a ValidationError and preserves a BOM", () => {
   );
   expect(nodeFromBytes(valid).id).toBe("k:a");
 });
+it.each([
+  ["title", makeNode({ id: "k:a", kind: "k", title: "x\uD800" })],
+  ["facet key", makeNode({ id: "k:a", kind: "k", title: "T", facets: { f: { "\uDC00": 1 } } })],
+])("refuses to write a surrogate in the %s", (_, node) => {
+  // The reader refuses every surrogate (STANDARD §4.2), so the writer must not emit one.
+  expect(() => nodeToMarkdown(node)).toThrow(ValidationError);
+});
+it.each([
+  "\tcol1\tcol2\nrow",
+  "a\n\tb",
+  "\n\tlead",
+  "\t",
+  " \t\n",
+  // past yaml's 40-character multi-line threshold: a one-space line and an astral run
+  "Line one of a note\n \n\tindented code line\n\tmore code",
+  `a\n\t${"\u{1F600}".repeat(60)}`,
+  `\t${"\u{1F600}".repeat(60)}`,
+])("writes %j with no tab in a line's leading whitespace, which libyaml refuses", (value) => {
+  const text = nodeToMarkdown(makeNode({ id: "k:a", kind: "k", title: "T", facets: { f: { x: value } } }));
+  const frontmatter = text.slice(0, text.indexOf("\n---\n", 4));
+  expect(frontmatter.split("\n").filter((line) => /^[ ]*\t/.test(line))).toEqual([]);
+  expect(nodeFromMarkdown(text).facets.f.x).toBe(value);
+});
