@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T12:20:19Z
+updated: 2026-10-15T12:35:59Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -30,3 +30,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
 - 2026-10-15T12:20:09Z (perf/csafe-frontmatter): resumed
   provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-15T12:20:19Z (perf/csafe-frontmatter): scope grew with user approval 2026-10-15: CSafeLoader in Python, standard §4.2 rule that frontmatter strings are valid Unicode (lone surrogates malformed), TS check to match, both edge cases in fixtures; stays direct: the approach is settled
+- 2026-10-15T12:35:59Z (perf/csafe-frontmatter): review: impl round 1 — verdict: revise; findings: critical 0, important 5, minor 6; reviewer: claude-code/claude-opus-5-5
