@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T13:13:02Z
+updated: 2026-10-15T13:25:36Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -37,3 +37,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
 - 2026-10-15T13:10:28Z (perf/csafe-frontmatter): review: impl round 3 — verdict: revise; findings: critical 1, important 1, minor 4; reviewer: claude-code/claude-opus-5-5
 - 2026-10-15T13:11:16Z (perf/csafe-frontmatter): upstream (eemeli/yaml) searched 2026-10-15: issues for double quoted / backslash space newline / emoji / fold surrogate, v2.9.1 notes (merge-alias limits, quoted-string parsing): no report or fix for the double-quoted emitter turning a one-space line into a backslash past doubleQuotedMinMultiLineLength, nor for folding through a surrogate pair. Remedy: doubleQuotedAsJSON (a supported option, never folds); an upstream issue to be prepared for user approval
 - 2026-10-15T13:13:02Z (perf/csafe-frontmatter): minor (deferred, round 3): M2 the tab-led-line quoting rule is broader than libyaml needs; M3 TS writer misplaces a break in long strings opening with a space (>2- fold; also on main, not in §13); M4 covered by the new long-value test
+- 2026-10-15T13:25:36Z (perf/csafe-frontmatter): review: impl round 3 — verdict: accept; findings: critical 0, important 0, minor 3; reviewer: claude-code/claude-opus-5-5
