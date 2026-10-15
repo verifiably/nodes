@@ -17,6 +17,18 @@ def test_split_no_frontmatter():
     assert fm == {} and body == "just text"
 
 
+def test_split_parses_with_libyaml_not_the_pure_python_parser(monkeypatch):
+    """libyaml is the parse floor's YAML (STANDARD §4.2), and several times faster on
+    walks that parse thousands of blocks."""
+    import yaml
+
+    def pure_python(_stream):
+        raise AssertionError("frontmatter went through yaml.safe_load")
+
+    monkeypatch.setattr(yaml, "safe_load", pure_python)
+    assert split_frontmatter("---\na: 1\n---\nbody") == ({"a": 1}, "body")
+
+
 def test_parse_related_and_relations():
     text = (
         "---\n"
@@ -137,10 +149,3 @@ def test_invalid_utf8_is_a_validation_error_and_bom_is_preserved():
     with pytest.raises(ValidationError):
         node_from_bytes("﻿---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n".encode("utf-8"))
     assert node_from_bytes(b"---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n").id == "k:a"
-
-
-def test_existing_yaml_edge_acceptance():
-    header = b"---\nid: note:x\nuid: x\nkind: note\n"
-    assert node_from_bytes(header + b'title: "\\uD800"\n---\n').title == "\ud800"
-    with pytest.raises(ValidationError):
-        node_from_bytes(header + b"title: \tbad\n---\n")

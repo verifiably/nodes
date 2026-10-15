@@ -34,8 +34,10 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     if idx == -1:
         return {}, text
     try:
-        # PyYAML's timestamp constructor raises a bare ValueError for an impossible date.
-        fm = yaml.safe_load(rest[:idx])
+        # libyaml refuses every surrogate code point, raw or escaped (STANDARD §4.2); a
+        # raw one surfaces as UnicodeEncodeError. PyYAML's timestamp constructor raises a
+        # bare ValueError for an impossible date. Both are ValueErrors.
+        fm = yaml.load(rest[:idx], Loader=yaml.CSafeLoader)
     except (yaml.YAMLError, ValueError) as exc:
         raise ValidationError(f"invalid frontmatter YAML: {exc}") from exc
     if fm is None:
