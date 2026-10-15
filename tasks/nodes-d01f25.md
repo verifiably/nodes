@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: perf/csafe-frontmatter
 created: 2026-10-15T12:00:37Z
-updated: 2026-10-15T12:20:09Z
+updated: 2026-10-15T12:20:19Z
 started: 2026-10-15T12:00:52Z
 depends: []
 tags: [perf]
@@ -29,3 +29,4 @@ split_frontmatter calls yaml.safe_load, PyYAML's pure-Python parser, though the 
 - 2026-10-15T12:16:53Z (perf/csafe-frontmatter): parity today (2026-10-15): TS (yaml parseDocument) accepts both cases: 'title: "\uD800"' -> '\ud800', 'title: <TAB>bad' -> 'bad'. So Python and TS already disagree on the tab case. CSafeLoader would match TS on tabs and differ on lone surrogates. A lone surrogate cannot be encoded as UTF-8 (Python raises UnicodeEncodeError on write-back), so rejecting it in both languages is the coherent rule. The pinned test dates from aaa644e, which pinned existing acceptance, not a standard decision.
 - 2026-10-15T12:20:09Z (perf/csafe-frontmatter): resumed
   provenance: {"harness_session":"claude-code:68ab2ddc-9049-44b2-91f0-59dfdd878c6c","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-15T12:20:19Z (perf/csafe-frontmatter): scope grew with user approval 2026-10-15: CSafeLoader in Python, standard §4.2 rule that frontmatter strings are valid Unicode (lone surrogates malformed), TS check to match, both edge cases in fixtures; stays direct: the approach is settled
