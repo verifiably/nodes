@@ -40,6 +40,27 @@ function plain(value: unknown, path: Set<object> = new Set()): unknown {
  * point, so this matches only lone surrogates. */
 const LONE_SURROGATE = /\p{Cs}/u;
 
+/** libyaml skips U+FEFF at the start of any line; PyYAML's own reader and `yaml` do
+ * not, so the parse floor refuses it there (STANDARD §4.2). */
+const LINE_START_BOM = /(?:^|\n)\uFEFF/;
+
+/** The reader refuses every surrogate, so the writer must not emit one: `yaml` would
+ * write a lone surrogate as a `\u` escape no kernel reads back. */
+function refuseSurrogates(value: unknown): void {
+  if (typeof value === "string") {
+    if (LONE_SURROGATE.test(value)) {
+      throw new ValidationError("node cannot be written: a string holds a surrogate code point");
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) refuseSurrogates(item);
+  } else if (typeof value === "object" && value !== null) {
+    for (const [key, item] of Object.entries(value)) {
+      refuseSurrogates(key);
+      refuseSurrogates(item);
+    }
+  }
+}
+
 /** Whether a double-quoted scalar's source holds a `\u` or `\U` escape naming a
  * surrogate, alone or as half of a pair `yaml` would otherwise join. */
 function escapesSurrogate(raw: string): boolean {
@@ -65,6 +86,9 @@ export function splitFrontmatter(text: string): [Record<string, unknown>, string
   if (idx === -1) return [{}, text];
 
   const source = rest.slice(0, idx);
+  if (LINE_START_BOM.test(source)) {
+    throw new ValidationError("malformed frontmatter: a frontmatter line begins with U+FEFF");
+  }
   if (LONE_SURROGATE.test(source)) {
     throw new ValidationError("malformed frontmatter: frontmatter contains a surrogate code point");
   }
@@ -194,6 +218,7 @@ export function nodeToMarkdown(node: Node): string {
   if (Object.keys(node.facets).length > 0) fm.facets = node.facets;
   if (node.deprecatedIds.length > 0) fm.deprecated_ids = node.deprecatedIds;
 
+  refuseSurrogates(fm);
   const yamlText = stringify(fm, { sortMapEntries: false }).trimEnd();
   return `---\n${yamlText}\n---\n${node.body}`;
 }

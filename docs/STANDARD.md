@@ -1,6 +1,6 @@
 # The nodes Standard
 
-- **Spec version:** 2.1
+- **Spec version:** 3.0
 - **Status:** Living standard — the authoritative definition of the portable `nodes` contract.
 - **Implementations:** Python (`python/src/nodes/`), TypeScript (`ts/src/`).
 
@@ -206,11 +206,12 @@ preserved verbatim). Top-level fields:
 - `facets` — optional nested map keyed by facet name.
 - `deprecated_ids` — optional list of previous ids.
 - **Parse floor.** A document is decoded as UTF-8 fatally, BOM preserved, and
-  begins with `---` at byte zero. Where YAML parsers disagree, libyaml's reading is the
-  floor: a tab may separate a key from its plain scalar, and no string, key or value,
+  begins with `---` at byte zero. Within the frontmatter, a tab may separate tokens on
+  a line wherever a space may (directly after a block-sequence `-` or explicit-key `?`
+  indicator is unsettled, §13); no line begins with U+FEFF; and no string, key or value,
   holds a surrogate code point, whether raw, escaped alone, or escaped as a pair such as
   `"\uD83D\uDE00"` (a non-BMP character is written literally or as a `\U` escape).
-  The frontmatter is a mapping. `id`, `uid`, `kind`,
+  Writers refuse a node holding a surrogate. The frontmatter is a mapping. `id`, `uid`, `kind`,
   `title` are strings. `related`, `relations`, `deprecated_ids` are absent or lists —
   `null` is malformed — of strings, mappings, strings respectively. `facets` is absent
   or a mapping of mappings. Every mapping key, at any depth, is a string; a cyclic
@@ -585,13 +586,21 @@ fingerprint nor the path-keyed snapshot manifest (§10) may be extended toward t
   Beliefs' landed executor — which takes `validate_plan` as its one lexical authority —
   was shown to write its manifests, registry and epoch records through the seam; §4.1's
   non-Markdown guarantee is stated over nodes' own derived effects.
-  **2.1** (2026-10-15) — the parse floor reads YAML as libyaml does (§4.2,
-  `frontmatter.malformed.json`): a tab before a plain scalar is accepted, as TypeScript
-  already did, and surrogate code points are malformed in both languages. Minor: the
-  documents it newly refuses were never portable — Python could not write a lone
-  surrogate back, and an escaped pair read as two different values across the languages.
+  **3.0** (2026-10-15) — major because the parse floor now refuses documents both
+  kernels read under 2.0 (§4.2, `frontmatter.malformed.json`): a lone surrogate escape
+  (`"\uD800"`, which neither `projection.v1` could represent) and a frontmatter line
+  beginning with U+FEFF; an escaped surrogate pair, which the two languages read as
+  different values, is refused too, and both writers refuse a surrogate. Relaxed in the
+  same change: a tab may separate tokens on a line, as TypeScript already allowed.
+  Python parses with libyaml.
 
 ## 13. Known limitations
+
+- YAML parsers still differ beyond the parse floor's rules (§4.2): raw control and
+  non-characters, NEL/LS/PS and CR-only line breaks, a tab directly after `-` or `?`,
+  anchor names with `.` or `:`, local tags, duplicate keys, merge keys, YAML 1.1
+  scalars (`yes`, `010`, timestamps), and a `|` block scalar ending the frontmatter
+  (Python drops its final newline). A corpus meant for both languages avoids them.
 
 - No coordination (§7): `DefaultExecutor` serializes nothing, so a deployment using it
   supplies the single writer; a durable executor owns serialization.

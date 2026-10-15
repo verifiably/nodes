@@ -114,3 +114,10 @@ it("treats invalid UTF-8 as a ValidationError and preserves a BOM", () => {
   );
   expect(nodeFromBytes(valid).id).toBe("k:a");
 });
+it.each([
+  ["title", makeNode({ id: "k:a", kind: "k", title: "x\uD800" })],
+  ["facet key", makeNode({ id: "k:a", kind: "k", title: "T", facets: { f: { "\uDC00": 1 } } })],
+])("refuses to write a surrogate in the %s", (_, node) => {
+  // The reader refuses every surrogate (STANDARD §4.2), so the writer must not emit one.
+  expect(() => nodeToMarkdown(node)).toThrow(ValidationError);
+});

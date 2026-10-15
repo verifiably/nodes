@@ -6,6 +6,9 @@ from typing import Any
 
 import yaml
 from pydantic import ValidationError as PydanticValidationError
+# libyaml is the parse floor's scanner (STANDARD §4.2): a PyYAML built without it fails
+# here, at import, not on the first parse.
+from yaml import CSafeLoader
 
 from nodes.core.errors import ValidationError
 from nodes.core.node import Node, NodeMetadata
@@ -13,6 +16,10 @@ from nodes.core.relations import RELATES_TO, Relation, relates_to
 
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# libyaml skips U+FEFF at the start of any line; PyYAML's own reader and TypeScript's
+# `yaml` do not, so the parse floor refuses it there (STANDARD §4.2).
+_LINE_START_BOM = re.compile("(?:^|\n)\ufeff")
+_SURROGATE = re.compile("[\ud800-\udfff]")
 
 
 def _malformed(message: str) -> ValidationError:
@@ -33,11 +40,14 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     idx = rest.find(sep)
     if idx == -1:
         return {}, text
+    source = rest[:idx]
+    if _LINE_START_BOM.search(source):
+        raise _malformed("a frontmatter line begins with U+FEFF")
     try:
         # libyaml refuses every surrogate code point, raw or escaped (STANDARD §4.2); a
         # raw one surfaces as UnicodeEncodeError. PyYAML's timestamp constructor raises a
         # bare ValueError for an impossible date. Both are ValueErrors.
-        fm = yaml.load(rest[:idx], Loader=yaml.CSafeLoader)
+        fm = yaml.load(source, Loader=CSafeLoader)
     except (yaml.YAMLError, ValueError) as exc:
         raise ValidationError(f"invalid frontmatter YAML: {exc}") from exc
     if fm is None:
@@ -185,6 +195,21 @@ def _is_plain_relatesto(rel: Relation, node_id: str) -> bool:
     )
 
 
+def _refuse_surrogates(value: object) -> None:
+    """The reader refuses every surrogate code point (STANDARD §4.2); PyYAML would emit
+    one as a `\\u` escape, writing a file no kernel reads back."""
+    if isinstance(value, str):
+        if _SURROGATE.search(value):
+            raise ValidationError("node cannot be written: a string holds a surrogate code point")
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            _refuse_surrogates(key)
+            _refuse_surrogates(item)
+    elif isinstance(value, list):
+        for item in value:
+            _refuse_surrogates(item)
+
+
 def node_to_markdown(node: Node) -> str:
     fm: dict[str, Any] = {"id": node.id, "uid": node.uid, "kind": node.kind, "title": node.title}
     if node.metadata.created is not None:
@@ -203,5 +228,6 @@ def node_to_markdown(node: Node) -> str:
         fm["facets"] = node.facets
     if node.deprecated_ids:
         fm["deprecated_ids"] = node.deprecated_ids
+    _refuse_surrogates(fm)
     yaml_text = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).rstrip()
     return f"---\n{yaml_text}\n---\n{node.body}"

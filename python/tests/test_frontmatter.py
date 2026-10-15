@@ -149,3 +149,14 @@ def test_invalid_utf8_is_a_validation_error_and_bom_is_preserved():
     with pytest.raises(ValidationError):
         node_from_bytes("﻿---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n".encode("utf-8"))
     assert node_from_bytes(b"---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\n").id == "k:a"
+
+
+@pytest.mark.parametrize("node", [
+    Node(id="k:a", uid="u", kind="k", title="x\ud800"),
+    Node(id="k:a", uid="u", kind="k", title="T", facets={"f": {"\udc00": 1}}),
+], ids=["title", "facet-key"])
+def test_writing_a_surrogate_is_a_validation_error(node):
+    """The reader refuses every surrogate (STANDARD §4.2), so the writer must not emit one."""
+    with pytest.raises(ValidationError):
+        node_to_markdown(node)
+

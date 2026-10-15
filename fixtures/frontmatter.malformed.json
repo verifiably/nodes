@@ -34,7 +34,9 @@
     "---\nid: k:a\nuid: u\nkind: k\ntitle: \"\\uD83D\\uDE00\"\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: \"\\U0000DE00\"\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n  f:\n    \"\\uD800\": 1\n---\n",
-    "---\nid: k:a\nuid: u\nkind: k\ntitle: x\ud800\n---\n"
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: x\ud800\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\n﻿extra: 1\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\n﻿# c\n---\n"
   ],
   "accepted": [
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\n---\nbody\n",
@@ -46,6 +48,7 @@
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nfacets:\n  f: &shared\n    x: 1\n  g: *shared\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle: T\nrelations:\n- predicate: p\n  target: k:b\n  weight: null\n  attrs:\n    n: null\n---\n",
     "---\nid: k:a\nuid: u\nkind: k\ntitle:\tT\n---\n",
-    "---\nid: k:a\nuid: u\nkind: k\ntitle: \"\\U0001F600 \\\\uD800\"\n---\n"
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: \"\\U0001F600 \\\\uD800\"\n---\n",
+    "---\nid: k:a\nuid: u\nkind: k\ntitle: T\t\n---\n"
   ]
 }
