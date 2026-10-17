@@ -5,13 +5,24 @@ status: todo
 priority: 2
 size: m
 complexity: mid
+process: direct
 created: 2026-09-04T21:44:54Z
-updated: 2026-09-28T10:27:42Z
+updated: 2026-10-17T20:33:13Z
 depends: [ops-31f038]
 tags: [testing]
 ---
 
 Piece of ops-65837b (the cross-project audit in the ops hub). 1. Measure: full-suite wall time, and roughly how often agent full-suite runs fail here. 2. Add a fast or affected-only test target for the inner loop and point AGENTS.md at it; keep the full suite for commit and CI. 3. Use a quiet reporter so test output does not flood agent context. 4. Fix suite hygiene: sleeps, real network, unshared fixtures. Record the before and after numbers in a note on this task.
+
+Established (see notes): step 1 landed 2026-09-05 (merge 85bb065): justfile front door, vendored tools/tt, .githooks, CI through ci-python/ci-typescript. Hygiene needs nothing (no sleeps, no real network, slowest test 0.05s). The quiet reporter is in place (pyproject addopts -q; pytest bare in the recipe on purpose). The baseline note is written (2026-09-28, window 2026-09-05..09-24). The ts test-fast target is a placeholder: vitest --changed measured no faster than the full suite.
+
+Remaining, checked against the code 2026-10-17 (none of it has landed; the justfile, AGENTS.md and .githooks are unchanged since 2026-09-28 apart from d0b6e56 and 629ecd0):
+- Step 3, per ops docs/specs/2026-09-28-test-ci-act-design.md (approved; supersedes the audit design's §4.4, §4.6, §4.7): copy from ops templates/justfile one_cmd plus the test-one recipe (two packages: default one_cmd to pytest under python/ and document the Vitest override in AGENTS.md, as beliefs does), docs_paths/docs_check_cmd plus hook-pre-commit-docs, ci_suite_refs/ci_remote/push_fast_cmd plus hook-pre-push-fast; replace .githooks/pre-commit and pre-push with ops templates/githooks (nodes' pre-commit lacks the docs-only path; diff both, keep d0b6e56's Git-local env isolation if the template lacks it). Set ci_suite_refs from .github/workflows/ci.yml, which runs both jobs on push to main and on pull requests, so main (say so in a note). Add the AGENTS.md Gates line in the shape of ops templates/AGENTS.md (test-one forms, what test-fast selects, whether CI or pre-push carries the full suite).
+- Step 4: after a window of runs past the step-3 merge, read `tt-report --project nodes --since <merge date>` and add the after note beside the baseline, then close.
+
+Done when: `just gate` is green with the step-3 recipes and hooks, a docs-only commit takes hook-pre-commit-docs, a push to main takes the fast push path, and the after-window note sits beside the baseline note.
+
+Where: justfile, .githooks/, AGENTS.md (Gates), .github/workflows/ci.yml; ops templates/justfile, templates/githooks/, templates/AGENTS.md; beliefs justfile as a two-package example. The setup recipe is nodes-9f6f50, not this task.
 
 ## Notes
 
