@@ -6,9 +6,9 @@ priority: 2
 size: xs
 complexity: low
 process: direct
-owner: main
+owner: fix/ts-ci-build
 created: 2026-10-15T12:24:21Z
-updated: 2026-10-26T14:48:29Z
+updated: 2026-10-26T14:49:09Z
 started: 2026-10-26T14:48:29Z
 depends: []
 tags: [testing]
@@ -20,4 +20,6 @@ ts/tests/search-browser.test.ts resolves @verifiably/nodes/search through packag
 ## Notes
 
 - 2026-10-26T14:48:29Z (main): started
+  provenance: {"harness_session":"codex:01a178ae-16e6-74c2-af0b-be455e361123","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-26T14:49:09Z (fix/ts-ci-build): resumed
   provenance: {"harness_session":"codex:01a178ae-16e6-74c2-af0b-be455e361123","harness_session_source":"CODEX_THREAD_ID"}
