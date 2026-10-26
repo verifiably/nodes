@@ -8,7 +8,7 @@ complexity: low
 process: direct
 owner: fix/ts-ci-build
 created: 2026-10-15T12:24:21Z
-updated: 2026-10-26T14:55:23Z
+updated: 2026-10-26T14:56:02Z
 started: 2026-10-26T14:48:29Z
 completed: 2026-10-26T14:55:23Z
 closed: 2026-10-26T14:55:23Z
@@ -34,3 +34,4 @@ ts/tests/search-browser.test.ts resolves @verifiably/nodes/search through packag
   provenance: {"harness_session":"codex:01a178ae-16e6-74c2-af0b-be455e361123","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-26T14:55:23Z (fix/ts-ci-build): Fixed missing-dist CI failure in 8dd401b: npm test builds before Vitest; test-fast shares npm test and preserves selection flags. Existing regression proved RED then GREEN; full just test 755 Python + 592 TypeScript passed, ci-typescript and pre-commit checks passed; independent impl review accepted with no findings. Closing for immediate local main integration and checked worktree removal; no push authorized.
   provenance: {"harness_session":"codex:01a178ae-16e6-74c2-af0b-be455e361123","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-26T14:56:02Z (main): retained: {"host":"titan","kind":"worktree","path":".worktrees/fix-ts-ci","state":"released","verification":"verified","purpose":"Reviewed fix 8dd401b and task records fast-forward merged into local main; integrated just test passed 755 Python and 592 TypeScript tests. After ignored-file dispositions, timing harvest and host-pointer checks, worktree removed and merged branch fix/ts-ci-build deleted. No scratch or off-tree evidence retained; full review remains attached to task.","next_owner":"none","cleanup_trigger":"none"}
