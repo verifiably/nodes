@@ -1,15 +1,17 @@
 ---
 id: nodes-527e85
 title: search-browser test needs a built dist/ that neither CI nor a fresh worktree has
-status: doing
+status: done
 priority: 2
 size: xs
 complexity: low
 process: direct
 owner: fix/ts-ci-build
 created: 2026-10-15T12:24:21Z
-updated: 2026-10-26T14:55:08Z
+updated: 2026-10-26T14:55:23Z
 started: 2026-10-26T14:48:29Z
+completed: 2026-10-26T14:55:23Z
+closed: 2026-10-26T14:55:23Z
 depends: []
 tags: [testing]
 agent: claude-code/claude-opus-5-5
@@ -28,3 +30,7 @@ ts/tests/search-browser.test.ts resolves @verifiably/nodes/search through packag
 - 2026-10-26T14:54:03Z (fix/ts-ci-build): attached: ts-ci-review-report.md (2360 bytes): Final branch review of 8dd401b by codex/gpt-6.1-sol: accept, no findings
 - 2026-10-26T14:54:49Z (fix/ts-ci-build): Verification at 8dd401b: just ci-typescript passed 592 tests plus TypeScript typechecking and Biome; just test passed 755 Python and 592 TypeScript tests; just test-fast recreated deleted ts/dist and passed 755 Python tests with zero TypeScript tests selected; pre-commit checks passed. Local runtime Node 26.5.0; hosted Node 20/24 rerun remains after an authorized push. Ruling: accept exclusion of broader browser detection (dynamic imports) at 8dd401b. Why: graph detector unchanged; this fixes build orchestration. Cost: existing detector limits remain. Ruling: accept exclusion of release artifact validation at 8dd401b. Why: package exports and release packaging unchanged. Cost: no fresh install/packaging proof. Ruling: accept exclusion of unrelated historical docs and dependency audit at 8dd401b. Why: no runtime/dependency changes in this bounded CI fix. Cost: pre-existing drift and dependency advisories remain unassessed. Cleanup disposition: python/.pytest_cache, python/.testmondata, python/.venv, ts/dist and ts/node_modules are generated caches, environment, build or dependencies and may be discarded on removal; no plan workspace or unique ignored evidence exists. Full reviewer report is attached; tt-report ran in ops; inspected launchers, user units and nodes config show no pointer into the worktree.
 - 2026-10-26T14:55:08Z (fix/ts-ci-build): retained: {"host":"titan","kind":"worktree","path":".worktrees/fix-ts-ci","state":"kept","verification":"verified","purpose":"Immediate local integration of reviewed CI fix 8dd401b; generated ignored entries accounted for in preceding note","next_owner":"session:codex:01a178ae-16e6-74c2-af0b-be455e361123","cleanup_trigger":"After closing task and fast-forward merging fix/ts-ci-build into main this turn, verify integrated state and remove worktree under recorded checks"}
+- 2026-10-26T14:55:23Z (fix/ts-ci-build): done
+  provenance: {"harness_session":"codex:01a178ae-16e6-74c2-af0b-be455e361123","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-26T14:55:23Z (fix/ts-ci-build): Fixed missing-dist CI failure in 8dd401b: npm test builds before Vitest; test-fast shares npm test and preserves selection flags. Existing regression proved RED then GREEN; full just test 755 Python + 592 TypeScript passed, ci-typescript and pre-commit checks passed; independent impl review accepted with no findings. Closing for immediate local main integration and checked worktree removal; no push authorized.
+  provenance: {"harness_session":"codex:01a178ae-16e6-74c2-af0b-be455e361123","harness_session_source":"CODEX_THREAD_ID"}
