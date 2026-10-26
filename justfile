@@ -20,7 +20,7 @@ py_fast_cmd := "(cd python && uv run --frozen pytest --testmon)"
 py_test_cmd := "(cd python && uv run --frozen pytest)"
 py_check_cmd := "(cd python && uv run --frozen ruff check . && uv run --frozen pyright src)"
 
-ts_fast_cmd := "(cd ts && npx vitest run --changed --passWithNoTests)"
+ts_fast_cmd := "(cd ts && npm test -- --changed --passWithNoTests)"
 ts_test_cmd := "(cd ts && npm test)"
 ts_check_cmd := "(cd ts && npm run typecheck && npm run check)"
 

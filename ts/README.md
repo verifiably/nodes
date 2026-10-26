@@ -32,6 +32,7 @@ The repository front door is `just` (`just test`, `just check`, `just gate`), wh
 these through a timing wrapper; call them directly only when working on this package
 alone without the wrapper.
 
-- `npm test` — Vitest suite (includes the cross-language parity checks)
+- `npm test` — builds the package, then runs the Vitest suite (includes the
+  cross-language parity checks and the built search export's browser-safety check)
 - `npm run typecheck` — `tsc --noEmit` (the type gate)
 - `npm run check` — Biome lint + format
