@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:18:19Z
+updated: 2026-10-29T09:18:26Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -62,3 +62,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:17:29Z (docs/model-docs): detached: final-gate.txt: Preserved raw bytes under WORK_ROOT/nodes/nodes-24226f/final-gate.log; replace layout-refused attachment with a portable derivative.
 - 2026-10-29T09:17:37Z (docs/model-docs): Created persistent scratch on titan: $WORK_ROOT/nodes/nodes-24226f, owned by nodes-24226f for exact final-gate evidence after attachment layout refusal; contents mutable and not yet checkpointed. Portable derivative substitutes <WORK_ROOT> for /mnt/ssd3/work.
 - 2026-10-29T09:18:19Z (docs/model-docs): attached: final-gate.txt (4053 bytes): Portable derivative of final-gate.log: <WORK_ROOT> replaces the host storage prefix. Exact raw bytes and mapping retained under the task retained-item records.
+- 2026-10-29T09:18:26Z (docs/model-docs): Attachment fallback tracked by ops-70266b. Raw final-gate.log SHA-256 6f045cf647ad5ee6911bf9ca48920470bacbe221be81bbd6205e1772ee307cc0; placeholder <WORK_ROOT> maps to /mnt/ssd3/work on titan. Final gate exited 0 with 755 Python + 592 TypeScript tests; the hook refused only the raw attachment host path.
