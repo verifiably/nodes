@@ -43,3 +43,12 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
   tier 3 (per-language convenience) may be one language with no standard change.
 - Wrap Pydantic/Zod errors into the kernel error hierarchy; they never escape public
   APIs. Kinds are name + facets + invariants, never subclasses.
+- Vocabulary: a **kind** composes facets and invariants under a name and may adopt one
+  registered **shape** (how members hang together; `set`, `list`, `dict`, `graph`,
+  `dag`, `tree` ship built in, and a registry accepts others); a **facet** is a named,
+  typed payload (the domain mix-in); a **structure** is a node whose kind adopts a
+  shape. "Subclass" and "inherits" never describe a kind. The README's "The model"
+  subsection is the reader's version of this list.
+- Boundary: an external identifier (a CURIE, a DOI, a vocabulary term) is an opaque
+  string inside a facet. The kernel never resolves, fetches or interprets one; a
+  resolver is a downstream concern, and no kernel code path may branch on its content.
