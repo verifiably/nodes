@@ -7,7 +7,7 @@ size: xs
 complexity: low
 process: direct
 created: 2026-10-29T09:17:52Z
-updated: 2026-10-29T09:17:52Z
+updated: 2026-10-29T09:18:46Z
 depends: []
 tags: []
 source: nodes-24226f
@@ -21,3 +21,4 @@ The documentation task retained exact gate output after its attachment failed th
 
 - 2026-10-29T09:17:52Z (add): created
   provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID","origin":"agent"}
+- 2026-10-29T09:18:46Z (docs/model-docs): retained: {"host": "titan", "state": "kept", "verification": "verified", "next_owner": "task:nodes-a81598", "cleanup_trigger": "When the executing checker accepts ledger-backed raw host values, attach and verify the raw log, then reassess disposal", "kind": "evidence", "path": "$WORK_ROOT/nodes/nodes-24226f/final-gate.log", "purpose": "Exact gate evidence retained after host-layout attachment refusal; portable derivative on nodes-24226f", "sha256": "6f045cf647ad5ee6911bf9ca48920470bacbe221be81bbd6205e1772ee307cc0"}
