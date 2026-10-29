@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:00:06Z
+updated: 2026-10-29T09:05:59Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -45,4 +45,6 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T08:58:12Z (docs/model-docs): review: plan round 1 — verdict: revise; findings: Important 2, Minor 1; reviewer: codex/gpt-6-astra
 - 2026-10-29T08:59:58Z (docs/model-docs): plan revision 2 at 2c47c60: abstract cut to 387 chars with a parsed-length step; shape adoption worded optional and open (register_shape, KindSpec.shape: str | None) in T1, T2, T3; reproducibility step stages then git diff --exit-code. Execution: native, then a fresh whole-branch reviewer
 - 2026-10-29T09:00:06Z (docs/model-docs): parked (waiting on user, review): user reviews plan revision 2c47c60 (docs/plans/2026-10-28-nodes-model-docs-plan.md); on accept, execute natively in .worktrees/model-docs via executing-plans, then dispatch a fresh whole-branch reviewer
+  provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-29T09:05:59Z (docs/model-docs): resumed
   provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
