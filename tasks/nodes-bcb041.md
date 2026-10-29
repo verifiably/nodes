@@ -1,13 +1,15 @@
 ---
 id: nodes-bcb041
 title: Resolve existing tilde-layout findings before checker rollout
-status: todo
+status: doing
 priority: 2
 size: m
 complexity: mid
 process: direct
+owner: main
 created: 2026-10-22T19:07:30Z
-updated: 2026-10-22T19:07:30Z
+updated: 2026-10-29T20:26:28Z
+started: 2026-10-29T20:26:28Z
 depends: []
 tags: []
 source: ops-295f8d
@@ -57,3 +59,8 @@ Reported files:
 - docs/plans/2026-08-30-nodes-tasks-migration.md: first reported line 82; 2 reported finding(s)
 - docs/superpowers/plans/2026-08-17-nodes-detailed-review.md: first reported line 18; 9 reported finding(s)
 - docs/superpowers/specs/2026-08-17-nodes-detailed-review-design.md: first reported line 238; 1 reported finding(s)
+
+## Notes
+
+- 2026-10-29T20:26:28Z (main): started
+  provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
