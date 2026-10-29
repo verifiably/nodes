@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: fix/nodes-bcb041
 created: 2026-10-22T19:07:30Z
-updated: 2026-10-29T20:41:46Z
+updated: 2026-10-29T20:42:20Z
 started: 2026-10-29T20:26:28Z
 completed: 2026-10-29T20:41:46Z
 closed: 2026-10-29T20:41:46Z
@@ -81,3 +81,4 @@ Reported files:
   provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-29T20:41:46Z (fix/nodes-bcb041): Reworded 334 lines of checkout aliases across 36 dated plans and designs to repository-relative paths and checkout placeholders, no allow entries; fast-forwarded into main; candidate exits 0 on main; just check passed
   provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-29T20:42:20Z (main): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-bcb041","state":"released","verification":"verified","purpose":"cleanup merged into main; regenerable ignored files discarded; worktree removed after harvest and pointer checks","next_owner":"none","cleanup_trigger":"none"}
