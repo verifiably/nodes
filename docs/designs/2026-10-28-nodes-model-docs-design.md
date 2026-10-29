@@ -1,7 +1,7 @@
 # Nodes model documentation — design
 
 - **Date:** 2026-10-28
-- **Status:** Draft, under review
+- **Status:** Accepted (spec round 1, 2026-10-28; two minor wording corrections applied)
 - **Task:** nodes-24226f
 - **Scope:** Documentation only. No kernel, standard, fixture or package change.
 
@@ -87,12 +87,13 @@ consumer sentence names beliefs, mindful v6 and lit.
   subclass; structure → a node of a shaped kind. Then "what nodes does not do", one line
   each with where it lives: meaning and verification of claims (beliefs); durability and
   crash safety (atoms, pluggable as a durable executor; nodes depends on atoms in neither
-  language); resolving external identifiers (a planned reference layer; until then they
-  are opaque strings in facets).
+  language); resolving external identifiers (they are opaque strings in facets and stay
+  opaque to nodes; a downstream resolver, the planned reference layer, interprets them).
 - `### Consumers`: beliefs (Python; science's claims, runs, datasets and coordination
   kinds, with atoms as its executor), mindful v6 (TypeScript; `thought`, `mindmap`,
   `journal`, `set`; no atoms), lit (Python; `paper` with `paperpile` and `world`
-  facets), science (through beliefs). One line each, by project name.
+  facets), science (Python; primarily through beliefs, with some direct nodes API use).
+  One line each, by project name.
 
 `AGENTS.md`, under `Rules`:
 
