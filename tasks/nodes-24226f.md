@@ -8,13 +8,14 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T02:05:47Z
+updated: 2026-10-29T02:08:07Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
 agent: claude-code/claude-fable-5-1
 origin: user
 spec: docs/designs/2026-10-28-nodes-model-docs-design.md
+plan: docs/plans/2026-10-28-nodes-model-docs-plan.md
 ---
 
 Make the nodes model legible from the README, AGENTS.md and the package guides: the shape / kind / facet composition (the 2022–2023 "structure + domain building blocks" model, which is what the kernel implements), the consumer map that commit 629ecd0 dropped, that nodes runs without atoms, and what nodes deliberately does not do (external references and meaning, durability), each pointing at where it lives instead. Documentation only; no kernel change.
