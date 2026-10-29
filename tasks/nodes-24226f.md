@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:16:12Z
+updated: 2026-10-29T09:16:20Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -57,3 +57,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:09:46Z (docs/model-docs): Execution setup: reused locked .worktrees/model-docs on docs/model-docs; existing python/.venv and ts/node_modules hydrated. Deferred baseline just test passed: Python 755, TypeScript 592 (1,347 total). Documentation only; no parity behavior changes. Plan and spec approvals verified in task notes; execute inline, then fresh whole-branch review.
 - 2026-10-29T09:15:41Z (docs/model-docs): review: impl round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6-astra
 - 2026-10-29T09:16:12Z (docs/model-docs): attached: whole-branch-report.md (2313 bytes): Full read-only whole-branch review by codex/gpt-6-astra of e440233..ef43553; accepted with no findings.
+- 2026-10-29T09:16:20Z (docs/model-docs): attached: execution-ledger.md (2120 bytes): Execution ledger: all three completed steps, verification and every ruling.
