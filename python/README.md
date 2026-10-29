@@ -8,6 +8,9 @@ derived full-text-search and similarity indexes. A TypeScript implementation
 ([`@verifiably/nodes`](https://www.npmjs.com/package/@verifiably/nodes)) passes
 the same cross-language conformance fixtures.
 
+The model the kernel implements (shape, kind, facet) and the projects that build on it
+are described under "The model" and "Consumers" in the repository README.
+
 ## Install
 
 ```

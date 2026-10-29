@@ -3,6 +3,9 @@
 TypeScript implementation of Nodes core — behavioral and on-disk-format parity with
 the Python distribution. Core contains the domain-free kernel.
 
+The model the kernel implements (shape, kind, facet) and the projects that build on it
+are described under "The model" and "Consumers" in the repository README.
+
 ## Scope
 
 Mirrors the current Python kernel: `Node`/`Relation`, ids, errors, frontmatter

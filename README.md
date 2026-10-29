@@ -56,6 +56,35 @@ console.log(new Corpus(root).get("topic:a").title); // A
 `Corpus.read_and_check()` returns every node with the findings of a structural check;
 inspect the findings before trusting the nodes.
 
+### The model
+
+A node's kind is built from the same blocks. The standard's terms, with where each is
+used today:
+
+| Plain words | Kernel term | Today |
+|-------------|-------------|-------|
+| A type | **kind**: a name, its facets and its invariants, registered on a `Registry`; never a subclass | beliefs registers `proposition`, `run`, `dataset`, … |
+| A domain mix-in | **facet**: a named, typed payload a kind requires or allows | lit's `paper` carries `paperpile` and `world` |
+| How members hang together | **shape**: a kind may adopt one registered shape; six ship built in (`set`, `list`, `dict`, `graph`, `dag`, `tree`) | mindful v6's `mindmap` adopts `graph`, its `journal` `list`; its `thought` adopts none |
+| A container | **structure**: a node whose kind adopts a shape; members are refs in its `membership` facet | a mindful `set` of thoughts |
+
+The kernel names zero knowledge kinds; a profile registers its own. What nodes
+deliberately does not do, and where it lives instead:
+
+- Meaning and verification of claims: beliefs.
+- Durability and crash safety: atoms, pluggable as a durable write executor. nodes
+  depends on atoms in neither language, and runs without it.
+- Resolving external identifiers (a CURIE, a DOI, a vocabulary term): they are opaque
+  strings inside facets and stay opaque to nodes; a downstream resolver interprets them.
+
+### Consumers
+
+- **beliefs** (Python): science's claims, runs, datasets and coordination kinds, with
+  atoms as its executor.
+- **mindful v6** (TypeScript): `thought`, `mindmap`, `journal`, `set`; no atoms.
+- **lit** (Python): `paper`, with the `paperpile` and `world` facets.
+- **science** (Python): primarily through beliefs, with some direct nodes API use.
+
 ## Layout
 
 | Path | Contents |
