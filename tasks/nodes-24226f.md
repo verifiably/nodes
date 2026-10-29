@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:17:29Z
+updated: 2026-10-29T09:17:37Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -60,3 +60,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:16:20Z (docs/model-docs): attached: execution-ledger.md (2120 bytes): Execution ledger: all three completed steps, verification and every ruling.
 - 2026-10-29T09:16:28Z (docs/model-docs): attached: final-gate.txt (4056 bytes): Final worktree just gate passed: 755 Python and 592 TypeScript tests.
 - 2026-10-29T09:17:29Z (docs/model-docs): detached: final-gate.txt: Preserved raw bytes under WORK_ROOT/nodes/nodes-24226f/final-gate.log; replace layout-refused attachment with a portable derivative.
+- 2026-10-29T09:17:37Z (docs/model-docs): Created persistent scratch on titan: $WORK_ROOT/nodes/nodes-24226f, owned by nodes-24226f for exact final-gate evidence after attachment layout refusal; contents mutable and not yet checkpointed. Portable derivative substitutes <WORK_ROOT> for /mnt/ssd3/work.
