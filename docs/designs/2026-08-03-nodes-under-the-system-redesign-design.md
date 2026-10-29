@@ -181,8 +181,8 @@ Measured against them:
   the write-new/delete-old window: two files carry one uid and strict construction
   refuses that state. The frozen seam design §2 specifies this invalid prefix and the
   later forward-resolvable prefixes. The `(crash-atomic)` comments still exist at
-  `~/d/nodes/python/src/nodes/core/corpus.py:296` and
-  `~/d/nodes/ts/src/corpus.ts:333`; correcting them remains queued for the implementation
+  `python/src/nodes/core/corpus.py:296` and
+  `ts/src/corpus.ts:333`; correcting them remains queued for the implementation
   plan, not this review.
 
 ## 4. The execution seam (direction, not built now)
@@ -246,14 +246,14 @@ Mechanical; lands with this design's plan:
   the paths they were executed against.
 - **README.** Science is listed as a consumer that "builds on the Python kernel" — false
   today; restate as the intended consumer via the redesign. The mindful path is
-  `~/d/mindful/v6/`.
+  `<mindful>/v6/`.
 
   *(2026-08-17:)* **stands.** The README still makes the active-consumer claim, while
   science's Python package has no `nodes-core` dependency and no `nodes.core` import.
 
-  *(2026-08-31:)* **corrected.** The README now names `beliefs` at `~/d/beliefs/`, whose
+  *(2026-08-31:)* **corrected.** The README now names `beliefs` at `<beliefs>/`, whose
   current Python package depends on `nodes-core`, and gives Mindful v6's full
-  `~/d/mindful/v6/` path.
+  `<mindful>/v6/` path.
 - **Identity boundary.** One sentence in the standard: the exact corpus-state identity is
   a distinct, science-owned primitive (digest over `corpus_id` plus sorted
   `(uid, content identity)` pairs); neither the `(path, mtime, size)` fingerprint nor the

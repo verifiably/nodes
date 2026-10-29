@@ -14,10 +14,10 @@ This plan has since been implemented and remains useful as the historical Plan-3
 
 The repo and kernel have grown since this checklist was written:
 
-- Python now lives under `~/d/nodes/python/`. Historical paths like `src/nodes/vocab/...`, `src/nodes/kernel/...`, and `tests/...` mean `python/src/nodes/vocab/...`, `python/src/nodes/kernel/...`, and `python/tests/...` in the current checkout.
+- Python now lives under `python/`. Historical paths like `src/nodes/vocab/...`, `src/nodes/kernel/...`, and `tests/...` mean `python/src/nodes/vocab/...`, `python/src/nodes/kernel/...`, and `python/tests/...` in the current checkout.
 - Current `Corpus` is `Corpus(root, registry=None, embedder=None)`. Registry validation still runs before disk writes on `add` and before any rename writes, but the current rename path also prepares and commits full-text search, optional similarity vectors, and the live snapshot manifest.
 - The `docs/STANDARD.md` appendix from Task 6 is already integrated and has since been extended with TypeScript parity, full-text search, similarity, and index-persistence sections. Do not append the historical snippet below again.
-- Current shell commands should use the repository's `rtk` wrapper. From `~/d/nodes/python`, run Python gates with `rtk uv run --frozen pytest`, `rtk uv run --frozen ruff check .`, and `rtk uv run --frozen pyright src`.
+- Current shell commands should use the repository's `rtk` wrapper. From `python`, run Python gates with `rtk uv run --frozen pytest`, `rtk uv run --frozen ruff check .`, and `rtk uv run --frozen pyright src`.
 
 Treat code snippets below as the original greenfield implementation sequence, not as replacement code for current `corpus.py`, `vocab/`, tests, or `docs/STANDARD.md`.
 

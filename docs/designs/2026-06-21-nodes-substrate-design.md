@@ -8,8 +8,8 @@
 
 ## 1. Motivation & goals
 
-Two existing systems — `~/d/mindful/` (a graph-based markdown tool-for-thought, human
-audience) and `~/d/science/` (a research-project + knowledge-graph system, human + AI-agent
+Two existing systems — `<mindful>/` (a graph-based markdown tool-for-thought, human
+audience) and `<science>/` (a research-project + knowledge-graph system, human + AI-agent
 audience) — independently converged on the same shape: **entities containing markdown +
 metadata, linked by relations, composed into graph structures.** They share topics and
 concepts but have no common data model.
@@ -280,7 +280,7 @@ Greenfield on the kernel:
    (UUID) on every node as the identity anchor; rename rewrites inbound refs and records
    `deprecated_ids` (§3.5).
 9. **Facet serialization:** nested `facets:` map in frontmatter.
-10. **Home:** new `~/d/nodes/` repo; `~/d/mindful/v6/` reserved for the future mindful app.
+10. **Home:** new `nodes` repo; `<mindful>/v6/` reserved for the future mindful app.
 
 ## 9. Open / deferred
 

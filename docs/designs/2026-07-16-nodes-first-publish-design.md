@@ -2,9 +2,9 @@
 
 - **Date:** 2026-07-16
 - **Status:** Accepted
-- **Follows:** `~/d/nodes/docs/designs/2026-07-11-nodes-package-identity-and-ownership-design.md`
+- **Follows:** `docs/designs/2026-07-11-nodes-package-identity-and-ownership-design.md`
   (which fixed the names, ownership model, and lockstep release contract) and
-  `~/d/nodes/docs/designs/2026-07-13-nodes-python-package-layout-design.md` (which
+  `docs/designs/2026-07-13-nodes-python-package-layout-design.md` (which
   closed the last pre-release layout blocker).
 
 ## 1. Context
@@ -57,7 +57,7 @@ only manual publish ever performed is the npm bootstrap (§2.5).
 
 `nodes-dev/core` is created public and `main` is pushed with full history — the
 dated designs and plans are part of the project's public record. This checkout
-(`~/d/nodes`) remains the primary working copy and gains `origin`. Interactive
+(`<nodes>`) remains the primary working copy and gains `origin`. Interactive
 prerequisite: `gh auth refresh` for the account that controls the `nodes-dev`
 organization.
 

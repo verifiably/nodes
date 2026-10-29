@@ -2,7 +2,7 @@
 
 - **Date:** 2026-07-18
 - **Status:** Accepted
-- **Amends:** `~/d/nodes/docs/designs/2026-07-16-nodes-first-publish-design.md`
+- **Amends:** `docs/designs/2026-07-16-nodes-first-publish-design.md`
 
 ## 1. Context
 
@@ -37,10 +37,10 @@ changes the first usable version and the PyPI publishing implementation.
 
 ### 2.1 Versions and identities
 
-- Set `~/d/nodes/python/pyproject.toml` and its regenerated
-  `~/d/nodes/python/uv.lock` to 0.1.1 with
-  `uv version 0.1.1 --no-sync`. Set `~/d/nodes/ts/package.json` and both
-  version entries in its regenerated `~/d/nodes/ts/package-lock.json` with
+- Set `python/pyproject.toml` and its regenerated
+  `python/uv.lock` to 0.1.1 with
+  `uv version 0.1.1 --no-sync`. Set `ts/package.json` and both
+  version entries in its regenerated `ts/package-lock.json` with
   `npm version 0.1.1 --no-git-tag-version`. Do not hand-edit either lockfile.
 - Do not publish, reuse, delete, or move version/tag 0.1.0.
 - Continue using one shared tag and one pair of artifacts for the lockstep
@@ -51,8 +51,8 @@ changes the first usable version and the PyPI publishing implementation.
 ### 2.2 Pre-publish compatibility gate
 
 Pin every `astral-sh/setup-uv` invocation in
-`~/d/nodes/.github/workflows/ci.yml` and
-`~/d/nodes/.github/workflows/release.yml` to uv 0.11.29 through the action's
+`.github/workflows/ci.yml` and
+`.github/workflows/release.yml` to uv 0.11.29 through the action's
 `version:` input. Pinning the action implementation does not pin the uv binary
 it downloads; the explicit binary version makes the gates, build, rehearsal,
 signing, and publication use one reviewed toolchain.
@@ -101,7 +101,7 @@ attestations from `dist/` and ignores unrelated files instead of receiving an
 expanded shell glob as an explicit upload set. The existing pre-upload and
 post-upload filename/SHA-256 checks remain as independent fail-closed guards.
 
-The current `~/d/nodes/.github/scripts/pypi_upload_check.py` treats every entry
+The current `.github/scripts/pypi_upload_check.py` treats every entry
 in its distribution directory as a release file and requires exactly two. Once
 signing adds two `.publish.attestation` sidecars, that behavior would make the
 post-check fail locally. Update the checker to hash only the one wheel and one

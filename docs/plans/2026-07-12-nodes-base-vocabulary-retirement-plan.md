@@ -20,7 +20,7 @@ pyright via uv), shared JSON conformance oracles.
 
 ## Global Constraints
 
-- Work on branch `refactor/vocab-retirement` off `main` in `~/d/nodes`; merge to main
+- Work on branch `refactor/vocab-retirement` off `main` in the `nodes` checkout; merge to main
   only after all three tasks and final verification pass.
 - All git commands through `rtk` (`rtk git …`); npm through `rtk npm …`; uv through
   `rtk uv …`.
@@ -40,12 +40,12 @@ pyright via uv), shared JSON conformance oracles.
 - `fixtures/` is untouchable: `rtk git status --porcelain fixtures/` must print nothing
   at every commit. Oracles stay byte-identical (design §3.2).
 - If `rtk npm run check` flags import ordering after a rewire, apply the fixer:
-  `cd ~/d/nodes/ts && rtk npx biome check --write .` — then re-run the gate.
+  `cd <nodes>/ts && rtk npx biome check --write .` — then re-run the gate.
 - Kernel source is untouchable: nothing under `ts/src/` changes except deleting
   `ts/src/vocab/`; nothing under `python/src/nodes/` changes except deleting
   `python/src/nodes/vocab/` (design §8: no kernel semantics change).
 - Historical docs (`docs/designs/`, `docs/plans/`) stay verbatim.
-- Filepaths written into docs use `~/d/nodes/...` form.
+- Filepaths written into docs use `~/…/nodes/...` form.
 - The spec (`docs/designs/2026-07-12-nodes-base-vocabulary-boundary-design.md`) governs
   on any conflict with this plan.
 
@@ -80,9 +80,9 @@ run the suite, delete, run the suite again.
 - [ ] **Step 1: Create the branch (baseline must be green first)**
 
 ```bash
-cd ~/d/nodes/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
-cd ~/d/nodes/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
-cd ~/d/nodes && rtk git checkout -b refactor/vocab-retirement
+cd <nodes>/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
+cd <nodes>/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
+cd <nodes> && rtk git checkout -b refactor/vocab-retirement
 ```
 
 Expected: all gates pass on main before branching. If any fail, STOP and report.
@@ -239,7 +239,7 @@ registerFixturesProfile(reg);
 - [ ] **Step 6: Rename and rewire the write-boundary test**
 
 ```bash
-cd ~/d/nodes && rtk git mv ts/tests/vocab-corpus.test.ts ts/tests/corpus-registry.test.ts
+cd <nodes> && rtk git mv ts/tests/vocab-corpus.test.ts ts/tests/corpus-registry.test.ts
 ```
 
 Then in `ts/tests/corpus-registry.test.ts`:
@@ -285,7 +285,7 @@ they need no registration and stay as-is.
 - [ ] **Step 7: Run the suite with the vocab still present**
 
 ```bash
-cd ~/d/nodes/ts && rtk npm test
+cd <nodes>/ts && rtk npm test
 ```
 
 Expected: PASS. The rewired tests now exercise the fixtures profile; nothing imports
@@ -294,14 +294,14 @@ vocab except the four dedicated vocab test files.
 - [ ] **Step 8: Delete the vocab and its dedicated tests**
 
 ```bash
-cd ~/d/nodes && rtk git rm -r ts/src/vocab
+cd <nodes> && rtk git rm -r ts/src/vocab
 rtk git rm ts/tests/vocab-exports.test.ts ts/tests/vocab-kinds.test.ts ts/tests/vocab-predicates.test.ts ts/tests/vocab-source.test.ts
 ```
 
 - [ ] **Step 9: Verify no vocab reference survives in TS**
 
 ```bash
-cd ~/d/nodes && rtk grep -rn "vocab" ts/src ts/tests; test $? -eq 1 && echo "ts vocab retired"
+cd <nodes> && rtk grep -rn "vocab" ts/src ts/tests; test $? -eq 1 && echo "ts vocab retired"
 ```
 
 Expected: `ts vocab retired` on its own (no match lines above it). Any match lines,
@@ -316,8 +316,8 @@ failed), is a STOP.
 artifacts must be cleaned explicitly:
 
 ```bash
-cd ~/d/nodes/ts && rm -rf dist && rtk npm run build
-cd ~/d/nodes/ts && PACK="$(rtk npm pack --dry-run 2>&1)" && if printf '%s' "$PACK" | grep -q "dist/vocab"; then echo "FAIL: dist/vocab still packed"; false; else echo "pack clean"; fi
+cd <nodes>/ts && rm -rf dist && rtk npm run build
+cd <nodes>/ts && PACK="$(rtk npm pack --dry-run 2>&1)" && if printf '%s' "$PACK" | grep -q "dist/vocab"; then echo "FAIL: dist/vocab still packed"; false; else echo "pack clean"; fi
 ```
 
 Expected: build succeeds; `pack clean`. `FAIL: dist/vocab still packed` is a STOP.
@@ -325,9 +325,9 @@ Expected: build succeeds; `pack clean`. `FAIL: dist/vocab still packed` is a STO
 - [ ] **Step 11: Gates (all six — both languages, per Global Constraints)**
 
 ```bash
-cd ~/d/nodes/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
-cd ~/d/nodes/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
-cd ~/d/nodes && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
+cd <nodes>/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
+cd <nodes>/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
+cd <nodes> && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
 ```
 
 Expected: all six gates PASS (check-oracle parity test included); `fixtures clean`.
@@ -335,7 +335,7 @@ Expected: all six gates PASS (check-oracle parity test included); `fixtures clea
 - [ ] **Step 12: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add ts/src ts/tests && rtk git commit -m "refactor(ts): retire knowledge vocab behind fixtures profile"
+cd <nodes> && rtk git add ts/src ts/tests && rtk git commit -m "refactor(ts): retire knowledge vocab behind fixtures profile"
 ```
 
 ---
@@ -526,7 +526,7 @@ def _registry() -> Registry:
 - [ ] **Step 6: Run the suite with the vocab still present**
 
 ```bash
-cd ~/d/nodes/python && rtk uv run --frozen pytest -q
+cd <nodes>/python && rtk uv run --frozen pytest -q
 ```
 
 Expected: PASS. Only the four `test_vocab_*.py` files still import `nodes.vocab`.
@@ -534,7 +534,7 @@ Expected: PASS. Only the four `test_vocab_*.py` files still import `nodes.vocab`
 - [ ] **Step 7: Delete the vocab and its dedicated tests**
 
 ```bash
-cd ~/d/nodes && rtk git rm -r python/src/nodes/vocab
+cd <nodes> && rtk git rm -r python/src/nodes/vocab
 rtk git rm python/tests/test_vocab_exports.py python/tests/test_vocab_kinds.py python/tests/test_vocab_predicates.py python/tests/test_vocab_source.py
 rm -rf python/src/nodes/vocab
 test ! -e python/src/nodes/vocab && echo "vocab dir gone"
@@ -548,9 +548,9 @@ failing Step 8. The `rm -rf` clears the residue; expect `vocab dir gone`.
 - [ ] **Step 8: Verify no vocab reference survives in Python, and the shipped surface**
 
 ```bash
-cd ~/d/nodes && rtk grep -rn "vocab" python/src python/tests; test $? -eq 1 && echo "python vocab retired"
-cd ~/d/nodes/python && rtk uv run --frozen python -c "import nodes; print('nodes ok')"
-cd ~/d/nodes/python && rtk uv run --frozen python -c "
+cd <nodes> && rtk grep -rn "vocab" python/src python/tests; test $? -eq 1 && echo "python vocab retired"
+cd <nodes>/python && rtk uv run --frozen python -c "import nodes; print('nodes ok')"
+cd <nodes>/python && rtk uv run --frozen python -c "
 try:
     import nodes.vocab
 except ModuleNotFoundError as exc:
@@ -571,9 +571,9 @@ fails (non-zero exit, `FAIL: nodes.vocab importable`) if the module still import
 - [ ] **Step 9: Gates (all six — both languages, per Global Constraints)**
 
 ```bash
-cd ~/d/nodes/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
-cd ~/d/nodes/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
-cd ~/d/nodes && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
+cd <nodes>/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
+cd <nodes>/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
+cd <nodes> && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
 ```
 
 Expected: all six gates PASS (check-oracle parity test included); `fixtures clean`.
@@ -581,7 +581,7 @@ Expected: all six gates PASS (check-oracle parity test included); `fixtures clea
 - [ ] **Step 10: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add python/src python/tests && rtk git commit -m "refactor(python): retire knowledge vocab behind fixtures profile"
+cd <nodes> && rtk git add python/src python/tests && rtk git commit -m "refactor(python): retire knowledge vocab behind fixtures profile"
 ```
 
 ---
@@ -790,8 +790,8 @@ The portable contract this kernel implements is specified in `../docs/STANDARD.m
 - [ ] **Step 8: Verify the living-doc exit criteria**
 
 ```bash
-cd ~/d/nodes && rtk grep -rln "vocab" README.md AGENTS.md ts/README.md; test $? -eq 1 && echo "living docs clean"
-cd ~/d/nodes && rtk grep -n "vocab" docs/STANDARD.md
+cd <nodes> && rtk grep -rln "vocab" README.md AGENTS.md ts/README.md; test $? -eq 1 && echo "living docs clean"
+cd <nodes> && rtk grep -n "vocab" docs/STANDARD.md
 ```
 
 Expected: `living docs clean` (no filenames above it; a listed filename or a missing
@@ -801,9 +801,9 @@ entry (design §5 exempts it as a dated record) — any other match is a STOP.
 - [ ] **Step 9: Gates (all six — both languages, per Global Constraints)**
 
 ```bash
-cd ~/d/nodes/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
-cd ~/d/nodes/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
-cd ~/d/nodes && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
+cd <nodes>/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
+cd <nodes>/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
+cd <nodes> && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
 ```
 
 Expected: all six gates PASS; `fixtures clean`.
@@ -811,7 +811,7 @@ Expected: all six gates PASS; `fixtures clean`.
 - [ ] **Step 10: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add docs/STANDARD.md README.md AGENTS.md ts/README.md && rtk git commit -m "docs: revise STANDARD to 1.2 and scrub vocab from living docs"
+cd <nodes> && rtk git add docs/STANDARD.md README.md AGENTS.md ts/README.md && rtk git commit -m "docs: revise STANDARD to 1.2 and scrub vocab from living docs"
 ```
 
 ---
@@ -821,8 +821,8 @@ cd ~/d/nodes && rtk git add docs/STANDARD.md README.md AGENTS.md ts/README.md &&
 - [ ] **Step 1: Full gates at branch HEAD**
 
 ```bash
-cd ~/d/nodes/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
-cd ~/d/nodes/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
+cd <nodes>/ts && rtk npm test && rtk npm run typecheck && rtk npm run check
+cd <nodes>/python && rtk uv run --frozen pytest -q && rtk uv run --frozen ruff check . && rtk uv run --frozen pyright src
 ```
 
 Expected: all PASS.
@@ -830,9 +830,9 @@ Expected: all PASS.
 - [ ] **Step 2: Design §5 exit criteria**
 
 ```bash
-cd ~/d/nodes && rtk grep -rn "vocab" ts/src python/src; test $? -eq 1 && echo "shipped surface clean"
-cd ~/d/nodes/python && rtk uv run --frozen python -c "import nodes; print('nodes ok')"
-cd ~/d/nodes/python && rtk uv run --frozen python -c "
+cd <nodes> && rtk grep -rn "vocab" ts/src python/src; test $? -eq 1 && echo "shipped surface clean"
+cd <nodes>/python && rtk uv run --frozen python -c "import nodes; print('nodes ok')"
+cd <nodes>/python && rtk uv run --frozen python -c "
 try:
     import nodes.vocab
 except ModuleNotFoundError as exc:
@@ -842,9 +842,9 @@ except ModuleNotFoundError as exc:
 else:
     raise SystemExit('FAIL: nodes.vocab importable')
 "
-cd ~/d/nodes/ts && PACK="$(rtk npm pack --dry-run 2>&1)" && if printf '%s' "$PACK" | grep -q "dist/vocab"; then echo "FAIL: dist/vocab still packed"; false; else echo "pack clean"; fi
-cd ~/d/nodes && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
-cd ~/d/nodes && rtk git log --oneline main..HEAD
+cd <nodes>/ts && PACK="$(rtk npm pack --dry-run 2>&1)" && if printf '%s' "$PACK" | grep -q "dist/vocab"; then echo "FAIL: dist/vocab still packed"; false; else echo "pack clean"; fi
+cd <nodes> && FIXSTAT="$(rtk git status --porcelain fixtures/)" && test -z "$FIXSTAT" && echo "fixtures clean"
+cd <nodes> && rtk git log --oneline main..HEAD
 ```
 
 Expected: `shipped surface clean` (no match lines); `nodes ok`; `nodes.vocab absent`

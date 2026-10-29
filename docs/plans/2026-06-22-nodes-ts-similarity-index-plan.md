@@ -46,9 +46,9 @@ These bind every task. Values are copied verbatim from the spec (`docs/designs/2
 - **Opt-in `Corpus` integration.** `new Corpus(root, registry?, embedder?)`. With no embedder, no `VectorCache`/`VectorIndex` is built and `similar`/`queryVector`/`similarText` throw `EmbedderRequiredError`. The structural and search indexes are unchanged whether or not an embedder is present.
 - **Mutation ordering (mirror Python `corpus.py`):** `add` = registry-validate → `assertAddable` → `prepare` (if embedder) → `writeFile` → `index.upsert` → `searchIndex.upsert` → `vectorIndex.commit`. `delete` = `deleteFile` → `index.remove` → `searchIndex.remove` → `vectorIndex?.remove`. `rename` is **not** otherwise refactored — it inserts exactly one `prepare` after registry validation / before the first `writeFile`, and one `commit` after the final `searchIndex.upsert`.
 - **Parity, not bit-identity.** Embeddings are not portable across languages, so the *vectors* are frozen, not computed. The contract is the three committed fixtures (`fixtures/similarity-corpus/`, `fixtures/similarity.vectors.json`, `fixtures/similarity.oracle.json`): identical ranked `id` order and scores equal at 6 decimal places. **This port consumes those fixtures read-only — it does not regenerate them.** Compare oracle scores numerically via `scoreKey` (do not string-compare — `0.99838` is a JSON trailing-zero truncation of `0.998380`).
-- **TS conventions:** camelCase fields/methods (`cacheNamespace`, `embedText`, `textHash`, `idByUid`, `hashByUid`, `vectorIndex`), SCREAMING_CASE module constants, `.js` import extensions, `type`-only imports for types, biome line width 120. Commands below assume the implementer runs from `~/d/nodes/ts`.
+- **TS conventions:** camelCase fields/methods (`cacheNamespace`, `embedText`, `textHash`, `idByUid`, `hashByUid`, `vectorIndex`), SCREAMING_CASE module constants, `.js` import extensions, `type`-only imports for types, biome line width 120. Commands below assume the implementer runs from `ts`.
 
-**Gate for every task:** from `~/d/nodes/ts`, `rtk npm test` (vitest) green, `rtk npm run typecheck` (`tsc --noEmit`) clean, `rtk npm run check` (biome) clean.
+**Gate for every task:** from `ts`, `rtk npm test` (vitest) green, `rtk npm run typecheck` (`tsc --noEmit`) clean, `rtk npm run check` (biome) clean.
 
 ---
 

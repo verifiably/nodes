@@ -10,7 +10,7 @@ kernel's private corpus-walk semantics.
 
 ## 1. Context
 
-`~/d/nodes/ts` is the problem-agnostic knowledge substrate. `~/d/mindful/v6` builds a
+nodes `ts/` is the problem-agnostic knowledge substrate. `<mindful>/v6` builds a
 thought/journal/mindmap application on top of that substrate. Recent Mindful resident-shell
 work needed a cheap "has the corpus changed?" check before reusing a cached `Mindful`
 instance. Mindful implemented its own recursive markdown walk and stat fingerprint, then

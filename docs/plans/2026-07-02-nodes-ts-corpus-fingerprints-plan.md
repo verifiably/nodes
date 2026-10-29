@@ -26,7 +26,7 @@
 
 ## Global Constraints
 
-- Run all commands from `~/d/nodes/ts` unless a step says otherwise.
+- Run all commands from `ts` unless a step says otherwise.
 - Use `rtk` for shell commands.
 - Do not change `Corpus`, snapshot schema, snapshot file layout, or mutation semantics.
 - Preserve current `iterCorpusFiles(root)` observable behavior: same rows, same sorting, same hashes, and file-level errors still propagate.
@@ -521,7 +521,7 @@ rtk git commit -m "feat: export corpus fingerprint helpers"
 
 - [ ] **Step 1: Run full TypeScript test suite**
 
-Run from `~/d/nodes/ts`:
+Run from `ts`:
 
 ```bash
 rtk npm test
@@ -577,7 +577,7 @@ Expected:
 
 - [ ] **Step 6: Check final git status**
 
-Run from `~/d/nodes/ts`:
+Run from `ts`:
 
 ```bash
 rtk git status --short
@@ -587,7 +587,7 @@ Expected: clean, or only intentional untracked build artifacts that are not part
 
 - [ ] **Step 7: Commit verification-only fixes if needed**
 
-If Step 1-5 required formatting or small test corrections, commit them (from `~/d/nodes/ts`):
+If Step 1-5 required formatting or small test corrections, commit them (from `ts`):
 
 ```bash
 rtk git add src/snapshot.ts src/index.ts tests/corpus-fingerprint.test.ts tests/smoke.test.ts

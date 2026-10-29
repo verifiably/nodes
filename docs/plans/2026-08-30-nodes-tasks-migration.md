@@ -79,7 +79,7 @@
 
 | Evidence | Correction | Outward-grep result |
 |---|---|---|
-| `README.md` still named the former `science` checkout as the Python consumer and shortened Mindful v6 to its parent directory; `~/d/beliefs/python/pyproject.toml` and imports prove the renamed consumer. | Name `beliefs` at `~/d/beliefs/` and Mindful v6 at `~/d/mindful/v6/`. | Current root guidance now uses the real names and paths; historical `science` references remain dated rationale. |
+| `README.md` still named the former `science` checkout as the Python consumer and shortened Mindful v6 to its parent directory; beliefs `python/pyproject.toml` and imports prove the renamed consumer. | Name `beliefs` at `<beliefs>/` and Mindful v6 at `<mindful>/v6/`. | Current root guidance now uses the real names and paths; historical `science` references remain dated rationale. |
 | The redesign review named five headers that still said draft or pending despite shipped Python/TypeScript implementations and passing parity suites. | Mark the substrate, TypeScript kernel, full-text, similarity, and TypeScript fingerprint designs as implemented historical records. | The redesign design records the correction; no current header among the five retains the stale state. |
 | The release recovery plan had unchecked owner steps but no status evidence. Local/remote tags, both registries, PyPI Integrity, npm deprecation metadata, and `npm whoami` now provide readback evidence. | Add a dated outcome note without rewriting historical checkboxes. | The redesign design records the correction; no claim treats unchecked boxes as proof. |
 

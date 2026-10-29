@@ -21,8 +21,8 @@ exercised by a landed consumer requires that consumer's sign-off, recorded in
 §8; `nodes`-side review alone may amend parts no landed consumer exercises.
 
 **Implementation status (2026-08-18):** the seam is implemented in both kernels
-(`nodes.core.write_plan` and `~/d/nodes/ts/src/write-plan.ts`; errors in
-`nodes.core.errors` / `~/d/nodes/ts/src/errors.ts`;
+(`nodes.core.write_plan` and `ts/src/write-plan.ts`; errors in
+`nodes.core.errors` / `ts/src/errors.ts`;
 `Corpus(root, executor_factory=...)` in both). The §2 plan-equality obligation
 is pinned by the tier-1 fixture `fixtures/write-plan.rename.canonical.json`,
 which fixes referrer replace operations in uid order — the deterministic order
@@ -59,13 +59,13 @@ pair emits `create`; a matching existing pair emits `replace`. This preserves th
 overwrite used by mindful v6's `tag()` path. Collision refusal remains
 corpus-side before plan construction: `assert_addable` still refuses a uid held
 by another id and an identity claim held by another uid
-(`~/d/nodes/python/src/nodes/core/structural_index.py:184-193`). It never sends
+(`python/src/nodes/core/structural_index.py:184-193`). It never sends
 either refusal to an executor. The current add path validates, calls that guard,
-then writes (`~/d/nodes/python/src/nodes/core/corpus.py:153-161`).
+then writes (`python/src/nodes/core/corpus.py:153-161`).
 
 Create and replace payloads are serialized document bytes from the emitting
 kernel's serializer, so the executor remains pure file mechanics, as `Store` is
-today (`~/d/nodes/python/src/nodes/core/store.py:25-45`), with no kernel
+today (`python/src/nodes/core/store.py:25-45`), with no kernel
 serialization service. Plan equality is semantic: plans match when operation
 kinds, paths, and `expected_digest` values match position-wise and every
 `content` payload parses to the same canonical JSON projection. This follows
@@ -74,7 +74,7 @@ at implementation time as a tier-1 obligation: this is mutation semantics.
 
 Rename emits `create` for the new document, then `delete` for the old document,
 then `replace` operations for referrers, matching today's write-new → delete-old
-→ referrers commit order (`~/d/nodes/python/src/nodes/core/corpus.py:254-316`).
+→ referrers commit order (`python/src/nodes/core/corpus.py:254-316`).
 *(2026-09-11, C:)* when the old and new ids map to the same exact path
 (`kind:a:b` → `kind:a__b`), rename instead emits one `replace` of that document
 in place and no `delete`; both kernels already did so. Referrer replaces follow
@@ -226,12 +226,12 @@ note's claim stands: every field remains derivable from the plan, adapter
 constants, or adapter reads, and no part of this contract re-opened.
 
 These are the engine's actual effect signatures
-(`~/d/atoms/python/src/atoms/core/effects.py:18-46`). Their digest formats differ:
+(atoms `python/src/atoms/core/effects.py:18-46`). Their digest formats differ:
 the plan's `expected_digest` is raw lowercase hex, while
 `FileState.content_hash` is `sha256:`-prefixed. The adapter prefixes the digest
 when building states and strips the prefix when cross-checking
-(`~/d/atoms/python/src/atoms/core/fingerprint.py:22-28`;
-`~/d/atoms/python/src/atoms/core/compiler.py:292-295`). `MoveNoClobber` exists
+(atoms `python/src/atoms/core/fingerprint.py:22-28`;
+atoms `python/src/atoms/core/compiler.py:292-295`). `MoveNoClobber` exists
 but is deliberately unused: §2 establishes that rename changes content and is
 never a pure move.
 
@@ -248,14 +248,14 @@ The complete `TransactionSpec` mapping is:
 | `registered_paths` | `()` for this slice. The corpus-write adapter reserves nothing. |
 
 Those fields are the complete engine model
-(`~/d/atoms/python/src/atoms/core/spec.py:31-40`). `intent_digest` enters through
+(atoms `python/src/atoms/core/spec.py:31-40`). `intent_digest` enters through
 the caller-facing builder and compilation only validates its format
-(`~/d/atoms/python/src/atoms/core/spec.py:77-101`;
-`~/d/atoms/python/src/atoms/core/compiler.py:207-213`). `registered_paths=()` is
+(atoms `python/src/atoms/core/spec.py:77-101`;
+atoms `python/src/atoms/core/compiler.py:207-213`). `registered_paths=()` is
 distinct from the automatic registration-chain append, which the engine performs
 in every transaction regardless and which is invisible to `nodes`. Per science
 cut 4's boundary, every transaction in this slice is **chained but unanchored**
-(`~/d/science/docs/designs/2026-08-17-conformance-cut-4.md:64-73`).
+(science `docs/designs/2026-08-17-conformance-cut-4.md:64-73`).
 
 Science supplies a root-taking executor factory to `Corpus`; that factory closes
 over the engine handles and lets `Corpus` provide the root. The composition root

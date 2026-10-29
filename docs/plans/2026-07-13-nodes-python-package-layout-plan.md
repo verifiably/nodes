@@ -22,10 +22,10 @@ backend), TypeScript gates run as cross-tree guards only.
 - Before Task 1, the execution controller MUST use
   `superpowers:using-git-worktrees` to create or verify an isolated checkout on branch
   `refactor/python-package-layout` off `main`. The plan never creates the branch or
-  assumes the primary `~/d/nodes` checkout is the active workspace.
+  assumes the primary `nodes` checkout is the active workspace.
 - Every command resolves the active checkout with
   `ROOT="$(git rev-parse --show-toplevel)"` on the same command line. Do not replace
-  that with a hardcoded `cd ~/d/nodes`: execution may be inside a linked worktree, and
+  that with a hardcoded `cd <nodes>`: execution may be inside a linked worktree, and
   environment variables do not persist across separate tool calls.
 - All git commands through `rtk` (`rtk git …`); npm through `rtk npm …`; uv through
   `rtk uv …`. Exception, on purpose: checks that capture command output use raw
@@ -52,7 +52,7 @@ backend), TypeScript gates run as cross-tree guards only.
   rewrite `nodes.kernel` → `nodes.core` and the directory move. No signature,
   logic, or re-export changes.
 - Historical docs (`docs/designs/`, `docs/plans/`) stay verbatim.
-- Filepaths written into docs use `~/d/nodes/...` form.
+- Filepaths written into docs use `~/…/nodes/...` form.
 - If `ruff check .` flags import ordering after the rewrite, apply
   `rtk uv run --frozen ruff check . --fix` from `python/`, then re-run the gate.
 - The spec (`docs/designs/2026-07-13-nodes-python-package-layout-design.md`) governs

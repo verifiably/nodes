@@ -17,7 +17,7 @@ procedural boxes below are historical instructions, not evidence of unfinished r
 
 ## Global Constraints
 
-- The governing design is `~/d/nodes/docs/designs/2026-07-18-nodes-first-publish-recovery-design.md`; `docs/STANDARD.md` remains the normative product contract.
+- The governing design is `docs/designs/2026-07-18-nodes-first-publish-recovery-design.md`; `docs/STANDARD.md` remains the normative product contract.
 - Preserve local and remote `core/v0.1.0` at commit `f4043dab94a5b78d8fe82f47ce129fe80d0aa193`. Never delete, move, or reuse it.
 - Neither registry contains 0.1.0. Do not create registry version 0.1.0 during recovery.
 - The recovery version is 0.1.1 in `python/pyproject.toml`, the editable root entry in `python/uv.lock`, `ts/package.json`, both root entries in `ts/package-lock.json`, and tag `core/v0.1.1`.
@@ -38,13 +38,13 @@ procedural boxes below are historical instructions, not evidence of unfinished r
 
 ## File Structure
 
-- Modify `~/d/nodes/.github/workflows/ci.yml` — pin the uv binary used by Python CI gates.
-- Modify `~/d/nodes/.github/workflows/release.yml` — pin uv for build/verification/publish, add the unsigned artifact dry run, and replace the PyPA publisher with sign/dry-run/publish steps.
-- Modify `~/d/nodes/.github/scripts/pypi_upload_check.py` — distinguish distributions from matching PEP 740 sidecars and enforce pre/post mode requirements.
-- Modify `~/d/nodes/python/tests/test_release_scripts.py` — pin workflow structure, versions, and publish command ordering.
-- Create `~/d/nodes/python/tests/test_pypi_upload_check.py` — unit-test clean, signed, missing-sidecar, and stray-file directory states.
-- Modify `~/d/nodes/python/pyproject.toml` and regenerate `~/d/nodes/python/uv.lock` — set Python release version 0.1.1.
-- Modify `~/d/nodes/ts/package.json` and regenerate `~/d/nodes/ts/package-lock.json` — set npm release version 0.1.1.
+- Modify `.github/workflows/ci.yml` — pin the uv binary used by Python CI gates.
+- Modify `.github/workflows/release.yml` — pin uv for build/verification/publish, add the unsigned artifact dry run, and replace the PyPA publisher with sign/dry-run/publish steps.
+- Modify `.github/scripts/pypi_upload_check.py` — distinguish distributions from matching PEP 740 sidecars and enforce pre/post mode requirements.
+- Modify `python/tests/test_release_scripts.py` — pin workflow structure, versions, and publish command ordering.
+- Create `python/tests/test_pypi_upload_check.py` — unit-test clean, signed, missing-sidecar, and stray-file directory states.
+- Modify `python/pyproject.toml` and regenerate `python/uv.lock` — set Python release version 0.1.1.
+- Modify `ts/package.json` and regenerate `ts/package-lock.json` — set npm release version 0.1.1.
 
 ---
 
@@ -54,12 +54,12 @@ procedural boxes below are historical instructions, not evidence of unfinished r
 
 **Interfaces:**
 - Consumes: clean primary checkout on `main`, including approved design commit `57be6df` and this plan commit.
-- Produces: branch `fix/first-publish-recovery` in `~/d/nodes/.worktrees/first-publish-recovery`.
+- Produces: branch `fix/first-publish-recovery` in `.worktrees/first-publish-recovery`.
 
 - [ ] **Step 1: Confirm the primary checkout and immutable failed tag**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 git status --short --branch
 test "$(git rev-parse core/v0.1.0^{commit})" = "f4043dab94a5b78d8fe82f47ce129fe80d0aa193"
 test "$(git ls-remote origin refs/tags/core/v0.1.0 | cut -f1)" = "f4043dab94a5b78d8fe82f47ce129fe80d0aa193"
@@ -72,10 +72,10 @@ Expected: clean `main`; both tag assertions exit 0.
 Use `superpowers:using-git-worktrees`. Its resulting commands must be equivalent to:
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 git check-ignore -q .worktrees
 git worktree add .worktrees/first-publish-recovery -b fix/first-publish-recovery main
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 test "$(git branch --show-current)" = "fix/first-publish-recovery"
 ```
 
@@ -84,11 +84,11 @@ Expected: `.worktrees` is ignored; the final assertion exits 0.
 - [ ] **Step 3: Establish a green baseline**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q
 uv run --frozen ruff check .
 uv run --frozen pyright src
-cd ~/d/nodes/.worktrees/first-publish-recovery/ts
+cd <nodes>/.worktrees/first-publish-recovery/ts
 npm test
 npm run typecheck
 npm run check
@@ -101,9 +101,9 @@ Expected: 480 Python tests pass; Ruff and Pyright report no findings; 41 TypeScr
 ### Task 1: Pin the uv binary in every workflow
 
 **Files:**
-- Modify: `~/d/nodes/.github/workflows/ci.yml`
-- Modify: `~/d/nodes/.github/workflows/release.yml`
-- Test: `~/d/nodes/python/tests/test_release_scripts.py`
+- Modify: `.github/workflows/ci.yml`
+- Modify: `.github/workflows/release.yml`
+- Test: `python/tests/test_release_scripts.py`
 
 **Interfaces:**
 - Consumes: existing SHA-pinned `astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990` steps.
@@ -151,7 +151,7 @@ Keep imports grouped and alphabetized for Ruff.
 - [ ] **Step 2: Run the pin test and verify RED**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q tests/test_release_scripts.py::test_workflows_pin_every_setup_uv_binary
 ```
 
@@ -181,7 +181,7 @@ Make the verify-artifacts setup block identical to that release build block.
 - [ ] **Step 4: Run the focused test and verify GREEN**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q tests/test_release_scripts.py::test_workflows_pin_every_setup_uv_binary
 ```
 
@@ -190,15 +190,15 @@ Expected: PASS.
 - [ ] **Step 5: Run all six gates and fixture check**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q
 uv run --frozen ruff check .
 uv run --frozen pyright src
-cd ~/d/nodes/.worktrees/first-publish-recovery/ts
+cd <nodes>/.worktrees/first-publish-recovery/ts
 npm test
 npm run typecheck
 npm run check
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 test -z "$(git status --porcelain -- fixtures/)"
 git diff --check
 ```
@@ -208,7 +208,7 @@ Expected: all gates pass, fixture assertion and diff check exit 0.
 - [ ] **Step 6: Commit the uv pin**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 git add .github/workflows/ci.yml .github/workflows/release.yml python/tests/test_release_scripts.py
 git commit -m "ci: pin uv release toolchain"
 ```
@@ -220,8 +220,8 @@ Expected: one commit containing only the three named files.
 ### Task 2: Make the PyPI hash checker sidecar-aware
 
 **Files:**
-- Modify: `~/d/nodes/.github/scripts/pypi_upload_check.py`
-- Create: `~/d/nodes/python/tests/test_pypi_upload_check.py`
+- Modify: `.github/scripts/pypi_upload_check.py`
+- Create: `python/tests/test_pypi_upload_check.py`
 
 **Interfaces:**
 - Consumes: a directory containing exactly one `.whl`, one `.tar.gz`, and optionally their adjacent `.publish.attestation` files.
@@ -316,7 +316,7 @@ def test_local_files_rejects_unrelated_entries(
 - [ ] **Step 2: Run the new tests and verify RED**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q tests/test_pypi_upload_check.py
 ```
 
@@ -361,7 +361,7 @@ Change the call in `main()` to:
 - [ ] **Step 4: Run the checker tests and verify GREEN**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q tests/test_pypi_upload_check.py
 ```
 
@@ -370,7 +370,7 @@ Expected: five tests pass.
 - [ ] **Step 5: Run the existing live-index pre-check**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 rm -rf dist
 uv build --no-create-gitignore
 python3 ../.github/scripts/pypi_upload_check.py pre --project nodes-core --version 0.1.0 --dist dist
@@ -382,15 +382,15 @@ Expected: `pypi pre-check ok: 0/2 files present and matching`; `dist/` is remove
 - [ ] **Step 6: Run all six gates and fixture check**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q
 uv run --frozen ruff check .
 uv run --frozen pyright src
-cd ~/d/nodes/.worktrees/first-publish-recovery/ts
+cd <nodes>/.worktrees/first-publish-recovery/ts
 npm test
 npm run typecheck
 npm run check
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 test -z "$(git status --porcelain -- fixtures/)"
 git diff --check
 ```
@@ -400,7 +400,7 @@ Expected: all gates pass; fixtures remain clean.
 - [ ] **Step 7: Commit the checker change**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 git add .github/scripts/pypi_upload_check.py python/tests/test_pypi_upload_check.py
 git commit -m "ci: validate signed PyPI artifact sets"
 ```
@@ -412,11 +412,11 @@ Expected: one commit containing only the checker and its new test file.
 ### Task 3: Roll both package identities to 0.1.1
 
 **Files:**
-- Modify: `~/d/nodes/python/pyproject.toml`
-- Regenerate: `~/d/nodes/python/uv.lock`
-- Modify: `~/d/nodes/ts/package.json`
-- Regenerate: `~/d/nodes/ts/package-lock.json`
-- Test: `~/d/nodes/python/tests/test_release_scripts.py`
+- Modify: `python/pyproject.toml`
+- Regenerate: `python/uv.lock`
+- Modify: `ts/package.json`
+- Regenerate: `ts/package-lock.json`
+- Test: `python/tests/test_release_scripts.py`
 
 **Interfaces:**
 - Consumes: current lockstep 0.1.0 manifests and lockfiles.
@@ -455,7 +455,7 @@ def test_release_manifests_and_lockfiles_are_lockstep_0_1_1() -> None:
 - [ ] **Step 2: Run the version test and verify RED**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q tests/test_release_scripts.py::test_release_manifests_and_lockfiles_are_lockstep_0_1_1
 ```
 
@@ -464,7 +464,7 @@ Expected: FAIL showing all five recorded values are 0.1.0.
 - [ ] **Step 3: Regenerate the Python version and lockfile**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv version 0.1.1 --no-sync
 ```
 
@@ -473,7 +473,7 @@ Expected: `nodes-core 0.1.0 => 0.1.1`; only `pyproject.toml` and `uv.lock` chang
 - [ ] **Step 4: Regenerate the npm version and lockfile**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/ts
+cd <nodes>/.worktrees/first-publish-recovery/ts
 npm version 0.1.1 --no-git-tag-version
 ```
 
@@ -482,7 +482,7 @@ Expected: `v0.1.1`; `package.json` and both root version entries in `package-loc
 - [ ] **Step 5: Run the version test and verify GREEN**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q tests/test_release_scripts.py::test_release_manifests_and_lockfiles_are_lockstep_0_1_1
 ```
 
@@ -491,7 +491,7 @@ Expected: PASS.
 - [ ] **Step 6: Audit the generated diff and run all gates**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 git diff -- python/pyproject.toml python/uv.lock ts/package.json ts/package-lock.json
 git diff --check
 test -z "$(git status --porcelain -- fixtures/)"
@@ -510,7 +510,7 @@ Expected: the diff contains only version changes; all gates pass.
 - [ ] **Step 7: Commit the lockstep version**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 git add python/pyproject.toml python/uv.lock ts/package.json ts/package-lock.json python/tests/test_release_scripts.py
 git commit -m "chore: roll first release to 0.1.1"
 ```
@@ -522,8 +522,8 @@ Expected: one commit containing only the five named files.
 ### Task 4: Replace the PyPA upload action with signed uv publication
 
 **Files:**
-- Modify: `~/d/nodes/.github/workflows/release.yml`
-- Test: `~/d/nodes/python/tests/test_release_scripts.py`
+- Modify: `.github/workflows/release.yml`
+- Test: `python/tests/test_release_scripts.py`
 
 **Interfaces:**
 - Consumes: uv 0.11.29 pin, sidecar-aware pre/post checker, and version 0.1.1 artifacts.
@@ -581,7 +581,7 @@ def test_release_pypi_job_signs_validates_and_publishes_default_dist() -> None:
 - [ ] **Step 2: Run the three workflow tests and verify RED**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q \
   tests/test_release_scripts.py::test_workflows_pin_every_setup_uv_binary \
   tests/test_release_scripts.py::test_release_rehearses_uv_against_only_python_distributions \
@@ -626,7 +626,7 @@ Do not change the job condition, environment, permissions, dependencies, artifac
 - [ ] **Step 5: Run the focused workflow tests and verify GREEN**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q \
   tests/test_release_scripts.py::test_workflows_pin_every_setup_uv_binary \
   tests/test_release_scripts.py::test_release_rehearses_uv_against_only_python_distributions \
@@ -640,7 +640,7 @@ Expected: three tests pass.
 Use the exact binary version in an isolated uvx cache so the workstation's uv 0.11.28 does not substitute:
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 rm -rf dist
 uv build --no-create-gitignore
 uvx --from uv==0.11.29 uv publish --dry-run --trusted-publishing never dist/*.whl dist/*.tar.gz
@@ -653,7 +653,7 @@ Expected: both dry runs succeed without credentials or upload; `dist/` is remove
 - [ ] **Step 7: Run release hygiene and all six gates**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/ts
+cd <nodes>/.worktrees/first-publish-recovery/ts
 npm audit --omit=dev
 npm test
 npm run typecheck
@@ -673,7 +673,7 @@ Expected: zero production vulnerabilities; all six gates pass; fixtures and diff
 - [ ] **Step 8: Commit the release pipeline**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery
+cd <nodes>/.worktrees/first-publish-recovery
 git add .github/workflows/release.yml python/tests/test_release_scripts.py
 git commit -m "ci: publish signed Python artifacts with uv"
 ```
@@ -693,7 +693,7 @@ Expected: one commit containing only the workflow and its regression tests.
 - [ ] **Step 1: Run final local verification in the worktree**
 
 ```bash
-cd ~/d/nodes/.worktrees/first-publish-recovery/python
+cd <nodes>/.worktrees/first-publish-recovery/python
 uv run --frozen pytest -q
 uv run --frozen ruff check .
 uv run --frozen pyright src
@@ -716,7 +716,7 @@ Use `superpowers:requesting-code-review`. Give the reviewer:
 
 - base: the implementation branch's parent commit on `main` (the committed plan);
 - head: `fix/first-publish-recovery`;
-- governing design: `~/d/nodes/docs/designs/2026-07-18-nodes-first-publish-recovery-design.md`;
+- governing design: `docs/designs/2026-07-18-nodes-first-publish-recovery-design.md`;
 - required checks: uv pin coverage, checker fail-closed classification, version lockstep, publish ordering/permissions, dispatch skip invariant, exact artifact reuse, no mutable action references.
 
 Expected: no Critical, Important, or Minor findings. If findings exist, fix them test-first, run all six gates, commit explicitly, and request re-review.
@@ -726,7 +726,7 @@ Expected: no Critical, Important, or Minor findings. If findings exist, fix them
 Use `superpowers:finishing-a-development-branch`, option "Merge back to main locally". The result must be equivalent to:
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 git status --short --branch
 git merge --ff-only fix/first-publish-recovery
 ```
@@ -736,7 +736,7 @@ Expected: fast-forward succeeds; no merge commit.
 - [ ] **Step 4: Re-run all gates on merged main**
 
 ```bash
-cd ~/d/nodes/python
+cd <nodes>/python
 uv run --frozen pytest -q
 uv run --frozen ruff check .
 uv run --frozen pyright src
@@ -755,7 +755,7 @@ Expected: all gates and audit pass; primary checkout is clean.
 - [ ] **Step 5: Push main and wait for exact-commit CI**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 git push origin main
 SHA="$(git rev-parse HEAD)"
 RUN_ID=""
@@ -773,7 +773,7 @@ Expected: the exact pushed commit's Python 3.11/3.13 and Node 20/24 jobs all suc
 - [ ] **Step 6: Dispatch and watch the exact-commit rehearsal**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 SHA="$(git rev-parse HEAD)"
 PREV="$(gh run list --repo nodes-dev/core --workflow release.yml --event workflow_dispatch --commit "$SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
 gh workflow run release.yml --repo nodes-dev/core --ref main
@@ -804,7 +804,7 @@ Expected: gates, build, artifact checks, install smokes, npm dry run, and uv uns
 - [ ] **Step 7: Remove the worktree and branch**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 git worktree remove .worktrees/first-publish-recovery
 git worktree prune
 git branch -d fix/first-publish-recovery
@@ -825,7 +825,7 @@ Expected: worktree removed and merged branch deleted; `main` remains clean.
 - [ ] **Step 1: Prove release targets are absent and main is exact**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 test -z "$(git status --porcelain)"
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 test -z "$(git tag --list core/v0.1.1)"
@@ -845,7 +845,7 @@ Expected: clean exact `main`; tag and both registry versions absent; production 
 - [ ] **Step 2: Create and push the immutable release tag**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 git tag core/v0.1.1
 git push origin core/v0.1.1
 ```
@@ -855,7 +855,7 @@ Expected: remote accepts the new tag. Never delete or move it after this point.
 - [ ] **Step 3: Watch the exact tag-push release run**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 SHA="$(git rev-parse core/v0.1.1^{commit})"
 RUN_ID=""
 for _ in $(seq 1 24); do
@@ -952,7 +952,7 @@ cd "$S"
 npm init -y >/dev/null
 npm install --no-audit --no-fund @nodes-dev/core@0.1.1 >/dev/null
 node --input-type=module -e "const core = await import('@nodes-dev/core'); if (Object.keys(core).length === 0) throw new Error('no exports'); console.log('npm registry smoke ok');"
-cd ~/d/nodes
+cd <nodes>
 rm -rf "$S"
 ```
 
@@ -960,10 +960,10 @@ Expected: `npm 0.1.1 present with attestations` and `npm registry smoke ok`.
 
 - [ ] **Step 6 [OWNER]: Deprecate npm 0.0.0 with a short-lived login**
 
-Notify the owner and wait. The owner runs `npm login` from `~/d/nodes/ts` and replies `Done`. Then run this mutation/readback/revocation block:
+Notify the owner and wait. The owner runs `npm login` from `ts` and replies `Done`. Then run this mutation/readback/revocation block:
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 DEPRECATE_STATUS=0
 npm whoami || DEPRECATE_STATUS=$?
 if test "$DEPRECATE_STATUS" -eq 0; then
@@ -1004,7 +1004,7 @@ Expected: owner username, `0.0.0 deprecated`, `npm deprecation credential revoke
 - [ ] **Step 7: Final repository and tag hygiene**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 test -z "$(git status --porcelain)"
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 test "$(git rev-parse core/v0.1.0^{commit})" = "f4043dab94a5b78d8fe82f47ce129fe80d0aa193"

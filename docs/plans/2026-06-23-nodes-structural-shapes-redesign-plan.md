@@ -6,9 +6,9 @@
 
 **Architecture:** A `Structure` is a `Node` of a registered shape, carrying a scope-only `membership` facet plus the form facet(s) its shape requires. Shapes are registered via `ShapeSpec`; a `KindSpec` adopts ≤1 shape via `KindSpec.shape`; the `Registry` composes the shape's required/optional facets and invariants into the kind's validation. The structural index and rename rewrite refs from `membership.members` plus the built-in form facets, independent of any registry. This is a clean breaking change — no compatibility layer, no corpus migration.
 
-**Tech Stack:** Python 3.11+, pydantic v2, pytest. Source under `~/d/nodes/python/src/nodes/`, tests under `~/d/nodes/python/tests/`. All commands run from `~/d/nodes/python` via the `rtk` wrapper.
+**Tech Stack:** Python 3.11+, pydantic v2, pytest. Source under `python/src/nodes/`, tests under `python/tests/`. All commands run from `python` via the `rtk` wrapper.
 
-This is **Plan A-py**, the first of three plans for mindful v6 SP1 (spec: `~/d/nodes/docs/designs/2026-06-23-mindful-v6-sp1-abstraction-design.md`). It is followed by **Plan A-ts** (the TypeScript port, using this finished Python as its oracle) and then **Plan B** (the mindful package). Both kernels land before mindful is scaffolded.
+This is **Plan A-py**, the first of three plans for mindful v6 SP1 (spec: `docs/designs/2026-06-23-mindful-v6-sp1-abstraction-design.md`). It is followed by **Plan A-ts** (the TypeScript port, using this finished Python as its oracle) and then **Plan B** (the mindful package). Both kernels land before mindful is scaffolded.
 
 ## Current State Note
 
@@ -29,9 +29,9 @@ There are three current-code details to keep in mind when reading the task snipp
 - **Duplicate names fail early:** `register_shape` rejects a duplicate shape name; `register` rejects a duplicate kind name. Shape and kind namespaces are **separate** (a `graph` shape and a `graph` kind coexist).
 - **Structure refs vs global graph:** structure refs (`members`/edges/`order`/`keys` values) are tracked for **rename + snapshot integrity** but are **never** exposed through `Corpus.outbound`/`inbound`/`neighbors`/`dangling`. Only top-level `relations:` feed the global relation graph.
 - **No-registry recognition:** the built-in structural facets (`membership`/`edges`/`order`/`keys`) are recognized for ref rewriting + index extraction **with or without** a registry. Rename never skips known structural refs for lack of a registry.
-- **Clean breaking change:** no compat layer, no migration. `~/d/mindful/v6` is empty and `science` does not use shapes yet.
+- **Clean breaking change:** no compat layer, no migration. `<mindful>/v6` is empty and `science` does not use shapes yet.
 - **Singular shape:** a kind adopts zero or one shape.
-- **Gate (run from `~/d/nodes/python`):** `rtk uv run pytest tests -q`, `rtk uv run ruff check src tests`, `rtk uv run pyright src` must all pass before a task is complete.
+- **Gate (run from `python`):** `rtk uv run pytest tests -q`, `rtk uv run ruff check src tests`, `rtk uv run pyright src` must all pass before a task is complete.
 
 ---
 
@@ -219,7 +219,7 @@ Expected: PASS (all registry tests, old and new).
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add python/src/nodes/kernel/registry.py python/tests/test_registry.py
+cd <nodes> && rtk git add python/src/nodes/kernel/registry.py python/tests/test_registry.py
 rtk git commit -m "feat(shapes-py): ShapeSpec + KindSpec.shape composition with dup-name rejection"
 ```
 
@@ -497,7 +497,7 @@ Expected: PASS (all shape tests).
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add python/src/nodes/kernel/shapes.py python/tests/test_shapes.py
+cd <nodes> && rtk git add python/src/nodes/kernel/shapes.py python/tests/test_shapes.py
 rtk git commit -m "feat(shapes-py): scope-only membership + edges/order/keys form facets + built-in shapes"
 ```
 
@@ -967,7 +967,7 @@ Expected: PASS (all four files). (`test_index_rebuild_equivalence.py` re-checks 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add python/src/nodes/kernel/index.py python/tests/test_index.py python/tests/test_index_snapshot.py python/tests/test_index_rebuild_equivalence.py python/tests/test_snapshot_load.py
+cd <nodes> && rtk git add python/src/nodes/kernel/index.py python/tests/test_index.py python/tests/test_index_snapshot.py python/tests/test_index_rebuild_equivalence.py python/tests/test_snapshot_load.py
 rtk git commit -m "feat(shapes-py): index extracts structural refs from form facets; persists generic structural_refs"
 ```
 
@@ -1123,7 +1123,7 @@ Expected: PASS (the new structural-rename test plus the existing rename/corpus t
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add python/src/nodes/kernel/corpus.py python/tests/test_corpus_persistence_rename.py python/tests/test_corpus.py
+cd <nodes> && rtk git add python/src/nodes/kernel/corpus.py python/tests/test_corpus_persistence_rename.py python/tests/test_corpus.py
 rtk git commit -m "feat(shapes-py): rename rewrites refs across membership/edges/order/keys form facets"
 ```
 
@@ -1187,7 +1187,7 @@ Expected: all PASS / no errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add docs/STANDARD.md python/src/nodes/vocab/kinds.py
+cd <nodes> && rtk git add docs/STANDARD.md python/src/nodes/vocab/kinds.py
 rtk git commit -m "docs(shapes-py): document membership/form-facet shape model in docs/STANDARD.md"
 ```
 
@@ -1195,7 +1195,7 @@ rtk git commit -m "docs(shapes-py): document membership/form-facet shape model i
 
 ## Final Verification (whole-plan)
 
-From `~/d/nodes/python`, the full gate must be green:
+From `python`, the full gate must be green:
 
 ```
 rtk uv run pytest tests -q          # all tests pass

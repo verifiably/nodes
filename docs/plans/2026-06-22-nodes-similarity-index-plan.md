@@ -35,7 +35,7 @@ There are three current-code details to keep in mind when reading the task snipp
 - **`VectorIndex.build` rejects a duplicate `uid`** with `CollisionError` (from `nodes.kernel.errors`), mirroring `Index.build` / `SearchIndex.build`.
 - **`Corpus` integration:** `Corpus(root, registry=None, embedder=None)`. The vector index is built only when `embedder` is supplied. With `embedder=None`, `similar` / `query_vector` / `similar_text` raise `EmbedderRequiredError` **before** any ref resolution. `add` and `rename` resolve+validate the renamed/added node's vector (`prepare`) **before** any disk/structural-index write and commit it **last** (`commit`) — `rename`'s prepare runs after the in-memory ref rewrite + registry validation and before `store.write_file`; `delete` calls `remove`. (A normal rename leaves title/body unchanged ⇒ id-only refresh, no re-embed; the ordering still guarantees no partial corpus state if the vector step fails.) All existing `Corpus` behavior and the existing test suite stay unchanged/green.
 - **Per-task gates, all clean before commit:** `rtk uv run pytest -q`, `rtk uv run ruff check src tests`, `rtk uv run pyright src`.
-- **Working directories:** run all `rtk uv run …` from `~/d/nodes/python/`; run all `rtk git …` from `~/d/nodes/`. Paths in `Files:` blocks are repo-root-relative.
+- **Working directories:** run all `rtk uv run …` from `python/`; run all `rtk git …` from the repository root. Paths in `Files:` blocks are repo-root-relative.
 
 ---
 

@@ -36,9 +36,9 @@ These bind every task. Values are copied verbatim from the spec (`docs/designs/2
 - **`limit` contract:** `undefined` = unbounded; otherwise must be an integer `> 0`. `0`, negative, or non-integer (e.g. `1.5`) → throw `RangeError` (the idiomatic JS equivalent of Python's `ValueError`; the parity oracle does not cover error type). Note: TypeScript's type system already rejects `boolean`/`string`/float-typed `limit` at compile time, so the runtime guard's observable cases are `0`, negatives, and non-integers.
 - **Mutation ordering (mirror the structural index):** `add` and `delete` are disk-first, then both in-memory indexes update together. `rename` stays best-effort and is **not** refactored — it adds exactly one `searchIndex.upsert(node)` for the renamed node before returning.
 - **Parity, not bit-identity:** scores are not asserted bit-identical across languages. The contract is the two committed fixtures: identical ranked `id` order and scores equal at 6 decimal places. When comparing oracle scores, parse them as numbers and compare the `scoreKey`-rounded value — do **not** string-compare (the oracle prints `0.34081`, a JSON trailing-zero truncation of `0.340810`).
-- **TS conventions:** camelCase fields/methods (`idByUid`, `matchedTerms`, `scoreKey`, `codepointSorted`), SCREAMING_CASE module constants, `.js` import extensions, `type`-only imports for types, biome line width 120. No `cd &&` chains needed in the plan — commands below assume the implementer runs from `~/d/nodes/ts`.
+- **TS conventions:** camelCase fields/methods (`idByUid`, `matchedTerms`, `scoreKey`, `codepointSorted`), SCREAMING_CASE module constants, `.js` import extensions, `type`-only imports for types, biome line width 120. No `cd &&` chains needed in the plan — commands below assume the implementer runs from `ts`.
 
-**Gate for every task:** from `~/d/nodes/ts`, `rtk npm test` (vitest) green, `rtk npm run typecheck` (`tsc --noEmit`) clean, `rtk npm run check` (biome) clean.
+**Gate for every task:** from `ts`, `rtk npm test` (vitest) green, `rtk npm run typecheck` (`tsc --noEmit`) clean, `rtk npm run check` (biome) clean.
 
 ---
 

@@ -15,7 +15,7 @@
 - **No code changes in the `nodes` repository.** If a task believes a code change is needed here, it reports BLOCKED; it does not make the change. The science follow-up may update existing documentation-guard metadata/allowlists when a required documentation citation triggers that guard; that guard update belongs in the same science docs commit.
 - **Gates before every commit** (AGENTS.md): from `python/`: `uv run --frozen pytest -q`, `uv run --frozen ruff check .`, `uv run --frozen pyright src`; from `ts/`: `npm test`, `npm run typecheck`, `npm run check`.
 - **Conventional commits; no AI-attribution trailers.**
-- **Filepaths in docs use `~/d/nodes/...`** (AGENTS.md); never write the absolute home or sync-root path into a document.
+- **Filepaths in docs use `~/…/nodes/...`** (AGENTS.md); never write the absolute home or sync-root path into a document.
 - **The seam design is pre-normative** (spec §2.1): frozen as a contract about the future standard amendment; it must never claim present normative authority over shipped code, and STANDARD.md is not edited anywhere in this plan.
 - **Verdict vocabulary** (spec §4): every redesign-design delta gets exactly one of **stands / stands amended / withdrawn**, as a dated parenthetical annotation at its site, in the document's existing style (see its 2026-08-08 notes for the form).
 - **Two landings, in order** (spec §2): the seam design merges to `main` before any trailing-review commit lands there. Merges are user checkpoints — stop and use superpowers:finishing-a-development-branch.
@@ -118,7 +118,7 @@ git commit -m "docs(designs): pin the executor protocol and boundary attribution
 
 **Files:**
 - Modify: `docs/designs/2026-08-17-nodes-write-plan-executor-seam-design.md` (sections 6, 7, 8; whole-document pass)
-- Read (evidence): science `docs/designs/2026-08-17-conformance-cut-4.md` §1–§2 (the add-only slice, the chained-but-unanchored close), science `docs/designs/2026-08-03-redesign-adoption-ledger.md` rows 3–4, spec §3 item 5; **the engine itself**: `~/d/atoms/python/src/atoms/core/effects.py` (`CreateFileNoClobber(effect_id, path, post)`; `ReplaceFile(effect_id, path, pre, post)`; `DeletePath(effect_id, path, pre)`; `MoveNoClobber`), `~/d/atoms/python/src/atoms/core/fingerprint.py:22` (`FileState(content_hash, mode, byte_len)` — `content_hash` is `sha256:<64 hex>`-prefixed), `~/d/atoms/python/src/atoms/core/spec.py:31-40` (`TransactionSpec`: `schema_version`, `consumer_tag`, `intent_digest`, `initial_surface`, `final_surface`, `effects`, `dependencies`, `fulfills`, `registered_paths`), and `~/d/atoms/python/src/atoms/core/compiler.py:207-213` (`intent_digest` is caller-supplied; the engine validates only its `sha256:<64 lowercase hex>` format)
+- Read (evidence): science `docs/designs/2026-08-17-conformance-cut-4.md` §1–§2 (the add-only slice, the chained-but-unanchored close), science `docs/designs/2026-08-03-redesign-adoption-ledger.md` rows 3–4, spec §3 item 5; **the engine itself**: atoms `python/src/atoms/core/effects.py` (`CreateFileNoClobber(effect_id, path, post)`; `ReplaceFile(effect_id, path, pre, post)`; `DeletePath(effect_id, path, pre)`; `MoveNoClobber`), atoms `python/src/atoms/core/fingerprint.py:22` (`FileState(content_hash, mode, byte_len)` — `content_hash` is `sha256:<64 hex>`-prefixed), atoms `python/src/atoms/core/spec.py:31-40` (`TransactionSpec`: `schema_version`, `consumer_tag`, `intent_digest`, `initial_surface`, `final_surface`, `effects`, `dependencies`, `fulfills`, `registered_paths`), and atoms `python/src/atoms/core/compiler.py:207-213` (`intent_digest` is caller-supplied; the engine validates only its `sha256:<64 lowercase hex>` format)
 
 **Interfaces:**
 - Consumes: §2's ops and preconditions, §3's protocol names.
@@ -158,7 +158,7 @@ git commit -m "docs(designs): complete the seam contract for freeze"
 
 **Files:**
 - Modify: `docs/designs/2026-08-03-nodes-under-the-system-redesign-design.md` (§4 and the status header only)
-- After merge, in science (`~/d/science`, on `main` directly): `docs/designs/2026-08-03-redesign-adoption-ledger.md` (row 3), `docs/guide/open-questions.md` (the cut-4 bullet, lines ~175–194), `python/tests/test_designs_corpus.py` (documentation-guard infrastructure for external citations)
+- After merge, in science (`<science>`, on `main` directly): `docs/designs/2026-08-03-redesign-adoption-ledger.md` (row 3), `docs/guide/open-questions.md` (the cut-4 bullet, lines ~175–194), `python/tests/test_designs_corpus.py` (documentation-guard infrastructure for external citations)
 
 **Interfaces:**
 - Consumes: the finished seam design and its exact filename.
@@ -180,7 +180,7 @@ Stop. Use superpowers:finishing-a-development-branch scoped to this landing: gat
 
 - [ ] **Step 4: Science follow-up commit (after the merge, on science `main`)**
 
-In `~/d/science`: ledger row 3's status cell gains: "Seam frozen 2026-08-XX (`nodes` `2026-08-17-nodes-write-plan-executor-seam-design.md`, pre-normative — binds the future standard amendment); §2/§3/§5 detailed review in progress." In `docs/guide/open-questions.md`, the cut-4 bullet's clause naming the seam freeze as pending is updated to name it frozen (the adapter design's dependency is now satisfied; the adapter design itself remains the open item). Run science's gates from its `python/`: `uv run --frozen pytest -q` (10-minute timeout; science's pytest config suppresses the summary line — verify exit 0), `uv run --frozen ruff check .`, `uv run --frozen pyright`, and — because this landing edits the guide — `uv run --frozen python tools/check_guide.py`. Commit:
+In `<science>`: ledger row 3's status cell gains: "Seam frozen 2026-08-XX (`nodes` `2026-08-17-nodes-write-plan-executor-seam-design.md`, pre-normative — binds the future standard amendment); §2/§3/§5 detailed review in progress." In `docs/guide/open-questions.md`, the cut-4 bullet's clause naming the seam freeze as pending is updated to name it frozen (the adapter design's dependency is now satisfied; the adapter design itself remains the open item). Run science's gates from its `python/`: `uv run --frozen pytest -q` (10-minute timeout; science's pytest config suppresses the summary line — verify exit 0), `uv run --frozen ruff check .`, `uv run --frozen pyright`, and — because this landing edits the guide — `uv run --frozen python tools/check_guide.py`. Commit:
 
 **2026-08-17 ruling:** add the new seam filename to science `python/tests/test_designs_corpus.py::EXTERNAL_DOCUMENTS` in this same follow-up commit. This documentation-guard entry is within the plan's intent; later follow-ups reuse the registered entry so the issue does not recur.
 
@@ -235,7 +235,7 @@ git commit -m "docs(designs): record the §2 contract-delta verdicts"
 
 **Files:**
 - Modify: `docs/designs/2026-08-03-nodes-under-the-system-redesign-design.md` (§3 annotations)
-- Read (evidence): commands below; `~/d/mindful/v6/src/`
+- Read (evidence): commands below; `<mindful>/v6/src/`
 
 **Interfaces:**
 - Consumes: the seam design §2 (rename's specified invalid prefix, for the rename verdict).
@@ -244,8 +244,8 @@ git commit -m "docs(designs): record the §2 contract-delta verdicts"
 - [ ] **Step 1: Re-run the caller measurements**
 
 ```bash
-grep -rn "similar\|dangling\|descendants\|ancestors" ~/d/mindful/v6/src --include="*.ts" -l
-grep -rn "\.similar(\|\.similarText(\|\.dangling(\|\.descendants(\|\.ancestors(" ~/d/mindful/v6/src
+grep -rn "similar\|dangling\|descendants\|ancestors" <mindful>/v6/src --include="*.ts" -l
+grep -rn "\.similar(\|\.similarText(\|\.dangling(\|\.descendants(\|\.ancestors(" <mindful>/v6/src
 wc -l python/src/nodes/core/similarity.py ts/src/similarity.ts
 grep -rln "similarity\|vector" python/tests ts/tests fixtures | head -20
 ```
@@ -290,7 +290,7 @@ git commit -m "docs(designs): record the §3 withdrawal verdicts"
 
 - [ ] **Step 2: Refresh the consumer-state note**
 
-Replace the 2026-08-08 note's facts with the current world, verified against science: the science corpus's current document count (read README's explicit count sentence — "Twenty-three documents" as of 2026-08-17 — and cross-check with `ls ~/d/science/docs/designs/*.md | wc -l`; use whatever the count is when the step runs), `atoms` A8 certified 2026-08-17 (ledger row 4), conformance cut 4 drafted against this seam (cut-4 §1), the tamper log confirmed as §2.2's second consumer. Keep it a dated note in the same style.
+Replace the 2026-08-08 note's facts with the current world, verified against science: the science corpus's current document count (read README's explicit count sentence — "Twenty-three documents" as of 2026-08-17 — and cross-check with `ls <science>/docs/designs/*.md | wc -l`; use whatever the count is when the step runs), `atoms` A8 certified 2026-08-17 (ledger row 4), conformance cut 4 drafted against this seam (cut-4 §1), the tamper log confirmed as §2.2's second consumer. Keep it a dated note in the same style.
 
 - [ ] **Step 3: Write the §6 version-policy verdict**
 
@@ -315,7 +315,7 @@ git commit -m "docs(designs): complete the detailed review of the redesign delta
 
 - [ ] **Step 6: USER CHECKPOINT — landing two, then the science follow-up**
 
-Stop; superpowers:finishing-a-development-branch for the remaining branch commits (merge to `main`; worktree cleanup per the skill). After the merge, in `~/d/science` on `main`: ledger row 3's status becomes "Detailed review complete 2026-08-XX; deltas await implementation" (keeping the seam-frozen fact and replacing "Direction approved"); grep science docs for any other "direction approved"-era claim about the nodes review (`grep -rn "Direction approved\|detailed review" docs/ --include="*.md"`) and correct what the landing made stale. **Before editing anything**, require a clean science tree (`git -C ~/d/science status --porcelain` empty; if not empty, stop and ask the user — another workstream's changes must not ride along). After the edits, list what changed (`git status --porcelain`); if the list contains anything the sweep does not account for, stop for inspection instead of staging. With that clean-tree precondition and inspection satisfied, stage the documentation sweep with `git add -A docs/`. Science gates green from its `python/` (`uv run --frozen pytest -q` exit 0, `uv run --frozen ruff check .`, `uv run --frozen pyright`, and `uv run --frozen python tools/check_guide.py` if the sweep touched the guide), then:
+Stop; superpowers:finishing-a-development-branch for the remaining branch commits (merge to `main`; worktree cleanup per the skill). After the merge, in `<science>` on `main`: ledger row 3's status becomes "Detailed review complete 2026-08-XX; deltas await implementation" (keeping the seam-frozen fact and replacing "Direction approved"); grep science docs for any other "direction approved"-era claim about the nodes review (`grep -rn "Direction approved\|detailed review" docs/ --include="*.md"`) and correct what the landing made stale. **Before editing anything**, require a clean science tree (`git -C <science> status --porcelain` empty; if not empty, stop and ask the user — another workstream's changes must not ride along). After the edits, list what changed (`git status --porcelain`); if the list contains anything the sweep does not account for, stop for inspection instead of staging. With that clean-tree precondition and inspection satisfied, stage the documentation sweep with `git add -A docs/`. Science gates green from its `python/` (`uv run --frozen pytest -q` exit 0, `uv run --frozen ruff check .`, `uv run --frozen pyright`, and `uv run --frozen python tools/check_guide.py` if the sweep touched the guide), then:
 
 ```bash
 git add -A docs/

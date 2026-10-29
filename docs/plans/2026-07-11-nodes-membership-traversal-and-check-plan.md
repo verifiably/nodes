@@ -18,7 +18,7 @@
 - Gates before every commit — TypeScript (from `ts/`): `rtk npm test`, `rtk npm run typecheck`, `rtk npm run check`; Python (from `python/`): `uv run --frozen pytest -q`, `uv run --frozen ruff check .`, `uv run --frozen pyright src`.
 - Exact normative values (copy verbatim, do not improvise): finding code `dangling-member`, severity `warning`, `ref` = container's live id, `detail` = the unresolved member ref, deduplicated per `(container, member ref)`; traversal returns **sorted (Unicode code point), uid-deduplicated live ids**; transitive results always exclude the start node, even when a cycle reaches it; dangling member refs are silently skipped by traversal; `RefError` only for an unresolvable *input* ref.
 - Fixture uids are 32-char strings; the new ones are pinned in Task 5 — do not regenerate them.
-- Use `~/d/` (never the absolute home or sync-root path) for any path written into docs.
+- Use `~/…/` (never the absolute home or sync-root path) for any path written into docs.
 
 ---
 
@@ -227,7 +227,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/structural-index.ts ts/tests/structural-index.test.ts
 rtk git commit -m "feat(ts/index): membership traversal primitives and dangling-member scan"
 ```
@@ -433,7 +433,7 @@ Expected: all PASS (existing suites unaffected — new code paths only).
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/corpus.ts ts/tests/corpus-traversal.test.ts ts/tests/corpus-check.test.ts
 rtk git commit -m "feat(ts/corpus): membership traversal API and dangling-member findings"
 ```
@@ -649,7 +649,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add python/src/nodes/kernel/structural_index.py python/tests/test_index.py
 rtk git commit -m "feat(py/index): membership traversal primitives and dangling-member scan"
 ```
@@ -838,7 +838,7 @@ Expected: all PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add python/src/nodes/kernel/corpus.py python/tests/test_corpus_traversal.py python/tests/test_corpus_check.py
 rtk git commit -m "feat(py/corpus): membership traversal API and dangling-member findings"
 ```
@@ -1110,7 +1110,7 @@ Expected: all PASS — in particular `check_parity` / `test_check_parity` now se
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add fixtures/check-corpus/set fixtures/check-corpus/note/renamed.md fixtures/check.oracle.json fixtures/traversal.oracle.json ts/tests/traversal_parity.test.ts python/tests/test_traversal_parity.py ts/tests/check_parity.test.ts python/tests/test_check_parity.py
 rtk git commit -m "test: membership cluster fixture + traversal and check oracles"
 ```
@@ -1121,7 +1121,7 @@ rtk git commit -m "test: membership cluster fixture + traversal and check oracle
 
 **Files:**
 - Modify: `docs/STANDARD.md` (header, §7, §8.2, §11.2, §12, §13)
-- Verify (no commit): `ts/` build output consumed by `~/d/mindful/v6` via its `@nodes/kernel` symlink
+- Verify (no commit): `ts/` build output consumed by `<mindful>/v6` via its `@nodes/kernel` symlink
 
 **Interfaces:**
 - Consumes: the shipped behavior of Tasks 1–5 (this task documents it; no code changes).
@@ -1231,18 +1231,18 @@ In §13, delete the first bullet (the three lines):
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add docs/STANDARD.md
 rtk git commit -m "docs: STANDARD 1.1 — membership traversal + dangling-member finding"
 ```
 
 - [ ] **Step 7: Rebuild the TS dist and smoke-check mindful**
 
-`~/d/mindful/v6` consumes the TS kernel's built `dist/` through its `@nodes/kernel` symlink, so rebuild and run its suite (no commits — verification only):
+`<mindful>/v6` consumes the TS kernel's built `dist/` through its `@nodes/kernel` symlink, so rebuild and run its suite (no commits — verification only):
 
 ```bash
-cd ~/d/nodes/ts && rtk npm run build
-cd ~/d/mindful/v6 && rtk npm test
+cd <nodes>/ts && rtk npm run build
+cd <mindful>/v6 && rtk npm test
 ```
 
 Expected: build succeeds; mindful's full vitest suite passes (the kernel change is additive, so no mindful code changes are needed).

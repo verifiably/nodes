@@ -60,7 +60,7 @@ The eight Plan-1 modules in scope: `errors`, `ids`, `relations`, `node`, `frontm
 ## 3. Repo restructure
 
 ```
-~/d/nodes/
+nodes/
   docs/            (unchanged — shared, language-agnostic specs & plans)
   fixtures/        (NEW — shared parity fixtures + canonical-JSON oracle; see §5)
   python/          (MOVED from root: src/, tests/, pyproject.toml, uv.lock)

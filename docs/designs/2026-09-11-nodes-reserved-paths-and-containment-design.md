@@ -37,7 +37,7 @@ snapshot manifest keeps its `.md` rule. Oracle rows renamed and flipped accordin
 
 **Containment.** No path nodes yields, reads, writes, or deletes — node documents,
 snapshots, vector cache entries, and their temporary siblings alike — has a symlink
-component below the root. The root itself may be a symlink (`~/d/nodes` is one); containment is
+component below the root. The root itself may be a symlink (the nodes checkout is one); containment is
 stated relative to the root as given, so every touched path resolves inside the root's
 own resolution. The walk never follows a symlink — file or directory, at any depth — and
 skips it as a non-member.

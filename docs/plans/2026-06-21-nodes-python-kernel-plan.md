@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Python reference implementation of the `nodes` kernel — the domain-free data model, on-disk format, registry/validation, and file CRUD — in the new `~/d/nodes/` repo.
+**Goal:** Build the Python reference implementation of the `nodes` kernel — the domain-free data model, on-disk format, registry/validation, and file CRUD — in the new `nodes` repo.
 
 **Architecture:** A single `nodes` package with a `nodes.kernel` subpackage (reserving `nodes.vocab` / `nodes.domains` for later plans). Markdown + YAML frontmatter is the canonical store; the kernel parses/serializes it into Pydantic models, validates kinds against a registry, and performs file CRUD + rename over a corpus directory. No derived index, no TypeScript, no knowledge-vocab kinds in this plan.
 
@@ -14,8 +14,8 @@ This plan has since been implemented and is still accurate as the historical Pyt
 
 The repo and kernel have grown substantially since this plan:
 
-- Python now lives under `~/d/nodes/python/` after the later TS-port repo restructure. Historical paths like `src/nodes/kernel/...`, `tests/...`, and `pyproject.toml` mean `python/src/nodes/kernel/...`, `python/tests/...`, and `python/pyproject.toml` in current checkout.
-- The root now also contains `ts/` plus shared docs. Run Python gates from `~/d/nodes/python`.
+- Python now lives under `python/` after the later TS-port repo restructure. Historical paths like `src/nodes/kernel/...`, `tests/...`, and `pyproject.toml` mean `python/src/nodes/kernel/...`, `python/tests/...`, and `python/pyproject.toml` in current checkout.
+- The root now also contains `ts/` plus shared docs. Run Python gates from `python`.
 - `Corpus` now owns the primary high-level API and coordinates `Store`, the structural `Index`, full-text `SearchIndex`, optional similarity `VectorIndex`, and index persistence snapshots.
 - `Store` is now narrow file CRUD (`write_file`, `read_file`, `delete_file`, `all_nodes`, `path_for`); ref resolution, rename, inbound ref rewriting, and derived-index updates live in `Corpus`.
 - Later plans added `nodes.vocab`, structural index, full-text search, similarity/vector cache, and snapshot persistence. So "No derived index" and "reserved vocab" below are historical Plan-1 scope statements, not current package state.
@@ -29,22 +29,22 @@ Treat code snippets below as the original greenfield rollout, not as replacement
 - Pydantic v2 `BaseModel`; snake_case field names (no camelCase aliases).
 - ruff `line-length = 120`.
 - Import package is `nodes`; historical kernel code lived under `src/nodes/kernel/` and tests under `tests/`. Current paths are `python/src/nodes/kernel/` and `python/tests/`.
-- All commands run through `uv` from the Python package dir (e.g. current checkout: `cd ~/d/nodes/python && uv run pytest …`).
+- All commands run through `uv` from the Python package dir (e.g. current checkout: `cd <nodes>/python && uv run pytest …`).
 - Canonical id form `kind:slug` is the stored **and** display ref form; `uid` is an immutable UUID anchor on every node (spec §3.1, §3.5).
 - One `Relation` primitive; on disk `source` is implied by location (spec §3.2): node-relations omit `source`, graph edges keep both endpoints.
 - Facets serialize as a nested `facets:` map (spec §4).
-- Reference spec: `~/d/nodes/docs/designs/2026-06-21-nodes-substrate-design.md`.
+- Reference spec: `docs/designs/2026-06-21-nodes-substrate-design.md`.
 
 ---
 
 ### Task 1: Repo scaffold + error hierarchy
 
 **Files:**
-- Create: `~/d/nodes/pyproject.toml`
-- Create: `~/d/nodes/src/nodes/__init__.py`
-- Create: `~/d/nodes/src/nodes/kernel/__init__.py`
-- Create: `~/d/nodes/src/nodes/kernel/errors.py`
-- Test: `~/d/nodes/tests/test_errors.py`
+- Create: `pyproject.toml`
+- Create: `src/nodes/__init__.py`
+- Create: `src/nodes/kernel/__init__.py`
+- Create: `src/nodes/kernel/errors.py`
+- Test: `tests/test_errors.py`
 
 **Interfaces:**
 - Consumes: nothing (first task).
@@ -182,7 +182,7 @@ Expected: PASS (7 parametrized cases).
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk git add pyproject.toml src/nodes tests/test_errors.py
 rtk git commit -m "feat(kernel): scaffold nodes package + error hierarchy"
 ```
@@ -1373,7 +1373,7 @@ rtk git commit -m "feat(kernel): file store with CRUD, collision detection, rena
 ### Task 9: On-disk format reference + full-suite gate
 
 **Files:**
-- Create: `~/d/nodes/docs/STANDARD.md`
+- Create: `docs/STANDARD.md`
 - Create: `tests/test_format_golden.py`
 - Create: `tests/fixtures/gene_phf19.md`
 
@@ -1440,7 +1440,7 @@ Expected: FAIL — fixture missing or assertion error until the fixture + parser
 
 - [ ] **Step 4: Write the format reference doc**
 
-`~/d/nodes/docs/STANDARD.md`:
+`docs/STANDARD.md`:
 ```markdown
 # nodes — on-disk format (kernel)
 
@@ -1502,7 +1502,7 @@ rtk git commit -m "docs(kernel): on-disk format reference + golden round-trip te
 - §3.5 identity/rename contract (stored=id, uid anchor, `resolve()` via deprecated_ids, ref rewrite incl. membership, collisions) → Tasks 2, 4, 8.
 - §4 on-disk format (nested facets, top-level created/updated/version, source-implied) → Tasks 7, 9.
 - §5 derived index → **historically out of scope (Plan 2)**, flagged in `STANDARD.md`; now implemented by later structural-index/search/similarity/persistence plans.
-- §6 Python lib (CRUD) → Tasks 4–8; TS port was historically out of scope and now lives under `~/d/nodes/ts`.
+- §6 Python lib (CRUD) → Tasks 4–8; TS port was historically out of scope and now lives under `ts`.
 - §10 `uid` backfill → **out of scope (science-migration plan)**; kernel mints uuid4 for new nodes (Task 4).
 
 **Placeholder scan:** none — every code/test step shows complete content.

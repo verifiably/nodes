@@ -6,9 +6,9 @@
 
 **Architecture:** A `Structure` is a `Node` of a registered shape carrying a scope-only `membership` facet plus the form facet(s) its shape requires. Shapes register via `ShapeSpec`; a `KindSpec` adopts ≤1 shape via `KindSpec.shape`; the `Registry` composes the shape's required/optional facets and invariants into the kind's validation. The structural index extracts refs from `membership.members` plus the built-in form facets (registry-independently) and persists them as a generic `structuralRefs` list. Rename rewrites refs across all those facets. Clean breaking change — no compatibility layer, no migration.
 
-**Tech Stack:** TypeScript 5.5+, zod v3, vitest, biome (width 120). Source under `~/d/nodes/ts/src/`, tests under `~/d/nodes/ts/tests/`. All commands run from `~/d/nodes/ts` via the `rtk` wrapper.
+**Tech Stack:** TypeScript 5.5+, zod v3, vitest, biome (width 120). Source under `ts/src/`, tests under `ts/tests/`. All commands run from `ts` via the `rtk` wrapper.
 
-This is **Plan A-ts**, the second of three plans for mindful v6 SP1 (spec: `~/d/nodes/docs/designs/2026-06-23-mindful-v6-sp1-abstraction-design.md`, Part A). Plan A-py (Python) is the **oracle** for this port. This TS port has since been implemented on `main`; the red/green expectations below are the historical implementation sequence, not the current suite state. Plan B (the mindful package) follows.
+This is **Plan A-ts**, the second of three plans for mindful v6 SP1 (spec: `docs/designs/2026-06-23-mindful-v6-sp1-abstraction-design.md`, Part A). Plan A-py (Python) is the **oracle** for this port. This TS port has since been implemented on `main`; the red/green expectations below are the historical implementation sequence, not the current suite state. Plan B (the mindful package) follows.
 
 ## Current State Note
 
@@ -24,10 +24,10 @@ There are three current-code details to keep in mind when reading the task snipp
 
 The Python kernel on `main` is the source of truth. For each task, the corresponding Python file is the behavioural reference — when this plan says "mirror the oracle," read it:
 
-- Registry: `~/d/nodes/python/src/nodes/kernel/registry.py`
-- Shapes: `~/d/nodes/python/src/nodes/kernel/shapes.py`
-- Structural index: `~/d/nodes/python/src/nodes/kernel/index.py`
-- Corpus rename: `~/d/nodes/python/src/nodes/kernel/corpus.py` (`_rewrite_refs`, lines 25–51)
+- Registry: `python/src/nodes/kernel/registry.py`
+- Shapes: `python/src/nodes/kernel/shapes.py`
+- Structural index: `python/src/nodes/kernel/index.py`
+- Corpus rename: `python/src/nodes/kernel/corpus.py` (`_rewrite_refs`, lines 25–51)
 
 This plan contains the full TypeScript for every changed function. The oracle is the cross-check for parity, not a substitute for the code below.
 
@@ -44,7 +44,7 @@ This plan contains the full TypeScript for every changed function. The oracle is
 - **Singular shape:** a kind adopts zero or one shape (`KindSpec.shape?: string`).
 - **Snapshot key casing:** the TS snapshot uses **camelCase** keys on disk (`deprecatedIds`, etc.). The new structural-refs container key is therefore **`structuralRefs`** (NOT `structural_refs`). The **role string values** (`relation_source`, `membership_member`, `edges_source`, `edges_target`, `order_member`, `keys_value`) are snake-case literals identical to Python's — they are the shared role vocabulary.
 - **Parity is behavioural, not byte-identical:** the TS and Python snapshots are separate files (`snapshot.ts.json` vs `snapshot.py.json`); key casing differs by language. The one cross-language fixture parity is `corpus_parity.test.ts` against the shared `fixtures/` oracle (see Baseline).
-- **Gate (run from `~/d/nodes/ts`):** `rtk npm test` (vitest), `rtk npm run typecheck` (`tsc --noEmit`), `rtk npm run check` (biome) must all pass before a task is complete. During the original red/green implementation, only the explicitly named historical `corpus_parity` failure below was tolerated before Task 4.
+- **Gate (run from `ts`):** `rtk npm test` (vitest), `rtk npm run typecheck` (`tsc --noEmit`), `rtk npm run check` (biome) must all pass before a task is complete. During the original red/green implementation, only the explicitly named historical `corpus_parity` failure below was tolerated before Task 4.
 
 ## Historical Baseline
 
@@ -177,7 +177,7 @@ describe("Registry — shapes", () => {
 
 - [ ] **Step 2: Run the new tests to verify they fail**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/registry.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/registry.test.ts`
 Expected: FAIL — `registerShape`/`isShape`/`shape`/dup-rejection do not exist yet (type errors / thrown-type mismatches).
 
 - [ ] **Step 3: Implement the registry changes**
@@ -278,7 +278,7 @@ In `ts/src/index.ts`, find the `export { ... } from "./registry.js"` / `export t
 
 - [ ] **Step 5: Run the registry tests, then the full gate**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/registry.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/registry.test.ts`
 Expected: PASS (all registry tests).
 
 Run: `rtk npm run typecheck && rtk npm run check && rtk npm test`
@@ -287,7 +287,7 @@ Historical expected output during the original implementation: `tsc` clean, biom
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add ts/src/registry.ts ts/src/index.ts ts/tests/registry.test.ts
+cd <nodes> && rtk git add ts/src/registry.ts ts/src/index.ts ts/tests/registry.test.ts
 rtk git commit -m "feat(shapes-ts): ShapeSpec + KindSpec.shape composition with dup-name rejection"
 ```
 
@@ -472,7 +472,7 @@ describe("shapes — built-in validation", () => {
 
 - [ ] **Step 2: Run the shapes tests to verify they fail**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/shapes.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/shapes.test.ts`
 Expected: FAIL — `EDGES`/`ORDER`/`KEYS`/`edgesOf`/`orderOf`/`keysOf` and the new schemas do not exist; `registerBuiltinShapes` does not register shapes yet.
 
 - [ ] **Step 3: Rewrite `ts/src/shapes.ts`**
@@ -681,7 +681,7 @@ Read each test before editing and preserve its surrounding assertions (file-not-
 
 - [ ] **Step 6: Run the affected tests, then the full gate**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/shapes.test.ts tests/corpus.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/shapes.test.ts tests/corpus.test.ts`
 Expected: PASS (shapes fully; corpus.test.ts — the migrated validation tests pass, the not-yet-migrated rename tests at L138–179 still pass because `rewriteRefs` is unchanged and they still use bundled membership).
 
 Run: `rtk npm run typecheck && rtk npm run check && rtk npm test`
@@ -690,7 +690,7 @@ Historical expected output during the original implementation: `tsc` clean, biom
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add ts/src/shapes.ts ts/src/index.ts ts/tests/shapes.test.ts ts/tests/corpus.test.ts
+cd <nodes> && rtk git add ts/src/shapes.ts ts/src/index.ts ts/tests/shapes.test.ts ts/tests/corpus.test.ts
 rtk git commit -m "feat(shapes-ts): scope-only membership + edges/order/keys form facets + built-in shapes"
 ```
 
@@ -805,7 +805,7 @@ Update the comment at L70 (mentions `membership_member role`) to reference the s
 
 - [ ] **Step 2: Run the index tests to verify they fail**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/structural-index.test.ts tests/index-snapshot.test.ts tests/index-rebuild-equivalence.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/structural-index.test.ts tests/index-snapshot.test.ts tests/index-rebuild-equivalence.test.ts`
 Expected: FAIL — the new structural-roles test and the `structuralRefs` persistence test fail (old code emits `membership`, lacks `edges_source`/`order_member`/`keys_value` roles).
 
 - [ ] **Step 3: Update `ts/src/structural-index.ts`**
@@ -987,7 +987,7 @@ and update the method's declared return type accordingly:
 
 - [ ] **Step 4: Run the index tests, then the full gate**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/structural-index.test.ts tests/index-snapshot.test.ts tests/index-rebuild-equivalence.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/structural-index.test.ts tests/index-snapshot.test.ts tests/index-rebuild-equivalence.test.ts`
 Expected: PASS.
 
 Run: `rtk npm run typecheck && rtk npm run check && rtk npm test`
@@ -996,7 +996,7 @@ Historical expected output during the original implementation: `tsc` clean, biom
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add ts/src/structural-index.ts ts/tests/structural-index.test.ts ts/tests/index-snapshot.test.ts ts/tests/index-rebuild-equivalence.test.ts
+cd <nodes> && rtk git add ts/src/structural-index.ts ts/tests/structural-index.test.ts ts/tests/index-snapshot.test.ts ts/tests/index-rebuild-equivalence.test.ts
 rtk git commit -m "feat(shapes-ts): index extracts structural refs from form facets; persists generic structuralRefs"
 ```
 
@@ -1081,7 +1081,7 @@ Replace `"rewrites dict-membership values"` (L164–179) with a dict node using 
 
 - [ ] **Step 2: Run the corpus tests to verify they fail**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/corpus.test.ts tests/corpus_parity.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/corpus.test.ts tests/corpus_parity.test.ts`
 Expected: FAIL — the new edges/order/keys assertions fail (old `rewriteRefs` only touches `membership.members` and the now-absent bundled `membership.edges`); `corpus_parity` still fails.
 
 - [ ] **Step 3: Update `rewriteRefs` in `ts/src/corpus.ts`**
@@ -1142,7 +1142,7 @@ Do NOT change the `rename` method body — `rewriteRefs` is called in its prepar
 
 - [ ] **Step 4: Run the corpus tests, then the full gate**
 
-Run: `cd ~/d/nodes/ts && rtk npx vitest run tests/corpus.test.ts tests/corpus_parity.test.ts`
+Run: `cd <nodes>/ts && rtk npx vitest run tests/corpus.test.ts tests/corpus_parity.test.ts`
 Expected: PASS — including `corpus_parity` (the TS rename now matches the shared oracle).
 
 Run: `rtk npm run typecheck && rtk npm run check && rtk npm test`
@@ -1151,7 +1151,7 @@ Expected: `tsc` clean, biome clean. `rtk npm test` → **0 failed, all passed**.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes && rtk git add ts/src/corpus.ts ts/tests/corpus.test.ts
+cd <nodes> && rtk git add ts/src/corpus.ts ts/tests/corpus.test.ts
 rtk git commit -m "feat(shapes-ts): rename rewrites refs across membership/edges/order/keys form facets"
 ```
 
@@ -1180,7 +1180,7 @@ If smoke/vocab-exports reference a removed symbol, fix the test to the new surfa
 
 - [ ] **Step 3: Run the full gate**
 
-Run: `cd ~/d/nodes/ts && rtk npm test && rtk npm run typecheck && rtk npm run check`
+Run: `cd <nodes>/ts && rtk npm test && rtk npm run typecheck && rtk npm run check`
 Expected: all vitest tests pass (0 failed), `tsc` clean, biome clean.
 
 - [ ] **Step 4: Confirm Python parity by inspection**
@@ -1195,7 +1195,7 @@ Confirm, by reading both, that the TS behaviour matches the Python oracle on the
 - [ ] **Step 5: Commit (only if Step 1/2 changed anything)**
 
 ```bash
-cd ~/d/nodes && rtk git add ts/src/vocab/kinds.ts ts/src/index.ts ts/tests/smoke.test.ts
+cd <nodes> && rtk git add ts/src/vocab/kinds.ts ts/src/index.ts ts/tests/smoke.test.ts
 rtk git commit -m "docs(shapes-ts): finalize structural-shape surface; confirm parity with Python oracle"
 ```
 
@@ -1205,7 +1205,7 @@ If Steps 1–2 found nothing to change (the likely case), skip the commit and no
 
 ## Final Verification (whole-plan)
 
-From `~/d/nodes/ts`, the full gate must be green:
+From `ts`, the full gate must be green:
 
 ```
 rtk npm test            # all tests pass, 0 failed (corpus_parity now green)

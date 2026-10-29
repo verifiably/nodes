@@ -11,7 +11,7 @@ gap with a `Corpus.check()` reporting API in both kernels.
 
 ## 1. Context
 
-`~/d/nodes` ships two kernels (Python under `python/`, TypeScript under `ts/`) over one
+`nodes` ships two kernels (Python under `python/`, TypeScript under `ts/`) over one
 on-disk format. The de-facto spec is `docs/format.md`, which grew by accretion — sections
 are labeled by plan number ("Plan 2", "Plan 3", "Plan 4") and per-language addenda were
 appended per feature. Three problems have emerged:

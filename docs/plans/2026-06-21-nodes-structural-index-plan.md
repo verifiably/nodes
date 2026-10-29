@@ -14,11 +14,11 @@ This plan has since been implemented and remains useful as the historical Plan-2
 
 The repo and kernel have grown since this checklist was written:
 
-- Python now lives under `~/d/nodes/python/`. Historical paths like `src/nodes/kernel/...` and `tests/...` mean `python/src/nodes/kernel/...` and `python/tests/...` in the current checkout.
+- Python now lives under `python/`. Historical paths like `src/nodes/kernel/...` and `tests/...` mean `python/src/nodes/kernel/...` and `python/tests/...` in the current checkout.
 - The current `Corpus` also builds and maintains `SearchIndex`, an optional `VectorIndex`, a live manifest, and disposable snapshot persistence. `Index` now exposes `to_dict()` / validating `from_dict()` for snapshots, but still does no file I/O.
 - `Store.all_nodes()` now scans through `iter_corpus_files()` so corpus scans share the snapshot file-walk rules, including ignoring `.nodes-index/`.
 - The `docs/STANDARD.md` update in Task 6 has been superseded by later sections for shapes, knowledge vocab, TypeScript parity, full-text search, similarity, and per-language snapshot persistence. Do not replace current `docs/STANDARD.md` with the historical snippet below.
-- Current shell commands should use the repository's `rtk` wrapper. From `~/d/nodes/python`, run Python gates with `rtk uv run --frozen pytest`, `rtk uv run --frozen ruff check .`, and `rtk uv run --frozen pyright src`.
+- Current shell commands should use the repository's `rtk` wrapper. From `python`, run Python gates with `rtk uv run --frozen pytest`, `rtk uv run --frozen ruff check .`, and `rtk uv run --frozen pyright src`.
 
 Treat code snippets below as the original greenfield implementation sequence, not as replacement code for current `corpus.py`, `index.py`, `store.py`, or `docs/STANDARD.md`.
 

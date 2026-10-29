@@ -21,7 +21,7 @@
 - Only kernel content errors convert to findings: `FacetError` → `facet-invalid`, `InvariantError` → `invariant-violated`. Any other exception from an invariant propagates.
 - Finding order is `(ref, code, detail)` ascending; `message` is human-only, never sorted on, never in the oracle.
 - Docs sweeps MUST NOT touch the two 2026-07-10 files (this plan and its design doc) — they intentionally reference the old paths they change.
-- Filepaths written into docs use `~/d/nodes/...` (never the absolute home or sync-root path).
+- Filepaths written into docs use `~/…/nodes/...` (never the absolute home or sync-root path).
 
 ---
 
@@ -589,8 +589,8 @@ npm run check
 
 ## Consumers
 
-- **mindful v6** (`~/d/mindful/`) — tool-for-thought, builds on the TypeScript kernel.
-- **science** (`~/d/science/`) — research knowledge graphs, builds on the Python kernel.
+- **mindful v6** (`<mindful>/`) — tool-for-thought, builds on the TypeScript kernel.
+- **science** (`<science>/`) — research knowledge graphs, builds on the Python kernel.
 ```
 
 - [ ] **Step 2: Create `AGENTS.md`**
@@ -631,7 +631,7 @@ Decide the tier first — see `docs/STANDARD.md` §1:
 - Fail early; no silent fallbacks. Wrap Pydantic/Zod errors into the kernel error
   hierarchy — they never escape public APIs.
 - Composition over inheritance: kinds are name + facets + invariants, never subclasses.
-- Filepaths in docs use `~/d/nodes/...`.
+- Filepaths in docs use `~/…/nodes/...`.
 - No AI-attribution trailers in commit messages.
 ```
 

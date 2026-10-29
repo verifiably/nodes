@@ -30,7 +30,7 @@ There are three current-code details to keep in mind when reading the task snipp
 - **Shared-`Relation` identity invariant (structural):** a relation's source and target `OutRef`s must share ONE `Relation` object, because the graph queries dedup on object reference (the TS analog of Python's `id(relation)`). `fromDict` must replay extraction (`outRefsFrom`), never deserialize the two `OutRef`s independently.
 - **TS conventions:** camelCase fields/methods (`toDict`, `fromDict`, `hashBytes`, `iterCorpusFiles`, `loadSnapshot`, `flushIndex`, `idByUid`, `hashByUid`), SCREAMING_CASE module constants, `.js` import extensions, `type`-only imports for types, biome line width 120. Maps serialize via `Object.fromEntries` and deserialize via `new Map(Object.entries(...))`. Deep-copy plain JSON values with `structuredClone`.
 
-**Gate for every task:** from `~/d/nodes/ts`, `rtk npm test` (vitest) green, `rtk npm run typecheck` (`tsc --noEmit`) clean, `rtk npm run check` (biome) clean. All commands run from `~/d/nodes/ts`. This work was implemented on `main`.
+**Gate for every task:** from `ts`, `rtk npm test` (vitest) green, `rtk npm run typecheck` (`tsc --noEmit`) clean, `rtk npm run check` (biome) clean. All commands run from `ts`. This work was implemented on `main`.
 
 ---
 

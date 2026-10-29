@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (strict, ES2022, NodeNext ESM), Zod, Vitest, Biome.
 
-**Reference (read before starting):** the spec is `docs/STANDARD.md` §"Knowledge vocab (Plan 3)" (the roster, the `Source` facet, the predicates, the enforcement contract). The oracle this mirrors is the Python source `~/d/nodes/python/src/nodes/vocab/{source,kinds,predicates,__init__}.py` and its tests `~/d/nodes/python/tests/test_vocab_{source,kinds,predicates,exports}.py`. The kernel surface the port consumes lives in `~/d/nodes/ts/src/{errors,node,registry,relations,corpus}.ts`.
+**Reference (read before starting):** the spec is `docs/STANDARD.md` §"Knowledge vocab (Plan 3)" (the roster, the `Source` facet, the predicates, the enforcement contract). The oracle this mirrors is the Python source `python/src/nodes/vocab/{source,kinds,predicates,__init__}.py` and its tests `python/tests/test_vocab_{source,kinds,predicates,exports}.py`. The kernel surface the port consumes lives in `ts/src/{errors,node,registry,relations,corpus}.ts`.
 
 ## Current State Note
 
@@ -37,7 +37,7 @@ Every task's requirements implicitly include this section.
 - **Faithful port:** mirror the current Python `nodes.vocab` semantics exactly, including the truthiness of `requireIdentifiableSource`'s "at least one of" check.
 - **No compatibility layers / no "Unified" prefixes / no "legacy" shims.**
 - **Commands:** `rtk` prefixes `git`/`npm`/`npx`/`uv`/`node`; shell builtins (`cd`) and filesystem primitives (`mkdir`) are shown bare; one command per line (no `&&` chains).
-- **Docs/code paths** use `~/d/` (never the absolute home or sync-root path). No `Co-Authored-By` trailers in commits.
+- **Docs/code paths** use `~/…/` (never the absolute home or sync-root path). No `Co-Authored-By` trailers in commits.
 
 ---
 
@@ -123,7 +123,7 @@ describe("Source facet", () => {
 - [ ] **Step 2: Run the test to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-source
 ```
 
@@ -187,7 +187,7 @@ export function requireIdentifiableSource(node: Node): void {
 - [ ] **Step 4: Run the test to verify it passes**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-source
 ```
 
@@ -196,7 +196,7 @@ Expected: PASS.
 - [ ] **Step 5: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -208,7 +208,7 @@ Expected: all green.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/vocab/source.ts ts/tests/vocab-source.test.ts
 rtk git commit -m "feat(ts): vocab Source facet (sourceOf + requireIdentifiableSource)"
 ```
@@ -287,7 +287,7 @@ describe("knowledge vocab kinds", () => {
 - [ ] **Step 2: Run the test to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-kinds
 ```
 
@@ -327,7 +327,7 @@ export function registerKnowledgeVocab(reg: Registry): void {
 - [ ] **Step 4: Run the test to verify it passes**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-kinds
 ```
 
@@ -336,7 +336,7 @@ Expected: PASS.
 - [ ] **Step 5: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -348,7 +348,7 @@ Expected: all green.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/vocab/kinds.ts ts/tests/vocab-kinds.test.ts
 rtk git commit -m "feat(ts): vocab knowledge kinds + registerKnowledgeVocab"
 ```
@@ -405,7 +405,7 @@ describe("vocab predicates", () => {
 - [ ] **Step 2: Run the test to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-predicates
 ```
 
@@ -453,7 +453,7 @@ export function refines(source: string, target: string): Relation {
 - [ ] **Step 4: Run the test to verify it passes**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-predicates
 ```
 
@@ -462,7 +462,7 @@ Expected: PASS.
 - [ ] **Step 5: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -474,7 +474,7 @@ Expected: all green.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/vocab/predicates.ts ts/tests/vocab-predicates.test.ts
 rtk git commit -m "feat(ts): vocab predicates (constants + relation constructors)"
 ```
@@ -631,7 +631,7 @@ describe("Corpus with the knowledge vocab registry", () => {
 - [ ] **Step 4: Run the new tests**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test -- vocab-exports vocab-corpus
 ```
 
@@ -640,7 +640,7 @@ Expected: PASS.
 - [ ] **Step 5: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -652,7 +652,7 @@ Expected: all green.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/vocab/index.ts ts/tests/vocab-exports.test.ts ts/tests/vocab-corpus.test.ts
 rtk git commit -m "feat(ts): vocab barrel + exports + Corpus-vocab integration test"
 ```
@@ -721,7 +721,7 @@ Re-read both edited sections to confirm there is no remaining "not yet ported" /
 - [ ] **Step 4: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/README.md docs/STANDARD.md
 rtk git commit -m "docs: TypeScript knowledge vocab ported"
 ```

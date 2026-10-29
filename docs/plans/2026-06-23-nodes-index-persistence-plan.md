@@ -6,7 +6,7 @@
 
 **Architecture:** A new `snapshot.py` module owns all snapshot I/O — the file location, atomic write, the version/lang gate, integrity validation, a byte-level file walk, and the `path → (sha256, uid)` manifest. The three index classes stay pure data and gain only `to_dict()`/`from_dict()`. `Corpus.__init__` loads + reconciles (or full-rebuilds); `Corpus.flush_index()` writes; `Corpus` maintains an in-memory manifest across every write path. The snapshot is never authoritative — every load reconciles against current file hashes, so a stale/absent snapshot costs only time.
 
-**Tech Stack:** Python ≥3.11, pydantic v2, pyyaml, stdlib `hashlib`/`json`/`os`. Tests: pytest. Lint: ruff (line-length 120). Types: pyright (basic). All commands run through the `rtk` wrapper from `~/d/nodes/python`.
+**Tech Stack:** Python ≥3.11, pydantic v2, pyyaml, stdlib `hashlib`/`json`/`os`. Tests: pytest. Lint: ruff (line-length 120). Types: pyright (basic). All commands run through the `rtk` wrapper from `python`.
 
 ## Current State Note
 
@@ -31,7 +31,7 @@ There are three current-code details to keep in mind when reading the task snipp
 - **No-embedder mode** ignores the `vectors` section entirely — it is not deserialized or validated.
 - Atomic writes: write to `<path>.tmp`, then `os.replace`. Manifest paths are **root-relative POSIX** strings.
 - **Shared-`Relation` identity invariant (structural):** the source and target `OutRef`s of one relation must share a single `Relation` instance (`in_refs` dedup keys on `id(relation)`). Serialize each relation once per entry and replay extraction (`_out_refs_from`) on load.
-- Gate (run from `~/d/nodes/python`): `rtk uv run pytest -q`, `rtk uv run ruff check src tests`, `rtk uv run pyright src`.
+- Gate (run from `python`): `rtk uv run pytest -q`, `rtk uv run ruff check src tests`, `rtk uv run pyright src`.
 
 ---
 

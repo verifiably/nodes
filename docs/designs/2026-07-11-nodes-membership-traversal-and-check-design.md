@@ -12,7 +12,7 @@ extended in the same change.
 
 ## 1. Context
 
-`~/d/nodes` ships two kernels (Python under `python/`, TypeScript under `ts/`) whose
+`nodes` ships two kernels (Python under `python/`, TypeScript under `ts/`) whose
 structural index already tracks every membership/edges/order/keys ref (roles
 `membership_member`, `edges_source`, `edges_target`, `order_member`, `keys_value`) in
 `inRefs` / `in_refs`. Those refs participate in rename rewriting and stay indexed after

@@ -235,7 +235,7 @@ What is re-verified, per delta:
   the collation gap confirmed (Python code points vs TS UTF-16 code units);
   the uid-minting wording still reads as a constraint.
 - **§3 (withdrawals):** the zero-caller measurements re-run — grep mindful v6
-  (`~/d/mindful/v6/`) and both `nodes` languages for the similarity facet,
+  (`<mindful>/v6/`) and both `nodes` languages for the similarity facet,
   `dangling()`, and `descendants`/`ancestors`; the line-count claim (~2,800)
   re-measured; `rename`'s prospective caller (address correction / inbound
   rewrite) still stands in the science designs; the `(crash-atomic)` code

@@ -308,8 +308,8 @@ Expected: one commit containing only the two living README files.
 - Verify: `ts/package-lock.json`
 - Verify: `README.md`
 - Verify: `ts/README.md`
-- Verify (no edits): `~/d/mindful/v6/package.json`
-- Verify (no edits): `~/d/mindful/v6/node_modules/@nodes/kernel`
+- Verify (no edits): `<mindful>/v6/package.json`
+- Verify (no edits): `<mindful>/v6/node_modules/@nodes/kernel`
 
 **Interfaces:**
 - Consumes: the three committed deliverables above.
@@ -330,7 +330,7 @@ Expected: no matches. Historical records are intentionally excluded because they
 Run from the package-identity worktree root:
 
 ```bash
-node -e 'const fs = require("node:fs"); const mindful = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); const core = JSON.parse(fs.readFileSync(process.argv[2], "utf8")); console.log(JSON.stringify({ requested: mindful.dependencies["@nodes/kernel"], bundled: mindful.bundledDependencies.includes("@nodes/kernel"), declared: core.name }, null, 2))' ~/d/mindful/v6/package.json ts/package.json
+node -e 'const fs = require("node:fs"); const mindful = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); const core = JSON.parse(fs.readFileSync(process.argv[2], "utf8")); console.log(JSON.stringify({ requested: mindful.dependencies["@nodes/kernel"], bundled: mindful.bundledDependencies.includes("@nodes/kernel"), declared: core.name }, null, 2))' <mindful>/v6/package.json ts/package.json
 ```
 
 Expected: `requested` is `file:../../nodes/ts`, `bundled` is `true`, and the worktree package declares `@nodes-dev/core`. This directly records the dependency-name mismatch that a future mindful `npm install` would reconcile.
@@ -338,17 +338,17 @@ Expected: `requested` is `file:../../nodes/ts`, `bundled` is `true`, and the wor
 Also confirm where mindful's existing installed link points:
 
 ```bash
-realpath ~/d/mindful/v6/node_modules/@nodes/kernel
+realpath <mindful>/v6/node_modules/@nodes/kernel
 ```
 
-Expected: `realpath` identifies `~/d/nodes/ts`, the main Nodes checkout, rather than the isolated package-identity worktree. Do not run a mindful build here: this slice changes no TypeScript source or API, and the existing symlink does not consume the renamed worktree manifest, so such a build cannot validate the identity migration.
+Expected: `realpath` identifies `<nodes>/ts`, the main Nodes checkout, rather than the isolated package-identity worktree. Do not run a mindful build here: this slice changes no TypeScript source or API, and the existing symlink does not consume the renamed worktree manifest, so such a build cannot validate the identity migration.
 
 - [ ] **Step 3: Record mindful migration as the top follow-up**
 
 Record this follow-up in the implementation handoff:
 
 ```text
-Before running npm install in ~/d/mindful/v6, migrate @nodes/kernel to
+Before running npm install in <mindful>/v6, migrate @nodes/kernel to
 @nodes-dev/core across:
 
 - package.json: description, file dependency, and bundledDependencies;
@@ -377,4 +377,4 @@ Expected: the Python metadata, TypeScript metadata, and documentation commits ar
 
 - [ ] **Step 5: Stop at the implementation boundary**
 
-Do not create npm/PyPI organizations, publish either package, transfer the GitHub repository, edit `~/d/mindful/` or `~/d/science/`, introduce domain package layouts, or decide the Python domain import namespace. Carry the explicit mindful migration from Step 3 as the first downstream follow-up; record the other items as follow-up work governed by the accepted design rather than expanding this branch.
+Do not create npm/PyPI organizations, publish either package, transfer the GitHub repository, edit `<mindful>/` or `<science>/`, introduce domain package layouts, or decide the Python domain import namespace. Carry the explicit mindful migration from Step 3 as the first downstream follow-up; record the other items as follow-up work governed by the accepted design rather than expanding this branch.

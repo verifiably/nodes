@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Create the public home (`nodes-dev/core`) and publish the first lockstep release — `nodes-core` 0.1.0 on PyPI and `@nodes-dev/core` 0.1.0 on npm — from tag `core/v0.1.0` through a trusted-OIDC pipeline, per
-`~/d/nodes/docs/designs/2026-07-16-nodes-first-publish-design.md`.
+`docs/designs/2026-07-16-nodes-first-publish-design.md`.
 
 **Architecture:** Tasks 1–4 are repository file changes (license, manifests, lockfile tracking, verification scripts, two workflows) on an isolated branch, merged to main. Tasks 5–7 are operational: push the repo to GitHub, set up registries (with owner-interactive steps), rehearse the pipeline, and cut `core/v0.1.0`.
 
@@ -11,8 +11,8 @@
 
 ## Global Constraints
 
-- Before Task 1, the execution controller MUST use `superpowers:using-git-worktrees` to create or verify an isolated checkout on branch `feat/first-publish` off `main`. The plan never creates the branch or assumes the primary `~/d/nodes` checkout is the active workspace.
-- Every local command resolves the active checkout with `ROOT="$(git rev-parse --show-toplevel)"` on the same command line. Never hardcode `cd ~/d/nodes`: execution may be inside a linked worktree, and environment variables do not persist across separate tool calls.
+- Before Task 1, the execution controller MUST use `superpowers:using-git-worktrees` to create or verify an isolated checkout on branch `feat/first-publish` off `main`. The plan never creates the branch or assumes the primary `nodes` checkout is the active workspace.
+- Every local command resolves the active checkout with `ROOT="$(git rev-parse --show-toplevel)"` on the same command line. Never hardcode `cd <nodes>`: execution may be inside a linked worktree, and environment variables do not persist across separate tool calls.
 - All local git commands through `rtk` (`rtk git …`); npm through `rtk npm …`; uv through `rtk uv …`. Exception, on purpose: checks that capture command output use raw `git` — `rtk git status` rewrites empty output to `ok`, which breaks emptiness tests. (Workflow YAML uses plain commands; CI has no `rtk`.)
 - Stage explicitly by path. Never `git add -A`. Never stage `python/dist/` (NOT gitignored — remove after every build) or `*.tgz` files.
 - No AI-attribution trailers or footers on commits.

@@ -37,7 +37,7 @@ Treat code snippets below as the original greenfield implementation sequence, no
 - **Boundary parsers wrap Zod errors into the kernel error hierarchy** (`ValidationError`/`FacetError`), never leaking raw. The boundary parsers are `makeNode`, `nodeFromMarkdown`, and `membershipOf` — the functions that ingest untrusted external input. Low-level schema helpers (`fromSerialized`, `relatesTo`, direct `RelationSchema.parse`) may surface raw Zod errors, mirroring Python where `Relation(...)`/`Relation.from_serialized` surface raw Pydantic errors. Callers reach disk through the boundary parsers, which catch and re-wrap.
 - **Tooling:** ESM (`"type":"module"`), `strict:true`, target ES2022, `NodeNext` resolution; relative imports use the `.js` extension. `engines.node` `>=20`, `packageManager` `npm@11.11.0` (refines the spec's illustrative `npm@10` to the installed npm).
 - **Command convention.** `rtk` is a token-optimizing proxy for *tool* commands whose output it can trim — `git`, `npm`, `npx`, `uv`, `node`, `grep` — so those are shown `rtk`-prefixed. Shell builtins (`cd`) and filesystem primitives (`mkdir`, `mv`, `rmdir`) have nothing for `rtk` to optimize and are shown bare. Every command — including `cd` — sits on **its own line**; no `&&` chaining. Python commands run from `python/`; TS commands run from `ts/`.
-- **Docs use `~/d/` paths**, never the absolute home or mount path.
+- **Docs use `~/…/` paths**, never the absolute home or mount path.
 - **Final gate:** TS — `vitest run` green, `tsc --noEmit` clean, `biome check` clean. Python — full suite green (≥112), `ruff check` clean, `pyright` clean, both run from `python/`.
 
 ---
@@ -47,7 +47,7 @@ Treat code snippets below as the original greenfield implementation sequence, no
 Current-code note: this file map is the original target. Current `ts/src` also contains `corpus.ts`, `structural-index.ts`, `search.ts`, `similarity.ts`, `snapshot.ts`, `ranking.ts`, and `vocab/`.
 
 ```
-~/d/nodes/
+nodes/
   docs/                              (unchanged; shared)
   fixtures/                          (NEW shared parity artifacts)
     gene_phf19.md                    (MOVED from python/tests/fixtures/)
@@ -85,7 +85,7 @@ Current-code note: the repo split is complete. The current TS package config has
 - [ ] **Step 1: Move the Python package**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 mkdir -p python
 rtk git mv src python/src
 rtk git mv tests python/tests
@@ -112,7 +112,7 @@ FIXTURE = Path(__file__).parent.parent.parent / "fixtures" / "gene_phf19.md"
 - [ ] **Step 3: Recreate the Python venv and run the migration gate**
 
 ```bash
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv sync
 rtk uv run pytest -q
 rtk uv run ruff check src tests
@@ -123,7 +123,7 @@ Expected: pytest **112 passed**; ruff + pyright clean. This is the migration gat
 
 - [ ] **Step 4: Update root .gitignore**
 
-Append to `~/d/nodes/.gitignore`:
+Append to `.gitignore`:
 
 ```
 .venv/
@@ -214,7 +214,7 @@ describe("scaffold", () => {
 - [ ] **Step 6: Install and run the TS gates**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm install
 rtk npm run typecheck
 rtk npm test
@@ -226,7 +226,7 @@ Expected: typecheck clean; **1 test passed**; biome clean. (`biome check` may re
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add -A
 rtk git commit -m "chore: restructure into python/ + ts/; scaffold TS toolchain"
 ```
@@ -330,7 +330,7 @@ def test_py_emit_round_trips_to_oracle():
 - [ ] **Step 3: Run to verify it fails**
 
 ```bash
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run pytest tests/test_parity.py -q
 ```
 
@@ -341,7 +341,7 @@ Expected: FAIL (oracle and py-emit fixtures do not exist yet).
 Run this one-off generator from `python/` (it writes the two fixtures from the *current* parser/emitter):
 
 ```bash
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run python -c '
 import json
 from pathlib import Path
@@ -379,7 +379,7 @@ If `body` lacks the trailing `\n`, the source fixture is missing its final newli
 - [ ] **Step 5: Run to verify it passes**
 
 ```bash
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run pytest tests/test_parity.py -q
 ```
 
@@ -388,7 +388,7 @@ Expected: **3 passed**.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add fixtures/ python/tests/_canonical.py python/tests/test_parity.py
 rtk git commit -m "test(parity): canonical-JSON oracle + Python-emitted fixture with currency guard"
 ```
@@ -461,7 +461,7 @@ describe("NodeId.parse", () => {
 - [ ] **Step 2: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -537,7 +537,7 @@ export class NodeId {
 - [ ] **Step 4: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -549,7 +549,7 @@ Expected: all tests pass; typecheck + biome clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/errors.ts ts/src/ids.ts ts/tests/errors.test.ts ts/tests/ids.test.ts
 rtk git commit -m "feat(ts): port errors hierarchy + NodeId"
 ```
@@ -630,7 +630,7 @@ describe("relations", () => {
 - [ ] **Step 2: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -693,7 +693,7 @@ export function tagToRelation(source: string, tag: string, aliasMap: Record<stri
 - [ ] **Step 4: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -705,7 +705,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/relations.ts ts/tests/relations.test.ts
 rtk git commit -m "feat(ts): port Relation primitive + serialization sugar"
 ```
@@ -796,7 +796,7 @@ describe("node", () => {
 - [ ] **Step 2: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -883,7 +883,7 @@ export function makeNode(input: NodeInput): Node {
 - [ ] **Step 4: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -895,7 +895,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/node.ts ts/tests/node.test.ts
 rtk git commit -m "feat(ts): port Node + NodeMetadata with Pydantic-parity defaults"
 ```
@@ -1072,7 +1072,7 @@ describe("cross-language parity (TS side)", () => {
 - [ ] **Step 3: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1190,7 +1190,7 @@ export function nodeToMarkdown(node: Node): string {
 - [ ] **Step 5: Generate the committed ts-emit fixture**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk node --experimental-strip-types -e '
 import { readFileSync, writeFileSync } from "node:fs";
 import { nodeFromMarkdown, nodeToMarkdown } from "./src/frontmatter.ts";
@@ -1205,7 +1205,7 @@ writeFileSync(fx + "gene_phf19.ts-emit.md", nodeToMarkdown(node));
 - [ ] **Step 6: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -1217,7 +1217,7 @@ Expected: all green (parse parity, idempotency, currency).
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/frontmatter.ts ts/tests/_canonical.ts ts/tests/frontmatter.test.ts ts/tests/parity.test.ts fixtures/gene_phf19.ts-emit.md
 rtk git commit -m "feat(ts): port frontmatter parse/serialize + TS parity oracle & currency guard"
 ```
@@ -1290,7 +1290,7 @@ describe("Registry", () => {
 - [ ] **Step 2: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1357,7 +1357,7 @@ export class Registry {
 - [ ] **Step 4: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -1369,7 +1369,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/registry.ts ts/tests/registry.test.ts
 rtk git commit -m "feat(ts): port KindSpec + Registry validation"
 ```
@@ -1472,7 +1472,7 @@ describe("shapes", () => {
 - [ ] **Step 2: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1580,7 +1580,7 @@ export function registerBuiltinShapes(reg: Registry): void {
 - [ ] **Step 4: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -1592,7 +1592,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/shapes.ts ts/tests/shapes.test.ts
 rtk git commit -m "feat(ts): port structural shapes (membership facet + invariants)"
 ```
@@ -1712,7 +1712,7 @@ describe("Store CRUD", () => {
 - [ ] **Step 2: Run to verify they fail**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1923,7 +1923,7 @@ export class Store {
 - [ ] **Step 4: Run to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -1935,7 +1935,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/store.ts ts/tests/store.test.ts
 rtk git commit -m "feat(ts): port historical Plan-1 Store CRUD surface"
 ```
@@ -2056,9 +2056,9 @@ describe("cross-language parity (check 4)", () => {
 - [ ] **Step 3: Run both to verify they pass**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run pytest tests/test_parity.py -q
 ```
 
@@ -2120,12 +2120,12 @@ vocab are not yet ported.
 - [ ] **Step 5: Final full-gate run**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
 rtk npm run check
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run pytest -q
 rtk uv run ruff check src tests
 rtk uv run pyright src
@@ -2136,7 +2136,7 @@ Expected: TS — full Vitest suite green, typecheck + biome clean. Python — fu
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/index.ts ts/tests/smoke.test.ts ts/tests/cross_parity.test.ts ts/README.md python/tests/test_parity.py docs/STANDARD.md
 rtk git commit -m "feat(ts): barrel exports + cross-language parity checks + docs"
 ```

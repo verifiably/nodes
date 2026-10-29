@@ -33,7 +33,7 @@ There are three current-code details to keep in mind when reading the task snipp
 - **Mutation ordering:** `Corpus.__init__` builds both indexes from a single `all_nodes()` scan. `add`/`delete` do disk first, then `index` then `search_index`. `rename` adds exactly one step — `search_index.upsert(node)` for the renamed node, after the existing structural commit. This plan does NOT refactor rename's commit atomicity.
 - `Corpus(registry=...)` and all existing behavior stay unchanged; the existing test suite stays green.
 - **Per-task gates, all clean before commit:** `rtk uv run pytest -q`, `rtk uv run ruff check src tests`, `rtk uv run pyright src`.
-- **Working directories:** run all `rtk uv run …` from `~/d/nodes/python/`; run all `rtk git …` from `~/d/nodes/`. Paths in `Files:` blocks are repo-root-relative.
+- **Working directories:** run all `rtk uv run …` from `python/`; run all `rtk git …` from the repository root. Paths in `Files:` blocks are repo-root-relative.
 
 ---
 
@@ -205,7 +205,7 @@ Expected: all green.
 - [ ] **Step 9: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add python/src/nodes/kernel/search.py python/tests/test_search_tokenizer.py python/scripts/gen_tokenizer_oracle.py fixtures/search.tokenizer.json
 rtk git commit -m "feat(search): canonical tokenizer + cross-language tokenizer oracle"
 ```
@@ -400,7 +400,7 @@ Expected: all green (existing suite still passes).
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add python/src/nodes/kernel/search.py python/tests/test_search_index.py
 rtk git commit -m "feat(search): SearchIndex build/upsert/remove with rebuild-equivalence"
 ```
@@ -626,7 +626,7 @@ Expected: all green.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add python/src/nodes/kernel/search.py python/tests/test_search_query.py
 rtk git commit -m "feat(search): BM25F scoring + ranked search query API"
 ```
@@ -773,7 +773,7 @@ Expected: all green — including the existing corpus/index/rebuild-equivalence 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add python/src/nodes/kernel/corpus.py python/tests/test_corpus_search.py
 rtk git commit -m "feat(search): Corpus.search + keep search index current on add/delete/rename"
 ```
@@ -983,7 +983,7 @@ Expected: all green.
 - [ ] **Step 8: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add fixtures/search-corpus python/scripts/gen_search_oracle.py fixtures/search.oracle.json python/tests/test_search_parity.py docs/STANDARD.md
 rtk git commit -m "test(search): cross-language ranking oracle + fixture corpus; docs"
 ```

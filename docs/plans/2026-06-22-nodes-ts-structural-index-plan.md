@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (strict, ES2022, NodeNext ESM), Zod, eemeli `yaml`, Vitest, Biome.
 
-**Reference (read before starting):** the design doc `~/d/nodes/docs/designs/2026-06-22-nodes-ts-structural-index-design.md`, and the Python sources this mirrors: `~/d/nodes/python/src/nodes/kernel/{index,corpus,store}.py` and their tests `~/d/nodes/python/tests/test_{index,corpus,store,index_rebuild_equivalence}.py`.
+**Reference (read before starting):** the design doc `docs/designs/2026-06-22-nodes-ts-structural-index-design.md`, and the Python sources this mirrors: `python/src/nodes/kernel/{index,corpus,store}.py` and their tests `python/tests/test_{index,corpus,store,index_rebuild_equivalence}.py`.
 
 ## Current State Note
 
@@ -39,7 +39,7 @@ Every task's requirements implicitly include this section.
 - **Faithful port:** mirror the current Python `Corpus`/`Index`/slim `Store` semantics exactly. The knowledge vocab is NOT ported in this plan — registry-integration tests use `registerBuiltinShapes` (the only registry surface TS has), not the Python `register_knowledge_vocab`.
 - **No compatibility layers / no "Unified" prefixes / no "legacy" shims.**
 - **Commands:** `rtk` prefixes `git`/`npm`/`npx`/`uv`/`node`; shell builtins (`cd`) and filesystem primitives (`mkdir`/`mv`/`rmdir`) are shown bare; one command per line (no `&&` chains).
-- **Docs/code paths** use `~/d/` (never the absolute home or sync-root path). No `Co-Authored-By` trailers in commits.
+- **Docs/code paths** use `~/…/` (never the absolute home or sync-root path). No `Co-Authored-By` trailers in commits.
 
 ---
 
@@ -121,7 +121,7 @@ describe("Store file mechanics", () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -203,7 +203,7 @@ export class Store {
 - [ ] **Step 4: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -215,7 +215,7 @@ Expected: all green. (The barrel `index.ts` still `export { Store }`s — that l
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/store.ts ts/tests/store.test.ts
 rtk git commit -m "refactor(ts): slim Store to file mechanics (cross-corpus logic moves to Corpus/Index)"
 ```
@@ -339,7 +339,7 @@ describe("Index — upsert & remove", () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -512,7 +512,7 @@ export class Index {
 - [ ] **Step 4: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -524,7 +524,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/structural-index.ts ts/tests/structural-index.test.ts
 rtk git commit -m "feat(ts): Index data layer — resolution, collision gate, upsert/remove"
 ```
@@ -626,7 +626,7 @@ The appended tests need no new imports beyond `makeNode`, `relatesTo`, `Index`, 
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -707,7 +707,7 @@ Then append the helpers and query methods inside the `Index` class, immediately 
 - [ ] **Step 4: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -719,7 +719,7 @@ Expected: all green; Biome clean (the Task 2 private helpers are now used).
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/structural-index.ts ts/tests/structural-index.test.ts
 rtk git commit -m "feat(ts): Index graph queries (outbound/inbound/dangling, relations-only)"
 ```
@@ -849,7 +849,7 @@ describe("Corpus — graph queries", () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -955,7 +955,7 @@ export class Corpus {
 - [ ] **Step 4: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -967,7 +967,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/corpus.ts ts/tests/corpus.test.ts
 rtk git commit -m "feat(ts): Corpus CRUD + resolution + graph queries (rename stubbed)"
 ```
@@ -1228,7 +1228,7 @@ describe("Corpus — registry validation (built-in shapes)", () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1347,7 +1347,7 @@ Finally, add the `rename` method inside the `Corpus` class, immediately after th
 - [ ] **Step 4: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -1359,7 +1359,7 @@ Expected: all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/corpus.ts ts/tests/corpus.test.ts
 rtk git commit -m "feat(ts): Corpus.rename — O(degree) referrer rewrite + fail-early validation"
 ```
@@ -1489,7 +1489,7 @@ describe("Index rebuild equivalence", () => {
 - [ ] **Step 2: Run the test**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1498,7 +1498,7 @@ Expected: PASS (the index is already correct from Tasks 2–5; this test guards 
 - [ ] **Step 3: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm run typecheck
 rtk npx biome check --write .
 rtk npm run check
@@ -1509,7 +1509,7 @@ Expected: all green.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/tests/index-rebuild-equivalence.test.ts
 rtk git commit -m "test(ts): rebuild-equivalence property (live index == fresh rebuild)"
 ```
@@ -1700,9 +1700,9 @@ def test_corpus_rename_parity(tmp_path):
 - [ ] **Step 5: Run both checks**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run pytest tests/test_corpus_parity.py -q
 ```
 
@@ -1711,12 +1711,12 @@ Expected: TS parity green; Python parity green. If both fail with the *same* act
 - [ ] **Step 6: Run both full gates**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
 rtk npm run check
-cd ~/d/nodes/python
+cd <nodes>/python
 rtk uv run pytest -q
 rtk uv run ruff check src tests
 rtk uv run pyright src
@@ -1727,7 +1727,7 @@ Expected: TS — full Vitest suite green, typecheck + Biome clean. Python — fu
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add fixtures/corpus fixtures/corpus.rename.canonical.json ts/tests/corpus_parity.test.ts python/tests/test_corpus_parity.py
 rtk git commit -m "test: cross-language Corpus.rename parity (shared fixture corpus + oracle)"
 ```
@@ -1789,7 +1789,7 @@ describe("barrel", () => {
 - [ ] **Step 3: Run to verify it passes**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 ```
 
@@ -1833,7 +1833,7 @@ semantic, not byte-identical.
 - [ ] **Step 6: Run the full gate**
 
 ```bash
-cd ~/d/nodes/ts
+cd <nodes>/ts
 rtk npm test
 rtk npm run typecheck
 rtk npx biome check --write .
@@ -1845,7 +1845,7 @@ Expected: all green.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd ~/d/nodes
+cd <nodes>
 rtk git add ts/src/index.ts ts/tests/smoke.test.ts ts/README.md docs/STANDARD.md
 rtk git commit -m "feat(ts): barrel exports for Corpus + Index; docs"
 ```

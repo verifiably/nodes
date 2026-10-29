@@ -2,11 +2,11 @@
 
 - **Date:** 2026-07-13
 - **Status:** Accepted
-- **Follows:** `~/d/nodes/docs/designs/2026-07-11-nodes-package-identity-and-ownership-design.md`
+- **Follows:** `docs/designs/2026-07-11-nodes-package-identity-and-ownership-design.md`
   (which recorded this decision as a pre-release blocker: "The Python package layout
   cannot be treated as stable until the native-namespace versus top-level-domain-import
   decision is made before the first public release") and
-  `~/d/nodes/docs/designs/2026-07-12-nodes-base-vocabulary-boundary-design.md` (which
+  `docs/designs/2026-07-12-nodes-base-vocabulary-boundary-design.md` (which
   reduced the shipped Python surface to the kernel alone).
 
 ## 1. Context
@@ -14,7 +14,7 @@
 The `nodes-core` distribution currently ships a regular top-level package `nodes`
 whose `__init__.py` contains only `from __future__ import annotations` — no
 re-exports. The entire public surface is deep imports through `nodes.kernel.*`
-(`~/d/nodes/python/src/nodes/kernel/`, 15 modules). Since the base-vocabulary
+(`python/src/nodes/kernel/`, 15 modules). Since the base-vocabulary
 retirement, `kernel` is the only subpackage; the path segment no longer contrasts
 with anything.
 
