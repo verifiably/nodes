@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T02:08:07Z
+updated: 2026-10-29T02:08:40Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -37,3 +37,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
   provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-29T02:05:15Z (docs/model-docs): review: spec round 1 — verdict: accept; findings: minor 2; reviewer: codex/gpt-6-astra
 - 2026-10-29T02:05:47Z (docs/model-docs): spec accepted by user for planning; review wording applied at 6ff7d20 (boundary stays opaque to nodes; science consumer line qualified)
+- 2026-10-29T02:08:40Z (docs/model-docs): plan drafted at 394c120; awaiting user plan review
