@@ -6,9 +6,9 @@ priority: 2
 size: m
 complexity: mid
 process: direct
-owner: main
+owner: fix/nodes-bcb041
 created: 2026-10-22T19:07:30Z
-updated: 2026-10-29T20:26:28Z
+updated: 2026-10-29T20:27:17Z
 started: 2026-10-29T20:26:28Z
 depends: []
 tags: []
@@ -63,4 +63,6 @@ Reported files:
 ## Notes
 
 - 2026-10-29T20:26:28Z (main): started
+  provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-29T20:27:17Z (fix/nodes-bcb041): resumed
   provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
