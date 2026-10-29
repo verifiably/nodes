@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T01:58:57Z
+updated: 2026-10-29T02:05:07Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -31,4 +31,6 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
   provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-29T01:58:48Z (docs/model-docs): spec drafted at 2f06a33 in .worktrees/model-docs (branch docs/model-docs); awaiting user review
 - 2026-10-29T01:58:57Z (docs/model-docs): parked (waiting on user, review): user reviews the spec docs/designs/2026-10-28-nodes-model-docs-design.md at the frozen revision; on approval, invoke writing-plans in .worktrees/model-docs
+  provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-29T02:05:07Z (docs/model-docs): resumed
   provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
