@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:19:16Z
+updated: 2026-10-29T09:19:54Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -65,3 +65,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:18:26Z (docs/model-docs): Attachment fallback tracked by ops-70266b. Raw final-gate.log SHA-256 6f045cf647ad5ee6911bf9ca48920470bacbe221be81bbd6205e1772ee307cc0; placeholder <WORK_ROOT> maps to /mnt/ssd3/work on titan. Final gate exited 0 with 755 Python + 592 TypeScript tests; the hook refused only the raw attachment host path.
 - 2026-10-29T09:19:09Z (docs/model-docs): retained: {"host": "titan", "kind": "evidence", "path": "$WORK_ROOT/nodes/nodes-24226f/final-gate.log", "state": "released", "verification": "verified", "purpose": "Transferred to nodes-a81598, whose notes contain current kept records and verified hashes; copy remains there", "next_owner": "none", "cleanup_trigger": "none"}
 - 2026-10-29T09:19:16Z (docs/model-docs): retained: {"host": "titan", "kind": "scratch", "path": "$WORK_ROOT/nodes/nodes-24226f", "state": "released", "verification": "verified", "purpose": "Transferred to nodes-a81598, whose notes contain current kept records and verified hashes; copy remains there", "next_owner": "none", "cleanup_trigger": "none"}
+- 2026-10-29T09:19:54Z (docs/model-docs): retained: {"host":"titan","kind":"worktree","path":".worktrees/model-docs","state":"kept","verification":"verified","purpose":"Closing session integrates reviewed docs/model-docs locally and removes this worktree in this turn; plan scratch removed after full report, ledger and portable gate log attachments were verified identical","next_owner":"session:codex:01a186e8-a116-7981-907e-fc286494c627","cleanup_trigger":"Immediate authorized local merge into main, passing merged gate, tt-report, ignored-file disposition and host-pointer checks"}
