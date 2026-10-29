@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:09:46Z
+updated: 2026-10-29T09:15:41Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -55,3 +55,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:09:04Z (docs/model-docs): resumed
   provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-29T09:09:46Z (docs/model-docs): Execution setup: reused locked .worktrees/model-docs on docs/model-docs; existing python/.venv and ts/node_modules hydrated. Deferred baseline just test passed: Python 755, TypeScript 592 (1,347 total). Documentation only; no parity behavior changes. Plan and spec approvals verified in task notes; execute inline, then fresh whole-branch review.
+- 2026-10-29T09:15:41Z (docs/model-docs): review: impl round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6-astra
