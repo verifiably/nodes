@@ -1,18 +1,21 @@
 ---
 id: nodes-bcb041
 title: Resolve existing tilde-layout findings before checker rollout
-status: doing
+status: done
 priority: 2
 size: m
 complexity: mid
 process: direct
 owner: fix/nodes-bcb041
 created: 2026-10-22T19:07:30Z
-updated: 2026-10-29T20:41:28Z
+updated: 2026-10-29T20:41:46Z
 started: 2026-10-29T20:26:28Z
+completed: 2026-10-29T20:41:46Z
+closed: 2026-10-29T20:41:46Z
 depends: []
 tags: []
 source: ops-295f8d
+model: claude-opus-5-5
 agent: codex
 ---
 
@@ -74,3 +77,7 @@ Reported files:
 - 2026-10-29T20:41:10Z (fix/nodes-bcb041): resumed
   provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-29T20:41:28Z (fix/nodes-bcb041): review: impl round 1 — verdict: accept; findings: none; reviewer: claude-code/claude-opus-5-5
+- 2026-10-29T20:41:46Z (fix/nodes-bcb041): done
+  provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
+- 2026-10-29T20:41:46Z (fix/nodes-bcb041): Reworded 334 lines of checkout aliases across 36 dated plans and designs to repository-relative paths and checkout placeholders, no allow entries; fast-forwarded into main; candidate exits 0 on main; just check passed
+  provenance: {"harness_session":"claude-code:0abf3f61-62e6-4a09-a944-9063cc887bf3","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
