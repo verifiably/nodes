@@ -25,7 +25,7 @@
 
 ## Review Focus
 
-1. A fresh clone's `just docs` must reproduce the committed identity regions byte for byte; a hand edit inside the `ops:identity` markers drifts on the next render. Pinned in Task 1 Step 4.
+1. A fresh clone's `just docs` must reproduce the committed identity regions byte for byte; a hand edit inside the `ops:identity` markers drifts on the next render. Pinned in Task 1 Step 5.
 2. A model claim that contradicts the standard (for example "a kind may adopt several shapes"). Pinned in Task 2 Step 3, a side-by-side read against §2.1, §2.3, §5, §6 before commit.
 3. A consumer line that names a kind the project does not register, or a dependency it does not have (science's direct nodes use; mindful's absence of atoms). Pinned in Task 2 Step 3 against the facts recorded in the spec.
 4. A `##` heading added under `Usage` by mistake, which `ops-docs check` refuses only as "must come after License". Pinned in Task 2 Step 4.
@@ -53,7 +53,7 @@ Entities as markdown files, typed relations, structural shapes and rebuildable d
 - [ ] **Step 2: Check the parsed value's length**
 
 Run: `python3 -c 'import tomllib; a = tomllib.load(open("identity.toml", "rb"))["abstract"]; print(len(a)); assert len(a) <= 400'`
-Expected: prints a number at most 400 and exits 0 (the draft above is 387).
+Expected: prints a number at most 400 and exits 0 (the draft above is 388 with its trailing newline).
 
 - [ ] **Step 3: Render the guides**
 
