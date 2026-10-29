@@ -18,6 +18,8 @@
 - Consumers are named by project, never by path; no host paths anywhere (spec §2 anti-goals).
 - Where the new text and `docs/STANDARD.md` §§2, 5, 6 disagree, the text is wrong (spec §3).
 - The README addition stays under one screen; `AGENTS.md` gains at most three bullets (spec §6).
+- `identity.toml`'s `abstract` is at most 400 characters (`ABSTRACT_MAX` in `tools/ops-docs`; `just docs` refuses a longer one).
+- Shape adoption is optional and open: a kind *may* adopt *one registered* shape (`KindSpec.shape: str | None`, `Registry.register_shape`); the six names are the *built-in* shapes, not the only ones. No wording may make a shape mandatory or the set closed.
 - Every recipe runs through `just`; never call `ops-docs`, `pytest`, `biome` or `tsc` directly except `tools/ops-docs check`, which the recipes themselves call.
 - Commits use conventional-commit subjects with no attribution trailer.
 
@@ -44,26 +46,31 @@
 
 ```toml
 abstract = """
-Entities as markdown files, typed relations, structural shapes and rebuildable derived indexes, implemented in Python and TypeScript over one shared on-disk format. Every node is built from the same blocks: a shape (how members hang together), facets (domain mix-ins) and a kind that composes them; a kind is registered, never subclassed. The kernel is domain-free; domain profiles such as beliefs, mindful v6 and lit register their own kinds on it.
+Entities as markdown files, typed relations, structural shapes and rebuildable derived indexes, in Python and TypeScript over one shared on-disk format. A kind composes facets (domain mix-ins) and invariants and may adopt one registered shape; kinds are registered, never subclassed. The kernel is domain-free; profiles such as beliefs, mindful v6 and lit register their own kinds on it.
 """
 ```
 
-- [ ] **Step 2: Render the guides**
+- [ ] **Step 2: Check the parsed value's length**
+
+Run: `python3 -c 'import tomllib; a = tomllib.load(open("identity.toml", "rb"))["abstract"]; print(len(a)); assert len(a) <= 400'`
+Expected: prints a number at most 400 and exits 0 (the draft above is 387).
+
+- [ ] **Step 3: Render the guides**
 
 Run: `just docs`
 Expected: `README.md` and `AGENTS.md` change only between their `ops:identity` markers (`git diff --stat` lists `identity.toml`, `README.md`; `AGENTS.md` is unchanged if its identity region carries no abstract, which is the current template).
 
-- [ ] **Step 3: Check**
+- [ ] **Step 4: Check**
 
 Run: `just check`
 Expected: exit 0; `ops-docs check` prints nothing.
 
-- [ ] **Step 4: Prove the render is reproducible**
+- [ ] **Step 5: Prove the render is reproducible**
 
-Run: `just docs && git status --short`
-Expected: no further change after the second render.
+Run: `git add identity.toml README.md AGENTS.md && just docs && git diff --exit-code -- README.md AGENTS.md`
+Expected: exit 0: the second render changes no byte of the staged first render.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add identity.toml README.md AGENTS.md
@@ -86,14 +93,14 @@ git commit -m "docs: name the model's blocks in the identity abstract"
 ```markdown
 ### The model
 
-Every node is built from the same blocks. The standard's terms, with where each is
+A node's kind is built from the same blocks. The standard's terms, with where each is
 used today:
 
 | Plain words | Kernel term | Today |
 |-------------|-------------|-------|
-| How members hang together | **shape**: one of `set`, `list`, `dict`, `graph`, `dag`, `tree`; a kind adopts at most one | mindful v6's `mindmap` is a `graph`, its `journal` a `list` |
-| A domain mix-in | **facet**: a named, typed payload a kind requires or allows | lit's `paper` carries `paperpile` and `world` |
 | A type | **kind**: a name, its facets and its invariants, registered on a `Registry`; never a subclass | beliefs registers `proposition`, `run`, `dataset`, … |
+| A domain mix-in | **facet**: a named, typed payload a kind requires or allows | lit's `paper` carries `paperpile` and `world` |
+| How members hang together | **shape**: a kind may adopt one registered shape; six ship built in (`set`, `list`, `dict`, `graph`, `dag`, `tree`) | mindful v6's `mindmap` adopts `graph`, its `journal` `list`; its `thought` adopts none |
 | A container | **structure**: a node whose kind adopts a shape; members are refs in its `membership` facet | a mindful `set` of thoughts |
 
 The kernel names zero knowledge kinds; a profile registers its own. What nodes
@@ -127,7 +134,7 @@ are described under "The model" and "Consumers" in the repository README.
 
 - [ ] **Step 3: Read the model table against the standard**
 
-Read `docs/STANDARD.md` §2.1 (Node fields), §2.3 (facets), §5 (shapes: the six names, "a kind adopts at most one shape", `membership = {members: [ref]}`), §6 (kind = name + facets + invariants) beside the table.
+Read `docs/STANDARD.md` §2.1 (Node fields), §2.3 (facets), §5 (shapes: the six built-in names, "a kind adopts at most one shape", `membership = {members: [ref]}`), §6 (kind = name + facets + invariants, "optionally adopting one shape") beside the table; confirm nothing in the text makes a shape mandatory or the built-in set closed.
 Expected: every claim in the table and the bullet list is stated or entailed by those sections; the consumer bullets match the kinds and dependencies the spec §5 records. Fix the text, never the standard.
 
 - [ ] **Step 4: Check headings and template**
@@ -153,11 +160,12 @@ git commit -m "docs: describe the model, its consumers and its boundary in the R
 - [ ] **Step 1: Append the two rules**
 
 ```markdown
-- Vocabulary: a **shape** is how members hang together (`set`, `list`, `dict`, `graph`,
-  `dag`, `tree`); a **facet** is a named, typed payload (the domain mix-in); a **kind**
-  composes facets and invariants under a name; a **structure** is a node whose kind
-  adopts a shape. "Subclass" and "inherits" never describe a kind. The README's
-  "The model" subsection is the reader's version of this list.
+- Vocabulary: a **kind** composes facets and invariants under a name and may adopt one
+  registered **shape** (how members hang together; `set`, `list`, `dict`, `graph`,
+  `dag`, `tree` ship built in, and a registry accepts others); a **facet** is a named,
+  typed payload (the domain mix-in); a **structure** is a node whose kind adopts a
+  shape. "Subclass" and "inherits" never describe a kind. The README's "The model"
+  subsection is the reader's version of this list.
 - Boundary: an external identifier (a CURIE, a DOI, a vocabulary term) is an opaque
   string inside a facet. The kernel never resolves, fetches or interprets one; a
   resolver is a downstream concern, and no kernel code path may branch on its content.
