@@ -1,15 +1,17 @@
 ---
 id: nodes-ec5b0d
 title: AGENTS.md vocabulary and boundary rules
-status: doing
+status: done
 priority: 2
 size: xs
 complexity: low
 process: direct
 owner: docs/model-docs
 created: 2026-10-29T02:08:32Z
-updated: 2026-10-29T09:11:59Z
+updated: 2026-10-29T09:12:32Z
 started: 2026-10-29T09:11:59Z
+completed: 2026-10-29T09:12:32Z
+closed: 2026-10-29T09:12:32Z
 depends: []
 parent: nodes-24226f
 tags: [docs]
@@ -24,4 +26,8 @@ step: "Task 3: AGENTS.md vocabulary and boundary rules"
 - 2026-10-29T02:08:32Z (add): created
   provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID","origin":"agent"}
 - 2026-10-29T09:11:59Z (docs/model-docs): started
+  provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-29T09:12:32Z (docs/model-docs): done
+  provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-29T09:12:32Z (docs/model-docs): Added vocabulary and opaque external-identifier boundary rules; just check and just test-fast passed.
   provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
