@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:06:21Z
+updated: 2026-10-29T09:06:28Z
 started: 2026-10-29T01:55:02Z
 depends: []
 tags: [docs]
@@ -50,3 +50,5 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
   provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
 - 2026-10-29T09:06:06Z (docs/model-docs): review: plan round 2 — verdict: accept; findings: minor 2; reviewer: codex/gpt-6-astra
 - 2026-10-29T09:06:21Z (docs/model-docs): plan approved by user at 2c47c60 (round 2 editorial corrections applied at 0db2a81, no new approval round); execution native in a fresh session, then a fresh whole-branch reviewer
+- 2026-10-29T09:06:28Z (docs/model-docs): parked (waiting on agent, session): fresh session: in .worktrees/model-docs (branch docs/model-docs) run tasks start nodes-24226f, re-enter using-git-worktrees for the deferred baseline (just test), then execute docs/plans/2026-10-28-nodes-model-docs-plan.md natively via executing-plans (Task 1 first, children nodes-4740bb nodes-fbbf51 nodes-ec5b0d), then dispatch a fresh whole-branch reviewer; after landing, file the refs project on ops and the overview update on vdocs (spec §8)
+  provenance: {"harness_session":"claude-code:569c9b6a-e9ba-4bc4-9e07-f584fa31dbb1","harness_session_source":"CLAUDE_CODE_SESSION_ID"}
