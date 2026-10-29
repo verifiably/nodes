@@ -1,15 +1,17 @@
 ---
 id: nodes-24226f
 title: "Document the nodes model: shapes, kinds, facets, consumers and the reference boundary"
-status: doing
+status: done
 priority: 2
 size: s
 complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:19:54Z
+updated: 2026-10-29T09:20:01Z
 started: 2026-10-29T01:55:02Z
+completed: 2026-10-29T09:20:01Z
+closed: 2026-10-29T09:20:01Z
 depends: []
 tags: [docs]
 agent: claude-code/claude-fable-5-1
@@ -66,3 +68,7 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:19:09Z (docs/model-docs): retained: {"host": "titan", "kind": "evidence", "path": "$WORK_ROOT/nodes/nodes-24226f/final-gate.log", "state": "released", "verification": "verified", "purpose": "Transferred to nodes-a81598, whose notes contain current kept records and verified hashes; copy remains there", "next_owner": "none", "cleanup_trigger": "none"}
 - 2026-10-29T09:19:16Z (docs/model-docs): retained: {"host": "titan", "kind": "scratch", "path": "$WORK_ROOT/nodes/nodes-24226f", "state": "released", "verification": "verified", "purpose": "Transferred to nodes-a81598, whose notes contain current kept records and verified hashes; copy remains there", "next_owner": "none", "cleanup_trigger": "none"}
 - 2026-10-29T09:19:54Z (docs/model-docs): retained: {"host":"titan","kind":"worktree","path":".worktrees/model-docs","state":"kept","verification":"verified","purpose":"Closing session integrates reviewed docs/model-docs locally and removes this worktree in this turn; plan scratch removed after full report, ledger and portable gate log attachments were verified identical","next_owner":"session:codex:01a186e8-a116-7981-907e-fc286494c627","cleanup_trigger":"Immediate authorized local merge into main, passing merged gate, tt-report, ignored-file disposition and host-pointer checks"}
+- 2026-10-29T09:20:01Z (docs/model-docs): done
+  provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-29T09:20:01Z (docs/model-docs): Documented model, consumers and external-identifier/durability boundaries across identity, README, AGENTS and package guides. Fresh codex/gpt-6-astra review accepted with no findings; just gate passed 755 Python + 592 TypeScript tests and rendering reproduced. Raw log retention transferred to nodes-a81598; integrate locally now and file spec section 8 follow-ups.
+  provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
