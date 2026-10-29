@@ -8,7 +8,7 @@ complexity: low
 process: planned
 owner: docs/model-docs
 created: 2026-10-29T01:54:53Z
-updated: 2026-10-29T09:21:12Z
+updated: 2026-10-29T09:21:35Z
 started: 2026-10-29T01:55:02Z
 completed: 2026-10-29T09:20:01Z
 closed: 2026-10-29T09:20:01Z
@@ -73,3 +73,4 @@ Context: brainstorm on 2026-10-28 in the nodes checkout; agreed direction is a s
 - 2026-10-29T09:20:01Z (docs/model-docs): Documented model, consumers and external-identifier/durability boundaries across identity, README, AGENTS and package guides. Fresh codex/gpt-6-astra review accepted with no findings; just gate passed 755 Python + 592 TypeScript tests and rendering reproduced. Raw log retention transferred to nodes-a81598; integrate locally now and file spec section 8 follow-ups.
   provenance: {"harness_session":"codex:01a186e8-a116-7981-907e-fc286494c627","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-29T09:21:12Z (main): Merged docs/model-docs locally into main at 5ba9781; merged just gate exited 0 with 755 Python + 592 TypeScript tests. tt-report ran successfully from ops. Worktree ignored-file disposition: .superpowers contains only regenerable sdd/.gitignore; python/.pytest_cache and python/.testmondata are regenerable caches; python/.venv and ts/node_modules are installed dependencies; ts/dist is build output. Full review, execution ledger and portable log are verified task attachments; raw log and manifest are preserved and owned by nodes-a81598. No submodules or host pointers into the worktree were found; remove this merged worktree after rechecking.
+- 2026-10-29T09:21:35Z (main): retained: {"host":"titan","kind":"worktree","path":".worktrees/model-docs","state":"released","verification":"verified","purpose":"Merged into main, passing merged just gate, tt-report harvested, ignored files dispositioned, host pointers rechecked; worktree removed and merged docs/model-docs branch deleted","next_owner":"none","cleanup_trigger":"none"}
