@@ -7,7 +7,7 @@ size: m
 complexity: mid
 process: direct
 created: 2026-09-04T21:44:54Z
-updated: 2026-10-17T20:33:21Z
+updated: 2026-10-30T17:04:27Z
 depends: [ops-31f038]
 tags: [testing]
 ---
@@ -37,3 +37,4 @@ Where: justfile, .githooks/, AGENTS.md (Gates), .github/workflows/ci.yml; ops te
 - 2026-09-28T08:35:52Z (main): Baseline window 2026-09-05..09-24 closes the day before ops host-budget worker sizing (09-25), the first timing change after step 1; no step-3 change had landed. Front-door total counts wrapper seconds of test, test-fast, check and both hooks. Next: step 3 (gates to ops design §4.6, the AGENTS.md inner-loop line, hygiene the numbers point at), then an after-window read with tt-report --since/--until.
 - 2026-09-28T10:27:42Z (main): Step 3 now follows ops docs/specs/2026-09-28-test-ci-act-design.md: copy templates/justfile's test-one, docs_paths/docs_check_cmd/hook-pre-commit-docs, ci_suite_refs/ci_remote/push_fast_cmd/hook-pre-push-fast and both templates/githooks; set ci_suite_refs from the refs CI actually runs the full suite for (say which in a note); add the AGENTS.md Gates line (templates/AGENTS.md). Then the after-window against this piece's baseline note.
 - 2026-10-17T20:33:21Z (main): scope: rescoped; premises checked 2026-10-17 against ops docs/specs/2026-09-28-test-ci-act-design.md (approved), ops templates/justfile, templates/githooks and templates/AGENTS.md, and nodes' justfile, .githooks and AGENTS.md at ca548bb: steps 1-2 and hygiene done, step 3 not started; established ci_suite_refs = main from ci.yml; body narrowed to step 3 and the after-window; process direct (the approved ops design settles approach)
+- 2026-10-30T17:04:27Z (main): Follow-up reconciliation needed after completed nodes-6fde14: reviewed main045ef235 now has language-qualified test-one, validated origin branch/tag coverage, hygiene-only hook timing and automatic_broad=false. This task body still requires local full-suite commit checks and describes missing recipes/coverage as of2026-10-17; those statements are stale against the approved adoption design cc5df73 and current code. Reassess remaining intent against that newer authority before implementing old snippets. The shared after-adoption savings/regression/cost review already exists as ops-56aab7, due2026-11-28, with nodes baseline and activation evidence; avoid duplicating its measurement work. This note preserves the audit scope pending reconciliation, rather than claiming it is complete.
