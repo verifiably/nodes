@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:38:32Z
+updated: 2026-10-30T16:39:29Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -56,3 +56,4 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:37:10Z (design/nodes-6fde14-test-policy): attached: corrected-release-coverage.json (1179 bytes): Accepted corrected manual Release41089968448 at8695d91; build/verify success and real publication skipped
 - 2026-10-30T16:37:12Z (design/nodes-6fde14-test-policy): Activation candidate4e912df7c9243c4320f76374cec3b9bed04c1cc6 is frozen after enabled integration1f77a06 at2026-10-30T16:30:20Z. Focused126Python/49TS GREEN; uncovered-ref fixture RED1fail40pass then fixed explicit fixture coverage. Actual broad test/check-code/test-fast requests skipped with null outcomes, actual hygiene ran0. Fresh independent activation review pending before the already-approved conditional main merge/push; no extra approval is needed if accepted. Main still enabled; no routine broad rerun under valid branch-local policy-off.
 - 2026-10-30T16:38:32Z (design/nodes-6fde14-test-policy): review: impl round 2 — verdict: accept; findings: Minor 1; reviewer: codex/gpt-6-astra
+- 2026-10-30T16:39:29Z (design/nodes-6fde14-test-policy): attached: activation-review-report.md (4139 bytes): Full fresh activation review by codex/gpt-6-astra: accepted4e912df, no blocking findings, Minor M1 deferred
