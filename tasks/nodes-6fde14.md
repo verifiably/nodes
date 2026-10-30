@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:48:37Z
+updated: 2026-10-30T16:48:38Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -141,3 +141,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T16:48:34Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
 - 2026-10-30T16:48:35Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/execution","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
 - 2026-10-30T16:48:37Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/spec-round-4-report-raw.md","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
+- 2026-10-30T16:48:38Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/plan-round-2-report-raw.md","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
