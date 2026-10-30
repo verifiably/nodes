@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: main
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:30:40Z
+updated: 2026-10-30T16:30:48Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -131,3 +131,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:30:40Z (main): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T16:30:48Z (main): policy: enabled at 2026-10-30T16:30:20Z revision 1f77a06fdca9f7c9b94820d6c97398531c80eae9
