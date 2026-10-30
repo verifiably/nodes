@@ -1,6 +1,6 @@
 # Nodes test execution policy adoption
 
-Status: proposed for user review. Task: nodes-6fde14.
+Status: revised after spec round 2; proposed for user review. Task: nodes-6fde14.
 No implementation, workflow publication or policy-off activation is authorized by
 this draft. Implementation planning follows user approval of the frozen design.
 
@@ -61,6 +61,34 @@ no parity-tier feature, and no conformance-oracle changes.
   vulnerability assessment. The planned full-suite baseline waits for execution
   Setup; no test count or hosted equivalence is claimed by this design.
 
+Successful local wrapper executions in this host's shared tt log, read through
+ops tt-report's validated parser on 2026-10-30 (all available history, no fallback
+harvest), give this descriptive cost baseline:
+
+| Target | Median seconds | Successful executed runs |
+| --- | ---: | ---: |
+| test | 4.760 | 71 |
+| check | 6.593 | 72 |
+| hook-pre-commit | 7.293 | 232 |
+| hook-pre-push | 12.906 | 26 |
+
+Rows span 2026-09-05 through 2026-10-30; test/check series end on 2026-10-29.
+The round-2 reviewer reported 230 commit-hook runs at 7.3 seconds; this fresh
+snapshot has 232 at the same rounded median. These are successful invocation
+wall times, mixing content, hosts' session load and nested work, not an
+uncontended benchmark or a measured post-adoption saving. Roughly six seconds
+per commit and thirteen per push is the reviewer's opportunity estimate;
+always-run hygiene remains, so actual savings need post-adoption measurement.
+
+Designer decision: retain check-code as broad, consistent with the approved
+shared contract, rather than keeping all static checks local only in nodes.
+The local cost is modest. The accepted tradeoff proposed for user approval is
+that routine Ruff, Pyright, tsc and Biome failures can remain undiscovered until
+the next push and completed CI run; focused implementation checks and deliberate
+`TT_FORCE=1 just check-code` remain available. CI queues, cancellation or failure
+can delay that feedback further. No claim that these checks are individually
+expensive or that nodes has measured large savings is made.
+
 ## Approaches
 
 1. Adopt tt policy at existing command boundaries and retain both language
@@ -76,13 +104,16 @@ no parity-tier feature, and no conformance-oracle changes.
 
 ## Command contract
 
-Reuse the current command strings and standard ops hook/template patterns.
-Every executed check goes through the existing vendored tt; do not edit that copy.
+Reuse the existing test selections and static-check commands and standard ops
+hook/template patterns. CI reporting flags are an explicit exception to unchanged
+command strings: add persistent JUnit output as specified below without changing
+test selection. Every executed check goes through the existing vendored tt;
+do not edit that copy.
 
 | Route | Contract |
 | --- | --- |
-| `setup` | Protected, timed route: frozen uv sync in Python and npm ci in TypeScript; build TypeScript output if required by guide checks. No shared environment or host launcher changes. |
-| `test-one <python\|ts> <runner args...>` | Protected focused route, requires a language and at least one selector argument; forwards remaining argv intact. Python uses the unselected pytest command; TS uses the existing npm test/build command with npm's argument separator. Unknown language fails early. No shell interpolation of user arguments. |
+| `setup` | Protected, timed route: prepare managed links before frozen dependency installs, then reapply Dropbox marks after npm installs/builds in synced checkouts, as detailed below. Build TypeScript output if guide checks require it. No shared environment or host launcher changes. |
+| `test-one <python\|ts> <runner args...>` | Protected focused route, requires a language and at least one selector argument; forwards remaining argv intact. Python uses the unselected pytest command from python/; TS uses the existing npm test/build command from ts/ with npm's argument separator. Unknown language fails early. No shell interpolation of user arguments. |
 | `test-fast` | Existing pytest-testmon and Vitest changed commands, unchanged selection and argument semantics; classified broad. |
 | `test` | Existing complete Python and TS suites; classified broad. |
 | `test-full` | Untimed alias `TT_FORCE=1 just test`; only the inner suite is recorded. |
@@ -93,7 +124,30 @@ Every executed check goes through the existing vendored tt; do not edit that cop
 | `hook-pre-commit` | Time mandatory hygiene once under the hook target, then invoke check-code as its own child. |
 | `hook-pre-push` | Time mandatory hygiene once, then invoke check-code and test separately. |
 | `hook-pre-push-fast` | Same hygiene/check-code children, then existing test-fast command; no new push selector. |
-| `ci-python`, `ci-typescript` | Existing package suite and static checks, each timed once under its CI target. Classified broad so a missing hosted force cannot silently succeed. |
+| `ci-python`, `ci-typescript` | Complete package suite plus existing static checks, each timed once under its CI target; add persistent CI JUnit reporting without test selection. Classified broad so a missing hosted force cannot silently succeed. |
+
+Local setup follows ops's Dropbox handling, not merely the package installs.
+Before uv sync, invoke the existing work-link tool's ensure route for
+`python/.venv` from the repository root; in the synced main checkout it must
+resolve to managed host-local storage. Outside the configured synced root,
+work-link's explicit outside result leaves environments in-tree. Do not migrate
+or replace an unrelated environment silently. In a synced checkout, run
+`attr -s com.dropbox.ignored -V 1 node_modules` from ts/ immediately after
+`npm ci`, and the corresponding mark on `dist` immediately after any build
+that creates/replaces it. Missing tooling, failed link preparation or failed
+attribute writes fail setup; do not swallow them. Repeated setup must preserve
+the marks even when npm replaces directories. Mark only generated paths,
+never their source parents. Builds outside setup that replace these directories
+must retain/reapply the marks too. Hosted package setup remains the existing
+frozen install path outside Dropbox and needs neither work-link nor attr.
+The implementation plan must prove synced and outside-tree behavior with
+isolated fixtures, including a failed attribute operation, without taking over
+the host's main environment or changing its existing marks.
+
+The guide must state that focused selectors resolve inside the selected package:
+`just test-one python tests/test_paths.py` names a path relative to python/,
+and `just test-one ts tests/paths.test.ts` names one relative to ts/.
+Do not prefix the selector with the package directory again.
 
 A caller can deliberately select all tests through runner arguments; documentation
 must forbid using test-one as a policy bypass. The interface requires a selector
@@ -111,10 +165,15 @@ Composing aliases and protected hook/focused/setup/hygiene targets stay outside
 that list. Missing policy means enabled; malformed policy is an error, including
 under force. Skips are decisions, never passing suites or performance samples.
 Hook timing becomes hygiene-only and cannot be compared directly with historical
-whole-hook timings.
+whole-hook timings. The old timed check series (72 successful samples above)
+also ends: check becomes an untimed alias, and check-hygiene/check-code begin
+new series. Do not splice or sum their medians into a continuation of check.
 
 Adopt the standard pre-push coverage routing with `ci_remote = "origin"` and,
-after workflow publication/accepted coverage, `ci_suite_refs = "refs/heads/*"`.
+after workflow publication/accepted coverage, `ci_suite_refs = "refs/heads/* refs/tags/v*"`.
+The tag declaration reflects Release's v* push trigger and reusable CI gate;
+do not add standalone CI tag triggers that duplicate the Release gate. Declare
+both patterns only when their current workflows are published and validated.
 Before then declare no coverage. Preserve input validation, deletion handling,
 byte-preserving ref forwarding, SSH keepalive and inherited Git-variable clearing.
 An uncovered push under policy-off warns and retains hygiene without restoring
@@ -129,11 +188,52 @@ PR events launch no duplicate suite jobs. Preserve both version matrices and
 existing pinned setup actions and frozen dependency installs. Set `TT_FORCE: "1"`
 explicitly at verification-job scope so nested wrapper processes inherit it.
 
-Use per-ref cancellation for ordinary CI. Concurrency groups must distinguish
-standalone CI from reusable Release calls, including the caller context; do not
-reuse Release's existing group, which could cause self-cancellation. Release tag
-and dispatch behavior stays intact. Add finite job timeouts, with the exact
+Use per-ref cancellation for ordinary CI. Give the called CI workflow a distinct
+literal namespace, for example
+`nodes-ci-${{ github.workflow }}-${{ github.ref }}`. In reusable CI the github
+context belongs to the caller, so the generic workflow/ref expression alone
+would become Release-refs/tags/v..., colliding with Release's existing
+release-refs/tags/v... group because GitHub group names are case-insensitive.
+The literal nodes-ci prefix prevents that collision; standalone CI and called
+Release groups also differ by workflow context. Test the evaluated keys for
+both paths, not just YAML spelling. Release's existing serialization and its
+tag/dispatch behavior stay intact; do not enable latest-ref cancellation for
+Release publishing by this change. Add finite job timeouts, with the exact
 bound stated in the activation packet. Cancelled or absent runs are unverified.
+
+### Durable coverage evidence
+
+Choose persistent JUnit artifacts rather than relying on tt's temporary JUnit
+directory or runner-local log. Verification jobs create an evidence directory
+under RUNNER_TEMP in a shell step (not job-level runner-context interpolation).
+Each CI recipe writes to that directory outside TT_JUNIT_DIR: pytest adds
+`--junitxml` to its complete-suite command, and npm test adds Vitest's default
+and junit reporters with an explicit junit output path. The default reporter
+keeps summary counts in the job log. Require an evidence path for these CI
+routes; the workflow supplies it before invoking them. Local test/test-fast
+commands retain their existing flags and selection. Do not alter tt's cleanup.
+
+After verification, an always-run, pinned upload-artifact step uploads the JUnit
+file and module inventory with a unique package/version artifact name and finite
+retention covering activation review (30 days). Missing expected evidence is an
+error, not an empty passing artifact. A failed test/static check must retain its
+failure status even when artifact upload succeeds. Cancelled or setup-failed
+jobs may lack evidence and cannot satisfy activation.
+
+The module inventory identifies eligible tracked test modules at the exact
+revision under each runner's discovery configuration; compare it with module
+identities in JUnit and the job's collection/error summary. Count partially
+skipped modules separately from wholly skipped modules; list excluded modules
+and every unexplained absent module, rather than treating them as executed.
+Pytest JUnit carries skip reasons. Vitest may emit a skipped identity without a
+reason: map each such case back to the exact revision's skip guard and record
+the condition as a source-derived reason, explicitly distinct from a reported
+runtime reason. An unmapped case remains unknown and blocks coverage acceptance.
+A static inventory alone is not proof that a guard fired. Validate the evidence
+path with one executed and one skipped case in each runner before the full hosted
+verification; include wholly skipped module and missing-artifact cases in the
+focused evidence checks. Retain the downloaded artifacts on the task through
+activation/closeout under the normal attachment/retained-item rules.
 
 Verification retains every test module. Record executed/passed/failed/skipped
 counts per matrix job, skipped module count and any excluded modules, with reasons.
@@ -161,7 +261,8 @@ in every required package job plus accepted omission coverage before activation.
    to test adoption. Existing shared tests supply policy internals; these project
    tests cover the composed commands, hooks and workflow.
 5. Update AGENTS and development guidance with command forms, setup, policy scope,
-   explicit force, CI refs, known omissions and hook timing discontinuity. This
+   explicit force, package-relative focused paths, CI refs, known omissions and
+   hook/check timing discontinuities. This
    remains infrastructure scope; do not change the Standard or package APIs.
 6. Present reviewed implementation plus an activation packet: exact commit/ref,
    workflow diff, setup and delivery revisions, runner/time limits, public/private
@@ -177,8 +278,8 @@ in every required package job plus accepted omission coverage before activation.
    Reconcile every outstanding latency host/target against the landed policy:
    disabled obligations are policy-retired, never performance-verified. Keep
    unrelated halts and remaining diagnosis. Report concrete status to ops-39bff6.
-   The shared first-activation regret review already exists; link to it rather
-   than filing a second first-activation task or inventing a date.
+   The shared first-activation regret review is ops-56aab7, deferred to
+   2026-11-28; link to it rather than filing a duplicate or inventing a date.
 
 Rollback sets automatic_broad=true, restores documented local cadence, records
 the same enabled-floor note with the rollback's actual landed timestamp/SHA,
@@ -198,4 +299,9 @@ Sources: current justfile, hooks, workflows, package manifests and test skip gua
 ops-8bfa85 approved artifacts and ops-68729d completion evidence; originating
 session codex:01a1874f-c2d8-7320-ae81-7114e37e343f human turns;
 [GitHub billing](https://docs.github.com/en/actions/concepts/billing-and-usage) and
-[concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), checked 2026-10-30.
+[concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency),
+[Vitest 2 reporters](https://v2.vitest.dev/guide/reporters) and
+[pytest JUnit implementation](https://github.com/pytest-dev/pytest/blob/main/src/_pytest/junitxml.py),
+checked 2026-10-30. Round-2 review concerns frozen 13a879b only; its full text and
+the controller's seven rulings are attached to nodes-6fde14. This revised design
+is a new review revision, not an amendment of the prior frozen commit.
