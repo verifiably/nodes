@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:50:00Z
+updated: 2026-10-30T14:51:20Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -94,3 +94,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:49:44Z (design/nodes-6fde14-test-policy): review: plan round 3 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
 - 2026-10-30T14:49:52Z (design/nodes-6fde14-test-policy): attached: plan-round-2-report.md (4006 bytes): Portable derivative of full supplied plan round 2 review, claude/claude-opus-5-5: Important 1, Minor 3 on ace792b. Exact raw bytes and both placeholder mappings retained on task.
 - 2026-10-30T14:50:00Z (design/nodes-6fde14-test-policy): attached: plan-round-2-ledger.md (3005 bytes): All four plan round 2 rulings corrected in frozen 6beecc9; plan round 3 self-review accepts, none deferred; implementation not started.
+- 2026-10-30T14:51:20Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"kept","verification":"verified","manifest":"$WORK_ROOT/nodes/nodes-6fde14/retention-manifest.jsonl","sha256":"42ee6b4bfabfdb14e76ff970bd99e1869ef16670b3ae3d8f8b596ec4e8f8b19b","purpose":"Exact spec round 4 and plan round 2 reviews retained under the established attachment-layout fallback; both portable derivatives are attached and mapping notes recorded; both raw hashes verified now","next_owner":"task:nodes-6fde14","cleanup_trigger":"After the executing checker accepts verbatim ledger-backed attachments, preserve and verify both exact raw attachments before considering disposition; approval, merge or done alone grants no deletion"}
