@@ -96,7 +96,13 @@ jobs:
       - name: PyPI publish dry-run
         run: uv publish --dry-run --trusted-publishing never dist-python/*.whl dist-python/*.tar.gz
       - name: npm publish dry-run
-        run: npm publish --dry-run "./$(ls dist-npm/*.tgz)"
+        run: |
+          # Manual rehearsals may use a version that is already published.
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            npm publish --dry-run --force "./$(ls dist-npm/*.tgz)"
+          else
+            npm publish --dry-run "./$(ls dist-npm/*.tgz)"
+          fi
 
   publish-npm:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')

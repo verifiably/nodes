@@ -194,14 +194,54 @@ def test_workflows_pin_external_actions_to_full_shas_with_version_comments(workf
 
 def test_release_workflow_uses_explicit_filesystem_tarball_paths() -> None:
     commands = [
-        line.strip()
-        for line in RELEASE_WORKFLOW.read_text().splitlines()
-        if line.strip().startswith(("run: npm publish", "- run: npm publish"))
+        _normalized_run(step)
+        for step in _job_steps(RELEASE_WORKFLOW, "publish-npm")
+        if _normalized_run(step).startswith("npm publish")
     ]
 
-    assert commands == [
-        'run: npm publish --dry-run "./$(ls dist-npm/*.tgz)"',
-        '- run: npm publish "./$(ls dist-npm/*.tgz)"',
+    assert commands == ['npm publish "./$(ls dist-npm/*.tgz)"']
+
+
+@pytest.mark.parametrize(
+    ("event", "flags"),
+    [("workflow_dispatch", ["--dry-run", "--force"]), ("push", ["--dry-run"])],
+)
+def test_npm_rehearsal_force_is_manual_only(
+    tmp_path: Path, event: str, flags: list[str]
+) -> None:
+    step = next(
+        step
+        for step in _job_steps(RELEASE_WORKFLOW, "verify-artifacts")
+        if step.get("name") == "npm publish dry-run"
+    )
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    npm = bin_dir / "npm"
+    npm.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$ARGV_LOG"\nexit 17\n')
+    npm.chmod(0o755)
+    home = tmp_path / "home"
+    home.mkdir()
+    dist = tmp_path / "dist-npm"
+    dist.mkdir()
+    (dist / "package.tgz").touch()
+    argv_log = tmp_path / "argv"
+    result = subprocess.run(
+        ["/bin/sh", "-eu", "-c", str(step["run"])],
+        cwd=tmp_path,
+        env={
+            "PATH": f"{bin_dir}:/usr/bin:/bin",
+            "HOME": str(home),
+            "GITHUB_EVENT_NAME": event,
+            "ARGV_LOG": str(argv_log),
+        },
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert result.returncode == 17, result.stdout + result.stderr
+    assert argv_log.read_text().splitlines() == [
+        "publish", *flags, "./dist-npm/package.tgz"
     ]
 
 
