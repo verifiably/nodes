@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:12:18Z
+updated: 2026-10-30T14:12:26Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -67,3 +67,5 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:11:33Z (design/nodes-6fde14-test-policy): attached: spec-round-3-report.md (1617 bytes): Full fresh builder review by codex/gpt-6.1-sol of frozen cc5df73; all seven round 2 findings addressed, accepted with none deferred.
 - 2026-10-30T14:12:10Z (design/nodes-6fde14-test-policy): Spec round 2 review recorded before revision; all I1-I3 and M4-M7 accepted and corrected in new frozen cc5df734f321d9755496e344866776f6c289f11b, SHA-256 47d628ca42caf15f699fe59ac3eaf4b7ff5f43dbc8a6411f74c58f82f13a30ea. Round 3 fresh builder acceptance supersedes the review-ledger pending-review status; no findings or deferred minors remain. Full round 2, seven-ruling ledger and round 3 reports are attached, tasks show lists each, and byte equality/SHA-256 verified before workspace duplicates were removed. No scratch/evidence copy remains. Design commit hook passed hygiene, Ruff/Pyright/tsc/Biome and tasks checks; git diff --check passed. No tests run for this design-only revision; setup behavior and hosted evidence remain unimplemented/unverified. Policy absent/enabled; no push, merge, host-pointer or external change.
 - 2026-10-30T14:12:18Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Revised frozen design cc5df73 and attached round 2 review, seven rulings and accepted round 3 builder check await user design review; branch design/nodes-6fde14-test-policy remains unmerged","next_owner":"task:nodes-6fde14","cleanup_trigger":"After user design and plan approvals, implementation and authorized integration, inspect ignored files and host pointers and harvest timings before considering removal"}
+- 2026-10-30T14:12:26Z (design/nodes-6fde14-test-policy): parked (waiting on user, review): User reviews frozen cc5df734f321d9755496e344866776f6c289f11b:docs/designs/2026-10-30-test-execution-policy-design.md (SHA-256 47d628ca42caf15f699fe59ac3eaf4b7ff5f43dbc8a6411f74c58f82f13a30ea) in .worktrees/nodes-6fde14. After approval the agent resumes here and writes the implementation plan for review. All seven spec round 2 findings are addressed; round 3 builder accepts. No implementation or activation yet.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
