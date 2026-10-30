@@ -1,23 +1,26 @@
 # Nodes test policy activation packet
 
-Status: prepared for review; no push, workflow dispatch or policy activation has
-occurred. Task nodes-6fde14, delivery steps nodes-d8dff5 / nodes-3ce05a /
-nodes-75252c. User approved plan 6beecc9 for inline implementation, not external
-execution. The approved design cc5df73 remains unchanged.
+Status: initial branch CI accepted; manual Release failed at npm's existing-version
+dry-run check. Policy remains enabled, with no main merge or activation. Task
+nodes-6fde14, delivery steps nodes-d8dff5 / nodes-3ce05a / nodes-75252c. The user
+approved the original three actions in packet a540c75. Its initial push and one
+manual dispatch were consumed; the conditional main push has not occurred. This
+revised packet requests authorization for the corrected snapshot below. Approved
+plan 6beecc9 and design cc5df73 remain unchanged.
 
 ## Exact snapshot and requested actions
 
 The prepared runtime snapshot is nodes commit
-`1dfcc543bed337281662b4d4b7c6acb4416d0391`. A subsequent documentation-only commit
+`8695d91ab87150c4dc9ac083c477d5542a97dddb`. A subsequent documentation-only commit
 contains this packet; neither later task-record commits nor this packet silently
 change the initial published runtime SHA. Final review must accept this exact
 code plus the packet before the following approval is requested.
 
 Recommend approving these three bounded actions together:
 
-1. Publish that explicit policy-enabled SHA to origin branch
+1. Publish that explicit corrected policy-enabled SHA to origin branch
    `design/nodes-6fde14-test-policy`, triggering one standalone CI workflow with
-   four matrix jobs. Command: `git push origin 1dfcc543bed337281662b4d4b7c6acb4416d0391:refs/heads/design/nodes-6fde14-test-policy`.
+   four matrix jobs. Command: `git push origin 8695d91ab87150c4dc9ac083c477d5542a97dddb:refs/heads/design/nodes-6fde14-test-policy`.
 2. If that branch run passes with accepted coverage, dispatch the existing
    Release workflow once on the same remote branch and exact SHA:
    `GH_TOKEN=$(gh auth token --user khughitt) gh workflow run release.yml --repo verifiably/nodes --ref design/nodes-6fde14-test-policy`.
@@ -50,8 +53,13 @@ additional documents/records; never substitute it for the approved runtime SHA.
   No completion or detection deadline is promised under queues/cancellation.
 - Release dispatch also performs its existing build and verify-artifacts jobs,
   artifact upload/download, package smoke installs and registry publish dry-runs.
-  These jobs have no explicit timeout in the unchanged Release workflow; the
-  platform default applies. They are not bounded by the CI jobs' 15-minute setting.
+  These Release jobs still have no explicit timeout; the
+   platform default applies. They are not bounded by the CI jobs' 15-minute setting.
+  Manual npm dry-runs alone add --force so an already-published version can be
+  rehearsed. Tag-push dry-runs retain registry eligibility checks; actual npm
+  publishing remains unforced. The manual path therefore does not establish
+  registry version availability or implicit-tag eligibility. Both paths always
+  use --dry-run in verify-artifacts; actual publish job guards are unchanged.
   Existing tag-push-only publish guards remain intact and are covered by local
   event/ref truth-table checks. Actual tag-trigger execution remains untested.
 - Setup uses frozen uv/npm lockfiles and pinned actions. Local just setup obtains
@@ -104,20 +112,50 @@ just 1.59.0. These are not the four hosted matrix environments.
 | Focused Task 2 Python including connected Task 1 checks | 81 passed; initial Task 2 RED had 11 failures and 29 passes |
 | Actual TS reporter pilot | 1 parent test passed; its isolated child has 1 passing case and 2 deliberate skips, including one wholly skipped module |
 | Actual pytest reporter pilot | Isolated child has 1 passing case and 2 deliberate skips, with persisted module identities and skip reasons |
-| Latest fast route before runtime commit | Python selected zero tests; TS 1 selected test passed; Python zero selection is not a passing suite, and this is not a full current suite |
+| Original runtime's retained fast route | Python selected zero tests; TS 1 selected test passed; Python zero selection is not a passing suite, and this is not a full current suite |
 | Mandatory hygiene and broad static checks | ops-check, ops-docs, tasks check, Ruff, Pyright, tsc and Biome passed |
 | Workflow lint | actionlint 1.7.12 passed for CI and Release |
+| Manual npm rehearsal correction | RED: 1 failed / 32 passed; GREEN: 33 release tests passed, including both event paths, exact dry-run argv and exit propagation |
+| Correction fast route | Python 37 passed / 5 deselected; TS selected zero tests, which is not a TS pass |
+| Correction hygiene, static checks and actionlint | Passed |
+| Real downloaded npm artifact, isolated local npm 11.17.0 | Original dry-run exits 1 for already-published 0.2.0; --dry-run --force exits 0; no upload |
 
-The retained latest fast log reports no Python tests selected. An earlier 40-test
-fast output was overwritten; no verification claim relies on that unavailable
-output. The separately retained focused Python result is 81 passing tests.
+The original runtime's retained fast log reports no Python tests selected. An
+earlier 40-test fast output was overwritten; no verification claim relies on that
+unavailable output. The separately retained focused result was 81 passing Python
+tests. The correction has fresh 33-test focused and 37-test fast Python evidence;
+its TS fast run selected zero tests. No full corrected-snapshot suite claim is made.
 
 The runtime snapshot has 52 Python test modules and 51 TS test modules in its
 tracked test roots. No module exclusion or selector was added to the hosted
-commands. Actual hosted executed/pass/fail/skipped counts, partially/wholly skipped
-module counts, excluded/absent modules and reasons remain unmeasured and are
-required before activation. Fixture-child skips above are intentional test inputs,
-not capability omissions from the package suites.
+commands. Counts for the original snapshot are recorded below; hosted evidence
+for corrected snapshot 8695d91 remains unmeasured and is required before activation.
+Fixture-child skips above are intentional test inputs, not capability omissions
+from the package suites.
+
+## Initial authorized hosted results
+
+Both runs used exactly runtime 1dfcc543bed337281662b4d4b7c6acb4416d0391:
+
+- [Branch CI 41084263091](https://github.com/verifiably/nodes/actions/runs/41084263091)
+  succeeded. Local pre-push suites passed 811 Python / 593 TS tests.
+- [Manual Release 41084963994](https://github.com/verifiably/nodes/actions/runs/41084963994)
+  failed only its npm publish dry-run, with npm 11.19.1 rejecting already-published
+  version 0.2.0. Called CI, build, artifact validators, smoke installs and PyPI
+  dry-run passed. Both publish jobs skipped; no package was published.
+- Reconciled all four artifacts in each run: Python 3.11/3.13 each executed and
+  passed 811 tests across 52 modules; Node 20/24 each executed and passed 593 tests
+  across 51 modules. Each had zero failed/skipped tests, partly/wholly skipped
+  modules, excluded/absent modules or unresolved reasons. Inventory SHA and source
+  module reconciliation matched. These results cover the original runtime only.
+
+Upstream npm investigation checked open/closed issues and PRs, default latest,
+maintained release/v11, the hosted v11.19.1 source and changelog. The rejection is
+intentional ([issue 4927](https://github.com/npm/cli/issues/4927)); npm's
+[publish implementation](https://github.com/npm/cli/blob/v11.19.1/lib/commands/publish.js)
+checks registry versions unless force is set and independently prevents upload
+when dryRun is set. The correction changes only the manual verification step,
+with no npm patch, dependency change or actual publication change.
 
 Potential capability omissions: symlinks, case-sensitive filename distinctions,
 permission checks for an unprivileged POSIX user, and platform-specific path
