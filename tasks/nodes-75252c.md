@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:13:12Z
+updated: 2026-10-30T16:13:20Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -43,3 +43,4 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:11:22Z (design/nodes-6fde14-test-policy): attached: release-coverage.json (1179 bytes): Accepted called-CI coverage within failed manual Release41084963994; not an overall Release pass
 - 2026-10-30T16:11:32Z (design/nodes-6fde14-test-policy): attached: hosted-validation-report.md (2570 bytes): Initial hosted outcomes, duplicate-version failure, local correction and remaining authorization gate
 - 2026-10-30T16:13:12Z (design/nodes-6fde14-test-policy): review: impl round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6-astra
+- 2026-10-30T16:13:20Z (design/nodes-6fde14-test-policy): attached: release-rehearsal-review-report.md (3722 bytes): Full fresh read-only scoped review by codex/gpt-6-astra of runtime8695d91 and packet52cf368; accept, zero findings
