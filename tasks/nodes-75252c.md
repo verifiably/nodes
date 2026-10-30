@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T15:35:59Z
+updated: 2026-10-30T15:37:46Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -21,7 +21,7 @@ plan: docs/plans/2026-10-30-test-execution-policy.md
 step: "Task 3: Validate approved hosted paths and activate policy"
 ---
 
-Await user review of the complete frozen plan 6beecc9ad558b85406c199bbae93ec6ec11edc8e before implementation. Follow Task 3: Validate approved hosted paths and activate policy: its interfaces, files, fixtures and verification define scope. External publication/dispatch/policy activation require separate concrete approval. Inline execution recommended; no independent design needed.
+Plan 6beecc9 is approved; local preparation steps are done. Await explicit approval of the reviewed activation packet a540c756a90bf0a14e16ddf74849f60d8a71cc9d:docs/notes/2026-10-30-test-policy-activation.md before external execution. Initial runtime snapshot is exactly 1dfcc543bed337281662b4d4b7c6acb4416d0391 on origin design/nodes-6fde14-test-policy. Approval request: one branch push, then only after accepted coverage one manual Release dispatch on that same remote SHA, then only after both paths pass one reviewed policy-off integration push to origin/main. No retries, real release tags, package publication or account/billing changes. Follow Task 3 interfaces and acceptance checks; all hosted counts, omissions and actual activation remain unverified. Raw execution evidence and shared worktree are retained by parent nodes-6fde14.
 
 ## Notes
 
