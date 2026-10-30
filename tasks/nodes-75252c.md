@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:30:04Z
+updated: 2026-10-30T16:37:09Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -52,3 +52,4 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:23:12Z (design/nodes-6fde14-test-policy): User approved revised packet52cf368 this turn: one push of corrected runtime8695d91ab87150c4dc9ac083c477d5542a97dddb to origin design/nodes-6fde14-test-policy; after accepted standalone coverage one manual Release dispatch at that same remote SHA; only after both paths pass and activation diff review one main integration push. No retries, real tags, package publication, paid compute or account changes. Verified both retained manifests and all member hashes, public visibility/admin access and named gh account before execution.
 - 2026-10-30T16:27:30Z (design/nodes-6fde14-test-policy): Corrected branch push at8695d91 succeeded. CI41089556252 accepted after exact SHA, complete module/config inventory and every JUnit identity reconciled: Python3.11/3.13 each813 passed/52modules; Node20/24 each593 passed/51modules; zero skipped, failed, partly/wholly skipped or absent/excluded modules. Approved manual Release41089968448 dispatched once after auth/public/published-workflow/remote-SHA checks; recorded event workflow_dispatch and branch/SHA correct. Submission alone is not success; main remains unmerged and policy enabled.
 - 2026-10-30T16:30:04Z (design/nodes-6fde14-test-policy): Corrected standalone CI41089556252 and manual Release41089968448 both accepted at8695d91 after complete exact-SHA/module/config/JUnit reconciliation: Python813/52modules per job, TS593/51modules per job, zero skips or omissions. Build/verify-artifacts passed and publish-npm/publish-pypi skipped. Conditional activation approval is now effective; proceed with local enabled integration/floor, branch-local activation and fresh review before the one main push. No actual tag execution or package publication.
+- 2026-10-30T16:37:09Z (design/nodes-6fde14-test-policy): attached: corrected-branch-coverage.json (1179 bytes): Accepted corrected branch CI41089556252 at8695d91; complete four-job module/config/JUnit reconciliation

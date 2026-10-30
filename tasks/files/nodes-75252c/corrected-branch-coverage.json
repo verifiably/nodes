@@ -1,0 +1,54 @@
+[
+  {
+    "artifact": "python-3.11-coverage",
+    "tests": 813,
+    "executed": 813,
+    "passed": 813,
+    "failed": 0,
+    "skipped": 0,
+    "modules": 52,
+    "wholly_skipped_modules": [],
+    "partially_skipped_modules": [],
+    "excluded_or_absent_modules": [],
+    "skip_reasons": []
+  },
+  {
+    "artifact": "python-3.13-coverage",
+    "tests": 813,
+    "executed": 813,
+    "passed": 813,
+    "failed": 0,
+    "skipped": 0,
+    "modules": 52,
+    "wholly_skipped_modules": [],
+    "partially_skipped_modules": [],
+    "excluded_or_absent_modules": [],
+    "skip_reasons": []
+  },
+  {
+    "artifact": "typescript-20-coverage",
+    "tests": 593,
+    "executed": 593,
+    "passed": 593,
+    "failed": 0,
+    "skipped": 0,
+    "modules": 51,
+    "wholly_skipped_modules": [],
+    "partially_skipped_modules": [],
+    "excluded_or_absent_modules": [],
+    "skip_reasons": []
+  },
+  {
+    "artifact": "typescript-24-coverage",
+    "tests": 593,
+    "executed": 593,
+    "passed": 593,
+    "failed": 0,
+    "skipped": 0,
+    "modules": 51,
+    "wholly_skipped_modules": [],
+    "partially_skipped_modules": [],
+    "excluded_or_absent_modules": [],
+    "skip_reasons": []
+  }
+]
