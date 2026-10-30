@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:39:55Z
+updated: 2026-10-30T14:45:32Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -86,4 +86,6 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:39:39Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Approved design cc5df73 and frozen implementation plan ace792b await user plan review; three direct children blocked for plan approval, branch design/nodes-6fde14-test-policy unmerged","next_owner":"task:nodes-6fde14","cleanup_trigger":"After plan approval, implementation, approved external activation and authorized integration, inspect ignored files and host pointers and harvest timings before considering removal; preserve the separately retained raw review"}
 - 2026-10-30T14:39:47Z (design/nodes-6fde14-test-policy): Plan frozen at ace792b31163d960319a797d9cdcd0b56509c63d, SHA-256 5ed03d99aa54a922d94e1beb1c07eee26a729ff77e37a2dc187a9e24293d1262. Child sequence nodes-d8dff5 -> nodes-3ce05a -> nodes-75252c is blocked for complete-plan review. Full round 4 portable review and planning ledger are attached and byte-verified; duplicate workspace copies removed, raw review is retained separately with hashed manifest. Self-review only, no independent plan review claimed. Commit hook hygiene/lint/type checks passed; no tests run in this documentation-only planning phase. Policy remains absent/enabled; no implementation, merge, push, workflow dispatch or host pointer change.
 - 2026-10-30T14:39:55Z (design/nodes-6fde14-test-policy): parked (waiting on user, review): User reviews frozen ace792b31163d960319a797d9cdcd0b56509c63d:docs/plans/2026-10-30-test-execution-policy.md (SHA-256 5ed03d99aa54a922d94e1beb1c07eee26a729ff77e37a2dc187a9e24293d1262). After approval the agent resumes .worktrees/nodes-6fde14, unblocks the three plan children and starts nodes-d8dff5 with inline execution and the deferred full baseline. External publication/Release dispatch/activation still require the later concrete packet approval.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T14:45:32Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
