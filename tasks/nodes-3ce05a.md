@@ -1,13 +1,13 @@
 ---
 id: nodes-3ce05a
 title: Preserve hosted coverage and prepare activation evidence
-status: blocked
+status: todo
 priority: 2
 size: m
 complexity: mid
 process: direct
 created: 2026-10-30T14:37:59Z
-updated: 2026-10-30T14:50:17Z
+updated: 2026-10-30T14:59:15Z
 depends: [nodes-d8dff5]
 parent: nodes-6fde14
 tags: []
