@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:11:33Z
+updated: 2026-10-30T14:12:10Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -65,3 +65,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:10:48Z (design/nodes-6fde14-test-policy): attached: review-ledger.md (3810 bytes): Controller rulings for all seven spec round 2 findings; corrected frozen design cc5df73, none deferred.
 - 2026-10-30T14:11:26Z (design/nodes-6fde14-test-policy): review: spec round 3 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
 - 2026-10-30T14:11:33Z (design/nodes-6fde14-test-policy): attached: spec-round-3-report.md (1617 bytes): Full fresh builder review by codex/gpt-6.1-sol of frozen cc5df73; all seven round 2 findings addressed, accepted with none deferred.
+- 2026-10-30T14:12:10Z (design/nodes-6fde14-test-policy): Spec round 2 review recorded before revision; all I1-I3 and M4-M7 accepted and corrected in new frozen cc5df734f321d9755496e344866776f6c289f11b, SHA-256 47d628ca42caf15f699fe59ac3eaf4b7ff5f43dbc8a6411f74c58f82f13a30ea. Round 3 fresh builder acceptance supersedes the review-ledger pending-review status; no findings or deferred minors remain. Full round 2, seven-ruling ledger and round 3 reports are attached, tasks show lists each, and byte equality/SHA-256 verified before workspace duplicates were removed. No scratch/evidence copy remains. Design commit hook passed hygiene, Ruff/Pyright/tsc/Biome and tasks checks; git diff --check passed. No tests run for this design-only revision; setup behavior and hosted evidence remain unimplemented/unverified. Policy absent/enabled; no push, merge, host-pointer or external change.
