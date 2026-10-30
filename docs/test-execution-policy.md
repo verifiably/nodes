@@ -4,8 +4,9 @@ Type: reference
 
 Development commands run from any directory through the root justfile. Their
 execution decisions come from the invoking Git top level's `.tt.toml`, validated
-by vendored `tools/tt`. An absent file keeps broad verification enabled. There
-is currently no policy-off activation or declared remote push coverage.
+by vendored `tools/tt`. The committed policy disables automatic broad work;
+an absent file keeps broad verification enabled. Origin coverage is declared
+for `refs/heads/*` and Release's `refs/tags/v*`.
 
 ## Setup and focused work
 
@@ -39,8 +40,8 @@ and `just gate` compose sequential children without enclosing timers.
 Pre-commit times hygiene under its hook target, then requests check-code.
 Pre-push preserves SSH keepalive and ref handling, clears Git-local environment
 variables, times hygiene, then requests check-code and the suite. A push to
-validated covered refs may use the existing fast selectors instead. Until
-coverage is accepted, `ci_suite_refs` is empty. A policy-off uncovered push warns
+validated covered refs may use the existing fast selectors instead.
+A policy-off uncovered push warns
 and retains hygiene; it does not restore a local broad suite.
 
 With an approved `automatic_broad=false` policy, broad test and code-check requests
@@ -60,7 +61,7 @@ run, with further delay during queues, cancellation or outages.
 
 ## Hosted verification and evidence
 
-The prepared CI workflow retains Python 3.11/3.13 and Node 20/24 on standard
+The CI workflow retains Python 3.11/3.13 and Node 20/24 on standard
 Ubuntu runners. It covers every branch push, including names with slashes,
 and fork PRs; same-repository PR events skip duplicate suite jobs. It supports
 manual dispatch and reusable Release calls. A literal nodes-ci concurrency
@@ -85,8 +86,9 @@ modules and reasons. A missing/unknown case blocks acceptance. Pytest includes
 runtime skip reasons; Vitest may not, so annotate guards from the exact source
 revision as source-derived reasons, never claim they were runtime messages.
 
-This is prepared configuration, not accepted hosted evidence: no workflow has
-been published or executed by this adoption yet. ci_suite_refs stays empty.
+Branch CI and a manual Release run accepted the same enabled snapshot, with
+813 Python tests in 52 modules per Python job and 593 TypeScript tests in
+51 modules per Node job, with zero skips or omitted modules. Exact revisions,+runs and subsequent activation results belong in the activation packet.
 
 ## Activation and rollback
 
@@ -96,12 +98,13 @@ The packet names setup, actual test/skip/module counts, unsupported capabilities
 public/private status, applicable billing controls, refs, run limits and rollback.
 Neither a workflow trigger nor a green job alone proves equivalent coverage.
 
-The intended broad target list is test, test-fast, check-code, ci-python and
-ci-typescript. The intended origin coverage is all branches and Release's `v*`
-tags, declared only after branch CI and an approved manual Release-on-branch
-run validate the shared callable path. Publish jobs must skip in that dispatch;
-no real release tag is used for this adoption check. Actual tag-trigger execution
-remains untested. Runtime results belong in the activation packet, not assumptions.
+The broad target list is test, test-fast, check-code, ci-python and ci-typescript.
+Origin coverage includes all branches and Release's `v*` tags, supported by branch
+CI, the approved manual Release run and local event/concurrency checks. Both
+publish jobs skipped in that dispatch. Manual npm dry-runs use --force to rehearse
+already-published versions; tag dry-runs and real publication retain registry
+eligibility checks. Actual tag-trigger execution and manual-path registry
+eligibility remain untested. No real release tag is used for this adoption check.
 
 Rollback enables automatic broad work, restores its local cadence and records
 `policy: enabled at <RFC3339-UTC> revision <full-sha>` on nodes-6fde14 at the actual

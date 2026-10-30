@@ -23,7 +23,8 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
   tasks check) with broad `just check-code` (Ruff, Pyright, tsc and Biome).
   `just gate` composes check and test. Run recipes from anywhere in the tree.
 - Checkout-local `.tt.toml`, validated by `tools/tt`, governs broad execution.
-  Missing policy means enabled. Policy skips have null outcomes, never passing
+  The committed policy disables automatic broad work. Missing policy means enabled.
+  Policy skips have null outcomes, never passing
   suites. Focused/setup/hygiene routes are protected. Deliberate broad checks use
   `TT_FORCE=1`; hosted broad verification requires that explicit setting.
 - Every executed check goes through `tools/tt`; do not call pytest, npm test,
@@ -32,12 +33,14 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
   measures hygiene only; the old hook and check timing series do not continue.
   Fresh clones install hooks with `git config core.hooksPath .githooks`.
 - CI keeps Python 3.11/3.13 and Node 20/24, sets `TT_FORCE=1` explicitly and
-  retains per-job JUnit/module inventory artifacts for 30 days. Its prepared
+  retains per-job JUnit/module inventory artifacts for 30 days. Its validated
   configuration covers branch pushes and fork PRs, with reusable Release calls.
-  Hosted evidence is still pending approval/execution; `ci_suite_refs` stays empty.
+  Origin coverage is declared for `refs/heads/*` and Release's `refs/tags/v*`.
+  Branch CI and a manual Release run validated the callable path; actual tag
+  execution remains untested. Results are in the activation packet.
 - Before removing a worktree, run `tt-report` in ops to harvest fallback timings.
 - See `docs/test-execution-policy.md` for setup location handling, force commands,
-  coverage and activation limits. Policy remains enabled pending hosted acceptance.
+  coverage, activation evidence and rollback limits.
 
 ## Layout
 

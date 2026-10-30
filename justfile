@@ -29,8 +29,8 @@ check_hygiene_cmd := "python3 tools/ops-check && python3 tools/ops-docs check &&
 check_code_cmd := py_check_cmd + " && " + ts_check_cmd
 
 ci_remote := "origin"
-# Coverage is declared only after approved hosted validation.
-ci_suite_refs := ""
+# Validated by branch CI and the manual Release callable path.
+ci_suite_refs := "refs/heads/* refs/tags/v*"
 
 # Affected-only: the inner loop. An empty selection is a result, not a failure.
 test-fast:
