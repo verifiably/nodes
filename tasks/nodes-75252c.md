@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:39:30Z
+updated: 2026-10-30T16:43:59Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -58,3 +58,4 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:38:32Z (design/nodes-6fde14-test-policy): review: impl round 2 — verdict: accept; findings: Minor 1; reviewer: codex/gpt-6-astra
 - 2026-10-30T16:39:29Z (design/nodes-6fde14-test-policy): attached: activation-review-report.md (4139 bytes): Full fresh activation review by codex/gpt-6-astra: accepted4e912df, no blocking findings, Minor M1 deferred
 - 2026-10-30T16:39:30Z (design/nodes-6fde14-test-policy): Activation4e912df accepted by fresh codex/gpt-6-astra, Critical0/Important0/Minor1. M1 reference prose literal + is minor(deferred), no corrective round. Exact tag/publication and manual-registry limits/advisories remain; savings unmeasured for ops-56aab7. Controller now performs approved local activation integration and one main push after fresh auth/visibility/ref checks; inspect exact-SHA forced CI before completion.
+- 2026-10-30T16:43:59Z (design/nodes-6fde14-test-policy): attached: main-coverage.json (1179 bytes): Accepted forced main CI41092069379 at activated045ef235;813Python/593TS per version with complete module/config inventories and no skips or omissions
