@@ -58,6 +58,36 @@ commit hooks and 12.9 for push hooks. Expected savings are modest and unmeasured
 routine lint/type errors under policy-off may wait until a completed pushed CI
 run, with further delay during queues, cancellation or outages.
 
+## Hosted verification and evidence
+
+The prepared CI workflow retains Python 3.11/3.13 and Node 20/24 on standard
+Ubuntu runners. It covers every branch push, including names with slashes,
+and fork PRs; same-repository PR events skip duplicate suite jobs. It supports
+manual dispatch and reusable Release calls. A literal nodes-ci concurrency
+namespace avoids Release's case-insensitive group collision. Superseded standalone
+CI runs cancel; Release keeps its own serialization. Cancelled heads are unverified.
+
+Each verification job has a 15-minute timeout and explicitly sets TT_FORCE=1,
+including the jobs invoked by Release. Complete package suites and static checks
+run through ci-python/ci-typescript. These recipes require an absolute
+NODES_CI_EVIDENCE_DIR; they add reporting flags without selecting tests. Local
+commands retain their original selections. The Python suite needs no Node install;
+the actual Vitest reporter pilot belongs to the TS suite.
+
+JUnit reports and module inventories live under RUNNER_TEMP outside tt's temporary
+JUnit directory. Each matrix job uploads a unique coverage artifact retained for
+30 days, including after a failing suite/static check. Explicit file checks fail
+missing JUnit or inventory rather than accepting an inventory-only artifact.
+The inventory contains the exact Git SHA, tracked test-root paths and discovery
+configuration. Match module/case identities and summary counts against that
+inventory; list excluded or unexplained absent modules, partially/wholly skipped
+modules and reasons. A missing/unknown case blocks acceptance. Pytest includes
+runtime skip reasons; Vitest may not, so annotate guards from the exact source
+revision as source-derived reasons, never claim they were runtime messages.
+
+This is prepared configuration, not accepted hosted evidence: no workflow has
+been published or executed by this adoption yet. ci_suite_refs stays empty.
+
 ## Activation and rollback
 
 Policy-off activation requires a reviewed packet and explicit external approval,

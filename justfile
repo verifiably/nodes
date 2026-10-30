@@ -86,12 +86,15 @@ hook-pre-push-fast:
     just check-code
     just test-fast
 
+# CI adds persistent reporting flags without changing suite selection.
+ci_evidence_cmd := "case \"${NODES_CI_EVIDENCE_DIR:?set NODES_CI_EVIDENCE_DIR}\" in /*) ;; *) echo \"CI evidence path must be absolute\" >&2; exit 2;; esac"
+
 # CI keeps its two-job matrix (Python 3.11/3.13, Node 20/24); each job runs the recipe
-# for its package, so the whole job is one recorded number. These run exactly what the
-# workflow's steps ran before, in the same order. `tasks check` is not in them: the
+# for its package, so the complete package check is one recorded number.
+# CI adds JUnit paths while preserving complete-suite selection and check order. `tasks check` is not in them: the
 # `tasks` binary is not installed on a runner.
 ci-python:
-    {{tt}} ci-python -- sh -c '{{py_test_cmd}} && {{py_check_cmd}}'
+    {{tt}} ci-python -- sh -c '{{ci_evidence_cmd}}; (cd python && uv run --frozen pytest --junitxml="$NODES_CI_EVIDENCE_DIR/pytest.xml") && {{py_check_cmd}}'
 
 ci-typescript:
-    {{tt}} ci-typescript -- sh -c '{{ts_test_cmd}} && {{ts_check_cmd}}'
+    {{tt}} ci-typescript -- sh -c '{{ci_evidence_cmd}}; (cd ts && npm test -- --reporter=default --reporter=junit --outputFile.junit="$NODES_CI_EVIDENCE_DIR/vitest.xml") && {{ts_check_cmd}}'

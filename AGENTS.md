@@ -31,6 +31,10 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
 - Git hooks retain hygiene and request broad children separately. Hook timing now
   measures hygiene only; the old hook and check timing series do not continue.
   Fresh clones install hooks with `git config core.hooksPath .githooks`.
+- CI keeps Python 3.11/3.13 and Node 20/24, sets `TT_FORCE=1` explicitly and
+  retains per-job JUnit/module inventory artifacts for 30 days. Its prepared
+  configuration covers branch pushes and fork PRs, with reusable Release calls.
+  Hosted evidence is still pending approval/execution; `ci_suite_refs` stays empty.
 - Before removing a worktree, run `tt-report` in ops to harvest fallback timings.
 - See `docs/test-execution-policy.md` for setup location handling, force commands,
   coverage and activation limits. Policy remains enabled pending hosted acceptance.

@@ -2,16 +2,25 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
+  workflow_dispatch:
   workflow_call:
 
 permissions:
   contents: read
 
+concurrency:
+  group: nodes-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.workflow == 'CI' }}
+
 jobs:
   python:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    timeout-minutes: 15
+    env:
+      TT_FORCE: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -26,12 +35,38 @@ jobs:
           version: "0.11.29"
           python-version: ${{ matrix.python-version }}
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+      - name: Prepare coverage evidence
+        run: |
+          evidence_dir="$RUNNER_TEMP/nodes-python-coverage"
+          mkdir -p "$evidence_dir"
+          echo "NODES_CI_EVIDENCE_DIR=$evidence_dir" >> "$GITHUB_ENV"
+          {
+            git rev-parse HEAD
+            git ls-files -- tests
+            cat pyproject.toml
+          } > "$evidence_dir/module-inventory.txt"
       - run: uv sync --frozen
-      # The same three commands as before, now through the recipe that records them.
+      # Complete suite plus static checks; reporting flags do not select tests.
       - run: just ci-python
+      - name: Require coverage evidence
+        if: always()
+        run: |
+          test -s "${NODES_CI_EVIDENCE_DIR:?}/pytest.xml"
+          test -s "$NODES_CI_EVIDENCE_DIR/module-inventory.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: python-${{ matrix.python-version }}-coverage
+          path: ${{ env.NODES_CI_EVIDENCE_DIR }}
+          retention-days: 30
+          if-no-files-found: error
 
   typescript:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    timeout-minutes: 15
+    env:
+      TT_FORCE: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -47,6 +82,28 @@ jobs:
           cache: npm
           cache-dependency-path: ts/package-lock.json
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+      - name: Prepare coverage evidence
+        run: |
+          evidence_dir="$RUNNER_TEMP/nodes-typescript-coverage"
+          mkdir -p "$evidence_dir"
+          echo "NODES_CI_EVIDENCE_DIR=$evidence_dir" >> "$GITHUB_ENV"
+          {
+            git rev-parse HEAD
+            git ls-files -- tests
+            cat package.json
+          } > "$evidence_dir/module-inventory.txt"
       - run: npm ci
-      # The same three commands as before, now through the recipe that records them.
+      # Complete suite plus static checks; reporting flags do not select tests.
       - run: just ci-typescript
+      - name: Require coverage evidence
+        if: always()
+        run: |
+          test -s "${NODES_CI_EVIDENCE_DIR:?}/vitest.xml"
+          test -s "$NODES_CI_EVIDENCE_DIR/module-inventory.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: typescript-${{ matrix.node-version }}-coverage
+          path: ${{ env.NODES_CI_EVIDENCE_DIR }}
+          retention-days: 30
+          if-no-files-found: error
