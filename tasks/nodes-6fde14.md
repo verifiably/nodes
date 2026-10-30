@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T13:49:06Z
+updated: 2026-10-30T13:49:34Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -54,3 +54,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T13:47:41Z (design/nodes-6fde14-test-policy): Origin recovered using session-logs from codex:01a1874f-c2d8-7320-ae81-7114e37e343f: human turn at line 15 asks to reduce broad local testing while preserving focused implementation tests; turn at line 108 carries shared wrapper/CI/lore suggestions; line 538 explicitly approves the shared plan for inline execution. This adoption task is agent-derived. Project calls: retain both matrices, introduce language-qualified test-one, split hygiene, expand branch CI before policy-off. GitHub API with khughitt reports public visibility/admin rights; private allowance controls are inapplicable while public on standard runners. No public workflow or host changes authorized by design preparation.
 - 2026-10-30T13:48:57Z (design/nodes-6fde14-test-policy): review: spec round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
 - 2026-10-30T13:49:06Z (design/nodes-6fde14-test-policy): attached: builder-check-report.md (869 bytes): Full read-only builder check by codex/gpt-6.1-sol of frozen design 13a879b; accepted with no findings.
+- 2026-10-30T13:49:34Z (design/nodes-6fde14-test-policy): Frozen design 13a879b3a53d3429f1de335af898f0815a2ddcf9 accepted by builder with no findings, rulings or deferred minors. Full review is attached and tasks show lists it; SHA-256 202c320cfb5ff86272ab5842dace2240b6d20e49695e8e17c83e9476095ae3d4 matched workspace copy, which was removed. No scratch/evidence copy or host pointer remains. Design commit hook passed ops-check, ops-docs check, Ruff, Pyright, tsc, Biome and tasks check; git diff --check passed. No tests run: design-only phase, full baseline deferred to execution Setup. Policy absent/enabled; no implementation, merge, push or hosted activation.
