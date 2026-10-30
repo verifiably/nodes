@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T15:41:50Z
+updated: 2026-10-30T15:48:19Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -115,4 +115,6 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T15:41:18Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Reviewed local preparation complete on unmerged design/nodes-6fde14-test-policy; runtime1dfcc54, packet a540c75, Task1/2 done, Task3 awaits explicit external approval; no host pointer or process points into it","next_owner":"task:nodes-6fde14","cleanup_trigger":"After approved activation/integration or explicit cancellation, inspect ignored items, harvest tt timings, check host pointers and preserve/transfer needed evidence before considering removal; raw canonical task storage remains separate"}
 - 2026-10-30T15:41:42Z (design/nodes-6fde14-test-policy): Local implementation steps nodes-d8dff5 and nodes-3ce05a are done and independently reviewed; nodes-75252c is parked at the concrete external approval gate, not offloaded. All six execution Rulings and no deferred minors are in attached execution-ledger.md; full code reviews attached to nodes-3ce05a. Initial runtime1dfcc54, corrected packet a540c75; approved design/plan unchanged. Latest fast Python empty selection corrected honestly; focused81Python/1TS repeated at completion and passed. Evidence/retention checkpoints current; main/worktree clean, no host pointers or surviving processes.
 - 2026-10-30T15:41:50Z (design/nodes-6fde14-test-policy): parked (waiting on user, approval): User approves reviewed packet a540c756a90bf0a14e16ddf74849f60d8a71cc9d for initial runtime1dfcc543bed337281662b4d4b7c6acb4416d0391 branch push, conditional manual Release dispatch and conditional reviewed policy-off main push. Then agent resumes .worktrees/nodes-6fde14 and nodes-75252c to perform approved hosted validation and activation. Local preparation is complete; no external action or policy-off activation has happened.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T15:48:19Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
