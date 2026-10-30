@@ -8,13 +8,14 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T13:45:17Z
+updated: 2026-10-30T13:47:32Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
 source: "tt-policy:nodes"
 agent: codex
 origin: agent
+spec: docs/designs/2026-10-30-test-execution-policy-design.md
 ---
 
 Adopt the approved shared test execution policy for this personal project after the ops pilot. Owner: the next nodes implementer; Keith approves external activation. State: pending preparation, not offloaded. Shared authority: ops-8bfa85 (read its approved spec and plan with tasks doc); pilot prerequisite ops-68729d.
