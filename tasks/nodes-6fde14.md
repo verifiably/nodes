@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:49:44Z
+updated: 2026-10-30T14:49:52Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -92,3 +92,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:45:47Z (design/nodes-6fde14-test-policy): review: plan round 2 — verdict: revise; findings: Important 1, Minor 3; reviewer: claude/claude-opus-5-5
 - 2026-10-30T14:48:28Z (design/nodes-6fde14-test-policy): Added exact plan round 2 review to existing persistent scratch on titan at $WORK_ROOT/nodes/nodes-6fde14/plan-round-2-report-raw.md, owner task:nodes-6fde14. Contents checkpointed after this addition. Reuse known raw/portable attachment fallback from ops-8c5a85: portable plan-round-2-report.md replaces ~/.ssh/config with <account-ssh-config> and ~/d with <synced-alias>; raw bytes remain unchanged. No checker exemption or bypass claimed.
 - 2026-10-30T14:49:44Z (design/nodes-6fde14-test-policy): review: plan round 3 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
+- 2026-10-30T14:49:52Z (design/nodes-6fde14-test-policy): attached: plan-round-2-report.md (4006 bytes): Portable derivative of full supplied plan round 2 review, claude/claude-opus-5-5: Important 1, Minor 3 on ace792b. Exact raw bytes and both placeholder mappings retained on task.
