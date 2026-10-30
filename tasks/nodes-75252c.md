@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:23:04Z
+updated: 2026-10-30T16:23:12Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -49,3 +49,4 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:23:04Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T16:23:12Z (design/nodes-6fde14-test-policy): User approved revised packet52cf368 this turn: one push of corrected runtime8695d91ab87150c4dc9ac083c477d5542a97dddb to origin design/nodes-6fde14-test-policy; after accepted standalone coverage one manual Release dispatch at that same remote SHA; only after both paths pass and activation diff review one main integration push. No retries, real tags, package publication, paid compute or account changes. Verified both retained manifests and all member hashes, public visibility/admin access and named gh account before execution.
