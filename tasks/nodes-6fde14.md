@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:58:40Z
+updated: 2026-10-30T14:58:55Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -104,3 +104,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:58:31Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T14:58:40Z (design/nodes-6fde14-test-policy): review: plan round 4 — verdict: accept; findings: none; reviewer: claude/claude-opus-5-5
+- 2026-10-30T14:58:55Z (design/nodes-6fde14-test-policy): Keith explicitly approved frozen 6beecc9 for inline execution. Supplied acceptance called itself round 3; recorded as round 4 because the prior plan round 3 self-review already exists. Implementation authorized, external publishing/dispatch/activation still separately gated.
