@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T13:47:32Z
+updated: 2026-10-30T13:47:41Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -51,3 +51,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T13:44:19Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T13:45:17Z (design/nodes-6fde14-test-policy): Planned path in .worktrees/nodes-6fde14 on design/nodes-6fde14-test-policy; locked worktree hydrated with uv sync --frozen in python and npm ci in ts. No just setup exists. Full-suite baseline deferred until implementation Setup per planned-work rule. tt is already version 8 (task inventory version 7 is stale). npm ci reports 10 existing dependency vulnerabilities; no dependency edits made.
+- 2026-10-30T13:47:41Z (design/nodes-6fde14-test-policy): Origin recovered using session-logs from codex:01a1874f-c2d8-7320-ae81-7114e37e343f: human turn at line 15 asks to reduce broad local testing while preserving focused implementation tests; turn at line 108 carries shared wrapper/CI/lore suggestions; line 538 explicitly approves the shared plan for inline execution. This adoption task is agent-derived. Project calls: retain both matrices, introduce language-qualified test-one, split hygiene, expand branch CI before policy-off. GitHub API with khughitt reports public visibility/admin rights; private allowance controls are inapplicable while public on standard runners. No public workflow or host changes authorized by design preparation.
