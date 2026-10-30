@@ -7,7 +7,7 @@ size: m
 complexity: mid
 process: direct
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T14:38:24Z
+updated: 2026-10-30T14:50:24Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
 tags: []
@@ -19,7 +19,7 @@ plan: docs/plans/2026-10-30-test-execution-policy.md
 step: "Task 3: Validate approved hosted paths and activate policy"
 ---
 
-Await user review of the complete frozen plan ace792b31163d960319a797d9cdcd0b56509c63d before implementation. Follow Task 3: Validate approved hosted paths and activate policy: its interfaces, files, fixtures and verification define scope. External publication/dispatch/policy activation require separate concrete approval. Inline execution recommended; no independent design needed.
+Await user review of the complete frozen plan 6beecc9ad558b85406c199bbae93ec6ec11edc8e before implementation. Follow Task 3: Validate approved hosted paths and activate policy: its interfaces, files, fixtures and verification define scope. External publication/dispatch/policy activation require separate concrete approval. Inline execution recommended; no independent design needed.
 
 ## Notes
 
