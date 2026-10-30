@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T15:53:47Z
+updated: 2026-10-30T16:06:47Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -38,3 +38,4 @@ Plan 6beecc9 is approved; local preparation steps are done. Await explicit appro
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T15:48:37Z (design/nodes-6fde14-test-policy): User explicitly approved all three actions in packet a540c75: one initial push of runtime1dfcc543bed337281662b4d4b7c6acb4416d0391 to origin design/nodes-6fde14-test-policy, one manual Release dispatch only after accepted branch coverage, and one reviewed policy-off main push only after both verification paths pass. No retries, real tags, package publication, paid compute or account/billing changes authorized.
 - 2026-10-30T15:53:47Z (design/nodes-6fde14-test-policy): Approved initial branch push completed at runtime1dfcc543bed337281662b4d4b7c6acb4416d0391. Hosted CI https://github.com/verifiably/nodes/actions/runs/41084263091 accepted after artifact reconciliation: Python3.11/3.13 each811 passed in52 modules; Node20/24 each593 passed in51 modules; zero skips, failures, wholly/partially skipped or excluded/absent modules. Local pre-push811Python/593TS passed. One approved push consumed; proceed with the already-approved conditional Release dispatch at this exact remote SHA.
+- 2026-10-30T16:06:47Z (design/nodes-6fde14-test-policy): Manual Release run41084963994 at approved runtime1dfcc543bed337281662b4d4b7c6acb4416d0391 failed only npm publish dry-run: version0.2.0 already published. Called CI matrix and build passed; artifact/smoke/PyPI dry-run steps passed; both publish jobs skipped. No retry, merge, .tt.toml or activation. Upstream investigation before local reproduction: searched npm/cli open/closed issues and PRs (4927,7993,8286,9188,1559), default latest and maintained release/v11 sources, v11.19.1 hosted source and latest changelog. Duplicate-version rejection is intentional and independent of dryRun; force bypasses registry eligibility while dryRun separately prevents upload. No upstream defect patch needed. Prepare manual-only dry-run correction and fresh reviewed packet, then seek further external authorization.
