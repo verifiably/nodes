@@ -1,0 +1,44 @@
+---
+id: nodes-3ce05a
+title: Preserve hosted coverage and prepare activation evidence
+status: done
+priority: 2
+size: m
+complexity: mid
+process: direct
+owner: design/nodes-6fde14-test-policy
+created: 2026-10-30T14:37:59Z
+updated: 2026-10-30T15:35:52Z
+started: 2026-10-30T15:08:09Z
+completed: 2026-10-30T15:35:52Z
+closed: 2026-10-30T15:35:52Z
+depends: [nodes-d8dff5]
+parent: nodes-6fde14
+tags: []
+source: "nodes-6fde14:plan-task-2"
+agent: codex
+origin: agent
+spec: docs/designs/2026-10-30-test-execution-policy-design.md
+plan: docs/plans/2026-10-30-test-execution-policy.md
+step: "Task 2: Preserve hosted coverage and prepare activation evidence"
+---
+
+Await user review of the complete frozen plan 6beecc9ad558b85406c199bbae93ec6ec11edc8e before implementation. Follow Task 2: Preserve hosted coverage and prepare activation evidence: its interfaces, files, fixtures and verification define scope. External publication/dispatch/policy activation require separate concrete approval. Inline execution recommended; no independent design needed.
+
+## Notes
+
+- 2026-10-30T14:37:59Z (add): created
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID","origin":"agent"}
+- 2026-10-30T14:38:07Z (design/nodes-6fde14-test-policy): Await user review of complete frozen plan ace792b before implementation.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T15:08:09Z (design/nodes-6fde14-test-policy): started
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T15:31:26Z (design/nodes-6fde14-test-policy): review: impl round 1 — verdict: revise; findings: Minor 1; reviewer: codex/gpt-6-astra
+- 2026-10-30T15:34:48Z (design/nodes-6fde14-test-policy): review: impl round 2 — verdict: accept; findings: none; reviewer: codex/gpt-6-astra
+- 2026-10-30T15:34:55Z (design/nodes-6fde14-test-policy): attached: final-round-1-report.md (4920 bytes): Full whole-branch review by codex/gpt-6-astra of 7257802: runtime ready for external pilot, Minor1 packet count corrected under controller Important ruling.
+- 2026-10-30T15:35:03Z (design/nodes-6fde14-test-policy): attached: final-round-2-report.md (1897 bytes): Full fresh scoped re-review by codex/gpt-6-astra accepts a540c75 packet correction with no findings; explicit actionlint exit0 verified.
+- 2026-10-30T15:35:43Z (design/nodes-6fde14-test-policy): Local preparation reviewed and complete: runtime1dfcc543bed337281662b4d4b7c6acb4416d0391; corrected packet a540c756a90bf0a14e16ddf74849f60d8a71cc9d. Whole-branch and fresh scoped review by codex/gpt-6-astra accepted after correcting stale latest-fast evidence to Python0selected/TS1pass; focused Python81/TS1, initial baseline755/592, hygiene/static and actionlint explicit exit0 passed. No hosted counts or parity claimed. No deferred minors; literal unmappable-case test adjusted to manual acceptance reconciliation, recorded as Ruling. Full reports attached; execution workspace/raw reviews and shared worktree owned by open parent nodes-6fde14, retained for Task3 approval/activation.
+- 2026-10-30T15:35:52Z (design/nodes-6fde14-test-policy): done
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T15:35:52Z (design/nodes-6fde14-test-policy): Prepared all-branch/fork/reusable CI, explicit force, persistent per-version JUnit/module inventories and reviewed activation packet. Focused81 Python/1TS pass, mandatory checks/actionlint0; latest fast Python0selection/TS1pass is not full-suite evidence. Two fresh review passes accepted correction. No publication or policy-off activation; evidence/worktree owned by parent nodes-6fde14.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}

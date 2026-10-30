@@ -12,17 +12,32 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
 
 ## Gates
 
-- `just gate` — the whole thing: `just check` (ops-check, ops-docs check, ruff, pyright,
-  biome, tsc, `tasks check`) then `just test` (pytest and vitest, both packages). Run it
-  from anywhere in the tree.
-- Every recipe records its run through `tools/tt`, the timing wrapper vendored from the
-  ops repository, so do not call `pytest`, `npm test`, `ruff`, `pyright`, `tsc`, or
-  `biome` directly.
-- The git hooks in `.githooks/` run `just hook-pre-commit` (the `check` command) and
-  `just hook-pre-push` (the whole gate). A fresh clone installs them with
-  `git config core.hooksPath .githooks`.
-- Before removing a worktree, run `tt-report` in the ops repository so this checkout's
-  fallback test-timing log is harvested.
+- `just setup` prepares managed Python storage, installs both frozen lockfiles,
+  builds TypeScript and restores Dropbox marks where required; errors fail setup.
+- Focused work: `just test-one python tests/test_paths.py` or
+  `just test-one ts tests/paths.test.ts`. Selectors are relative to the named
+  package; a language and selector are required and argv is forwarded intact.
+- `just test-fast` selects affected tests (pytest-testmon and Vitest changed).
+  `just test` requests both full suites; `just test-full` forces them explicitly.
+- `just check` composes mandatory `just check-hygiene` (ops-check, ops-docs and
+  tasks check) with broad `just check-code` (Ruff, Pyright, tsc and Biome).
+  `just gate` composes check and test. Run recipes from anywhere in the tree.
+- Checkout-local `.tt.toml`, validated by `tools/tt`, governs broad execution.
+  Missing policy means enabled. Policy skips have null outcomes, never passing
+  suites. Focused/setup/hygiene routes are protected. Deliberate broad checks use
+  `TT_FORCE=1`; hosted broad verification requires that explicit setting.
+- Every executed check goes through `tools/tt`; do not call pytest, npm test,
+  Ruff, Pyright, tsc or Biome directly. Composing aliases add no timer.
+- Git hooks retain hygiene and request broad children separately. Hook timing now
+  measures hygiene only; the old hook and check timing series do not continue.
+  Fresh clones install hooks with `git config core.hooksPath .githooks`.
+- CI keeps Python 3.11/3.13 and Node 20/24, sets `TT_FORCE=1` explicitly and
+  retains per-job JUnit/module inventory artifacts for 30 days. Its prepared
+  configuration covers branch pushes and fork PRs, with reusable Release calls.
+  Hosted evidence is still pending approval/execution; `ci_suite_refs` stays empty.
+- Before removing a worktree, run `tt-report` in ops to harvest fallback timings.
+- See `docs/test-execution-policy.md` for setup location handling, force commands,
+  coverage and activation limits. Policy remains enabled pending hosted acceptance.
 
 ## Layout
 

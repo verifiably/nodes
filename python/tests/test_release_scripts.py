@@ -194,14 +194,54 @@ def test_workflows_pin_external_actions_to_full_shas_with_version_comments(workf
 
 def test_release_workflow_uses_explicit_filesystem_tarball_paths() -> None:
     commands = [
-        line.strip()
-        for line in RELEASE_WORKFLOW.read_text().splitlines()
-        if line.strip().startswith(("run: npm publish", "- run: npm publish"))
+        _normalized_run(step)
+        for step in _job_steps(RELEASE_WORKFLOW, "publish-npm")
+        if _normalized_run(step).startswith("npm publish")
     ]
 
-    assert commands == [
-        'run: npm publish --dry-run "./$(ls dist-npm/*.tgz)"',
-        '- run: npm publish "./$(ls dist-npm/*.tgz)"',
+    assert commands == ['npm publish "./$(ls dist-npm/*.tgz)"']
+
+
+@pytest.mark.parametrize(
+    ("event", "flags"),
+    [("workflow_dispatch", ["--dry-run", "--force"]), ("push", ["--dry-run"])],
+)
+def test_npm_rehearsal_force_is_manual_only(
+    tmp_path: Path, event: str, flags: list[str]
+) -> None:
+    step = next(
+        step
+        for step in _job_steps(RELEASE_WORKFLOW, "verify-artifacts")
+        if step.get("name") == "npm publish dry-run"
+    )
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    npm = bin_dir / "npm"
+    npm.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$ARGV_LOG"\nexit 17\n')
+    npm.chmod(0o755)
+    home = tmp_path / "home"
+    home.mkdir()
+    dist = tmp_path / "dist-npm"
+    dist.mkdir()
+    (dist / "package.tgz").touch()
+    argv_log = tmp_path / "argv"
+    result = subprocess.run(
+        ["/bin/sh", "-eu", "-c", str(step["run"])],
+        cwd=tmp_path,
+        env={
+            "PATH": f"{bin_dir}:/usr/bin:/bin",
+            "HOME": str(home),
+            "GITHUB_EVENT_NAME": event,
+            "ARGV_LOG": str(argv_log),
+        },
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert result.returncode == 17, result.stdout + result.stderr
+    assert argv_log.read_text().splitlines() == [
+        "publish", *flags, "./dist-npm/package.tgz"
     ]
 
 
@@ -457,3 +497,42 @@ def test_python_smoke_removes_scratch_directory_after_failure(tmp_path: Path) ->
 
     assert result.returncode == 24
     assert list(scratch_parent.iterdir()) == []
+
+
+def test_ci_all_branches_force_and_preserved_matrices() -> None:
+    triggers = _workflow_triggers(CI_WORKFLOW)
+    assert triggers["push"] == {"branches": ["**"]}
+    assert {"pull_request", "workflow_dispatch", "workflow_call"} <= triggers.keys()
+    for name, field, versions in [("python", "python-version", ["3.11", "3.13"]),
+                                  ("typescript", "node-version", ["20", "24"])]:
+        job = _job(CI_WORKFLOW, name)
+        assert job["strategy"]["matrix"][field] == versions
+        assert job["runs-on"] == "ubuntu-latest"
+        assert job["timeout-minutes"] == 15
+        assert job["env"]["TT_FORCE"] == "1"
+        assert job["if"] == "github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository"
+    uploads = [s["with"]["name"] for s in _workflow_steps(CI_WORKFLOW)
+               if str(s.get("uses", "")).startswith("actions/upload-artifact@")]
+    assert len(uploads) == 2 and len(set(uploads)) == 2
+
+
+def test_ci_concurrency_separates_release_caller() -> None:
+    concurrency = _workflow(CI_WORKFLOW)["concurrency"]
+    assert concurrency["cancel-in-progress"] == "${{ github.workflow == 'CI' }}"
+    group = concurrency["group"]
+    for workflow, ref, want in [("CI", "refs/heads/feature/x", "nodes-ci-CI-refs/heads/feature/x"),
+                                ("Release", "refs/tags/v0.2.0", "nodes-ci-Release-refs/tags/v0.2.0")]:
+        actual = group.replace("${{ github.workflow }}", workflow).replace("${{ github.ref }}", ref)
+        assert actual == want
+        assert actual.casefold() != f"release-{ref}".casefold()
+    assert _workflow(RELEASE_WORKFLOW)["concurrency"] == {
+        "group": "release-${{ github.ref }}", "cancel-in-progress": False}
+
+
+@pytest.mark.parametrize("event,ref,publishes", [("workflow_dispatch", "refs/heads/feature/x", False),
+    ("workflow_dispatch", "refs/tags/v0.2.0", False), ("push", "refs/heads/main", False),
+    ("push", "refs/tags/v0.2.0", True)])
+def test_release_publish_event_matrix(event: str, ref: str, publishes: bool) -> None:
+    for name in ("publish-pypi", "publish-npm"):
+        assert _job(RELEASE_WORKFLOW, name)["if"] == PUBLISH_GATE
+    assert (event == "push" and ref.startswith("refs/tags/v")) == publishes
