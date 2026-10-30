@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -267,7 +268,8 @@ def test_nested_hosted_refuses_without_force(checkout):
 def test_push_validates_every_ref_and_preserves_bytes(checkout, refs, coverage, wanted):
     checkout.policy()
     p = checkout.root / "justfile"
-    p.write_text(p.read_text().replace('ci_suite_refs := ""', f'ci_suite_refs := "{coverage}"'))
+    p.write_text(re.sub(r'^ci_suite_refs := ".*"$', f'ci_suite_refs := "{coverage}"',
+                        p.read_text(), flags=re.MULTILINE))
     real_just = shutil.which("just")
     wrapper = checkout.root / "bin/just"
     wrapper.write_text(f'#!/bin/sh\nif [ "$1" = "--evaluate" ]; then exec "{real_just}" "$@"; fi\n'

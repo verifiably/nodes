@@ -1,22 +1,22 @@
 # Nodes test policy activation packet
 
-Status: initial branch CI accepted; manual Release failed at npm's existing-version
-dry-run check. Policy remains enabled, with no main merge or activation. Task
-nodes-6fde14, delivery steps nodes-d8dff5 / nodes-3ce05a / nodes-75252c. The user
-approved the original three actions in packet a540c75. Its initial push and one
-manual dispatch were consumed; the conditional main push has not occurred. This
-revised packet requests authorization for the corrected snapshot below. Approved
-plan 6beecc9 and design cc5df73 remain unchanged.
+Status: corrected branch CI and manual Release both accepted at 8695d91. Enabled
+infrastructure is integrated locally; the branch-local activation candidate awaits
+fresh review before its conditional main merge/push. Task nodes-6fde14, delivery
+steps nodes-d8dff5 / nodes-3ce05a / nodes-75252c. The user approved revised packet
+52cf368 after the original Release failure. Its corrected branch push and manual
+dispatch are complete; its one conditional main push remains authorized and unused.
+Approved plan 6beecc9 and design cc5df73 remain unchanged.
 
-## Exact snapshot and requested actions
+## Verified snapshot and approved actions
 
-The prepared runtime snapshot is nodes commit
-`8695d91ab87150c4dc9ac083c477d5542a97dddb`. A subsequent documentation-only commit
-contains this packet; neither later task-record commits nor this packet silently
-change the initial published runtime SHA. Final review must accept this exact
-code plus the packet before the following approval is requested.
+The verified enabled runtime is nodes commit
+`8695d91ab87150c4dc9ac083c477d5542a97dddb`. Frozen packet 52cf368 and the user's
+approval bound the following sequence. Later documents/records did not substitute
+another runtime for either pilot. The separate activation diff changes only policy,
+coverage declarations, current guidance/evidence and the coverage test fixture.
 
-Recommend approving these three bounded actions together:
+Approved bounded sequence (first two actions complete):
 
 1. Publish that explicit corrected policy-enabled SHA to origin branch
    `design/nodes-6fde14-test-policy`, triggering one standalone CI workflow with
@@ -37,10 +37,9 @@ changes or paid compute are included. Failure or a changed runtime revision
 requires a revised packet and further approval. Check gh auth status before each
 write and use the named khughitt token per command; do not switch global accounts.
 
-The initial runtime snapshot deliberately precedes this packet's documentation
-commit. This permits an immutable, exact push/dispatch target while retaining
-later review and task records locally. Local branch HEAD may contain only those
-additional documents/records; never substitute it for the approved runtime SHA.
+The initial runtime snapshot deliberately preceded the approval packet's
+documentation commit. Both pilots used exactly that snapshot. Activation is a
+separate reviewed change under action 3; it is never substituted for a pilot SHA.
 
 ## Prepared behavior and setup
 
@@ -73,9 +72,9 @@ additional documents/records; never substitute it for the approved runtime SHA.
   outside tt's deleted temporary JUnit directory. An always-run presence check
   rejects missing JUnit/inventory; unique per-version artifacts retain them for
   30 days. Successful upload does not erase an earlier verification failure.
-- Missing policy remains enabled. No .tt.toml exists and ci_suite_refs remains
-  empty until accepted publication/coverage. The intended origin declarations
-  are refs/heads/* refs/tags/v*, with the latter covered by the validated shared
+- Missing policy remains enabled. After accepted coverage, the branch-local
+  candidate adds .tt.toml and origin declarations refs/heads/* refs/tags/v*,
+  with the latter covered by the validated shared
   Release-called workflow plus unchanged trigger/guard contracts, not a real tag run.
 
 ## Delivery and billing evidence
@@ -119,17 +118,23 @@ just 1.59.0. These are not the four hosted matrix environments.
 | Correction fast route | Python 37 passed / 5 deselected; TS selected zero tests, which is not a TS pass |
 | Correction hygiene, static checks and actionlint | Passed |
 | Real downloaded npm artifact, isolated local npm 11.17.0 | Original dry-run exits 1 for already-published 0.2.0; --dry-run --force exits 0; no upload |
+| Corrected enabled snapshot's pre-push verification | Python 813 passed; TypeScript 593 passed |
+| Activation fixture RED | 1 failed / 40 passed: the uncovered-ref case inherited the new declared coverage |
+| Activation focused GREEN | Python 126 passed (development routes, paths, Release contracts); TS paths 49 passed |
+| Activation decisions and hygiene | test / check-code / test-fast skipped with null outcomes; check-hygiene executed successfully |
 
 The original runtime's retained fast log reports no Python tests selected. An
 earlier 40-test fast output was overwritten; no verification claim relies on that
 unavailable output. The separately retained focused result was 81 passing Python
 tests. The correction has fresh 33-test focused and 37-test fast Python evidence;
-its TS fast run selected zero tests. No full corrected-snapshot suite claim is made.
+its TS fast run selected zero tests. The later approved corrected push ran complete
+local suites, and both corrected hosted paths passed as recorded below.
 
 The runtime snapshot has 52 Python test modules and 51 TS test modules in its
 tracked test roots. No module exclusion or selector was added to the hosted
 commands. Counts for the original snapshot are recorded below; hosted evidence
-for corrected snapshot 8695d91 remains unmeasured and is required before activation.
+for corrected snapshot 8695d91 is accepted below. Activation's covered main push
+still requires its own forced hosted verification.
 Fixture-child skips above are intentional test inputs, not capability omissions
 from the package suites.
 
@@ -156,6 +161,39 @@ intentional ([issue 4927](https://github.com/npm/cli/issues/4927)); npm's
 checks registry versions unless force is set and independently prevents upload
 when dryRun is set. The correction changes only the manual verification step,
 with no npm patch, dependency change or actual publication change.
+
+## Corrected accepted hosted results and activation candidate
+
+Both corrected pilots used exactly 8695d91ab87150c4dc9ac083c477d5542a97dddb:
+
+- [Branch CI 41089556252](https://github.com/verifiably/nodes/actions/runs/41089556252)
+  succeeded after the one approved corrected branch push.
+- [Manual Release 41089968448](https://github.com/verifiably/nodes/actions/runs/41089968448)
+  succeeded. All four called CI jobs, build and verify-artifacts passed, including
+  both registry dry-runs. publish-npm and publish-pypi both skipped.
+- In each run, Python 3.11/3.13 each executed and passed 813 tests in 52 modules;
+  Node 20/24 each executed and passed 593 tests in 51 modules. Each had zero failed
+  or skipped tests, partly/wholly skipped modules, excluded/absent modules or
+  unresolved reasons. Entire inventories matched the exact SHA, tracked test paths
+  and package discovery manifests; JUnit identities covered every expected module.
+  No capability omission was observed in these Linux matrices.
+
+The enabled split merged locally at
+1f77a06fdca9f7c9b94820d6c97398531c80eae9, 2026-10-30T16:30:20Z. nodes-6fde14
+(source tt-policy:nodes) records that enabled floor. Selected checks on the merged
+enabled main passed Python paths 52 and TS paths 49. The activation branch includes
+that integration/floor record, the exact five-target policy and origin declarations.
+Its fixture now sets coverage explicitly rather than relying on an empty repository
+default; the existing uncovered-ref test was observed RED, then GREEN after that fix.
+
+Fresh activation checks passed 126 Python and 49 TS tests. The Python checks include
+the isolated forced-failure fixture (child exits 7), hosted force refusal and hook
+hygiene/failure propagation. Actual test/check-code/test-fast requests produced
+policy-disabled skips with null exit/test/selection/content/slowest fields; actual
+check-hygiene ran with exit 0. These skips are not passing suites or timing samples.
+Fresh review precedes integration and the one remaining approved main push. Its
+exact SHA, forced hosted results and activation time will be recorded on the task;
+none is claimed for this branch-local candidate.
 
 Potential capability omissions: symlinks, case-sensitive filename distinctions,
 permission checks for an unprivileged POSIX user, and platform-specific path
