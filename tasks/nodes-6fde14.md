@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:13:28Z
+updated: 2026-10-30T16:13:59Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -119,3 +119,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T15:48:19Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:13:28Z (design/nodes-6fde14-test-policy): Approved initial push and manual Release were executed at1dfcc54. Branch CI41084263091 accepted; Release41084963994 failed only duplicate-version npm dry-run; four called CI artifacts accepted and both publish jobs skipped. No retry, merge or activation. Manual-only dry-run correction8695d91 and revised packet52cf368 accepted by fresh codex/gpt-6-astra with zero findings; full report and hosted summaries attached to nodes-75252c. Next gate: user authorizes revised three bounded actions, then agent executes. Policy remains enabled and branch unmerged; no deferred minors.
+- 2026-10-30T16:13:59Z (design/nodes-6fde14-test-policy): attached: execution-ledger-hosted.md (9073 bytes): Full updated ledger through failed Release rehearsal, tested correction and clean scoped review; supplements original execution-ledger.md
