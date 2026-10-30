@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:37:59Z
-updated: 2026-10-30T15:35:03Z
+updated: 2026-10-30T15:35:43Z
 started: 2026-10-30T15:08:09Z
 depends: [nodes-d8dff5]
 parent: nodes-6fde14
@@ -35,3 +35,4 @@ Await user review of the complete frozen plan 6beecc9ad558b85406c199bbae93ec6ec1
 - 2026-10-30T15:34:48Z (design/nodes-6fde14-test-policy): review: impl round 2 — verdict: accept; findings: none; reviewer: codex/gpt-6-astra
 - 2026-10-30T15:34:55Z (design/nodes-6fde14-test-policy): attached: final-round-1-report.md (4920 bytes): Full whole-branch review by codex/gpt-6-astra of 7257802: runtime ready for external pilot, Minor1 packet count corrected under controller Important ruling.
 - 2026-10-30T15:35:03Z (design/nodes-6fde14-test-policy): attached: final-round-2-report.md (1897 bytes): Full fresh scoped re-review by codex/gpt-6-astra accepts a540c75 packet correction with no findings; explicit actionlint exit0 verified.
+- 2026-10-30T15:35:43Z (design/nodes-6fde14-test-policy): Local preparation reviewed and complete: runtime1dfcc543bed337281662b4d4b7c6acb4416d0391; corrected packet a540c756a90bf0a14e16ddf74849f60d8a71cc9d. Whole-branch and fresh scoped review by codex/gpt-6-astra accepted after correcting stale latest-fast evidence to Python0selected/TS1pass; focused Python81/TS1, initial baseline755/592, hygiene/static and actionlint explicit exit0 passed. No hosted counts or parity claimed. No deferred minors; literal unmappable-case test adjusted to manual acceptance reconciliation, recorded as Ruling. Full reports attached; execution workspace/raw reviews and shared worktree owned by open parent nodes-6fde14, retained for Task3 approval/activation.
