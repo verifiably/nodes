@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:29:08Z
+updated: 2026-10-30T14:36:18Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -73,3 +73,5 @@ After approved activation, commit .tt.toml with real broad target names, verify 
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T14:29:01Z (design/nodes-6fde14-test-policy): review: spec round 4 — verdict: accept; findings: Minor 2; reviewer: claude/claude-opus-5-5
 - 2026-10-30T14:29:08Z (design/nodes-6fde14-test-policy): User explicitly accepted frozen cc5df73 for planning. Design remains frozen and unchanged. Round 4 minors are assigned to the implementation plan: derive attribute marking from the successful work-link --ensure outside result, and validate Release-called CI with an explicitly approved workflow_dispatch on a branch, never by pushing a release tag. Planning only; implementation and external activation remain separately gated.
+- 2026-10-30T14:35:49Z (design/nodes-6fde14-test-policy): attached: spec-round-4-report.md (3012 bytes): Full spec round 4 review supplied by the user; claude/claude-opus-5-5 accepts cc5df73 with two Minor plan clarifications; explicit user approval for planning follows.
+- 2026-10-30T14:36:18Z (design/nodes-6fde14-test-policy): Created persistent scratch on titan at $WORK_ROOT/nodes/nodes-6fde14 for exact round 4 review bytes rejected by layout check; current owner task:nodes-6fde14, contents mutable until checkpoint. Raw file spec-round-4-report-raw.md preserves the verbatim user-supplied review; portable attachment will replace /mnt/ssd3/work with <work-storage>. Plan ace792b is unchanged.
