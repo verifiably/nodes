@@ -7,7 +7,7 @@ size: m
 complexity: mid
 process: direct
 created: 2026-10-30T14:37:43Z
-updated: 2026-10-30T14:37:51Z
+updated: 2026-10-30T14:50:08Z
 depends: []
 parent: nodes-6fde14
 tags: []
@@ -19,7 +19,7 @@ plan: docs/plans/2026-10-30-test-execution-policy.md
 step: "Task 1: Establish focused checks and separate local hygiene"
 ---
 
-Await user review of the complete frozen plan ace792b31163d960319a797d9cdcd0b56509c63d before implementation. Follow Task 1: Establish focused checks and separate local hygiene: its interfaces, files, fixtures and verification define scope. External publication/dispatch/policy activation require separate concrete approval. Inline execution recommended; no independent design needed.
+Await user review of the complete frozen plan 6beecc9ad558b85406c199bbae93ec6ec11edc8e before implementation. Follow Task 1: Establish focused checks and separate local hygiene: its interfaces, files, fixtures and verification define scope. External publication/dispatch/policy activation require separate concrete approval. Inline execution recommended; no independent design needed.
 
 ## Notes
 
