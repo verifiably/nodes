@@ -1,13 +1,13 @@
 ---
 id: nodes-d8dff5
 title: Establish focused checks and separate local hygiene
-status: blocked
+status: todo
 priority: 2
 size: m
 complexity: mid
 process: direct
 created: 2026-10-30T14:37:43Z
-updated: 2026-10-30T14:50:08Z
+updated: 2026-10-30T14:59:07Z
 depends: []
 parent: nodes-6fde14
 tags: []
