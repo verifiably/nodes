@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:51:10Z
+updated: 2026-10-30T16:51:51Z
 started: 2026-10-30T13:43:25Z
 completed: 2026-10-30T16:51:10Z
 closed: 2026-10-30T16:51:10Z
@@ -149,3 +149,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:51:10Z (design/nodes-6fde14-test-policy): Adopted verified remote test policy on pushed main045ef235a4a424d81226e6a3ff2316657d33da30 at2026-10-30T16:39:31Z. Corrected branch41089556252, manualRelease41089968448 and final forcedmain41092069379 accepted all matrix artifacts813Python/593TS per version, no skips/omissions. Focused126Python/49TS and hygiene passed; null broad skips never passes. Full ledger/reviews attached, Minor M1 prose typo deferred. Savings unmeasured; exact hashed raw evidence transferred to open ops-56aab7 due2026-11-28. All children done; closing session integrates records locally and removes the checked worktree, without another push.
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T16:51:51Z (main): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"released","verification":"verified","purpose":"Closed records merged locally; owned worktree unlocked and removed after exact six ignored-file dispositions, external canonical evidence/hash/receiving-owner verification, timing harvest and fresh host-pointer checks. Local merged task branch deleted; remote pilot branch retained and merged by ancestry. Canonical evidence remains unchanged under ops-56aab7","next_owner":"none","cleanup_trigger":"none"}
