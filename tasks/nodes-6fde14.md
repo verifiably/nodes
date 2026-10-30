@@ -6,9 +6,9 @@ priority: 2
 size: m
 complexity: mid
 process: planned
-owner: design/nodes-6fde14-test-policy
+owner: main
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:22:56Z
+updated: 2026-10-30T16:30:40Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -128,4 +128,6 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T16:15:42Z (design/nodes-6fde14-test-policy): parked (waiting on user, approval): User approves revised three-action packet52cf368 after original manual Release duplicate-version failure; agent then resumes nodes-75252c in .worktrees/nodes-6fde14 and performs corrected-runtime push, conditional manual Release and conditional reviewed activation/main push. Parent retains current hashed evidence and unmerged branch; policy remains enabled.
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:22:56Z (design/nodes-6fde14-test-policy): resumed
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T16:30:40Z (main): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
