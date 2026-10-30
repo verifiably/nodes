@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T13:44:19Z
+updated: 2026-10-30T13:45:17Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -49,3 +49,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T13:44:19Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T13:45:17Z (design/nodes-6fde14-test-policy): Planned path in .worktrees/nodes-6fde14 on design/nodes-6fde14-test-policy; locked worktree hydrated with uv sync --frozen in python and npm ci in ts. No just setup exists. Full-suite baseline deferred until implementation Setup per planned-work rule. tt is already version 8 (task inventory version 7 is stale). npm ci reports 10 existing dependency vulnerabilities; no dependency edits made.
