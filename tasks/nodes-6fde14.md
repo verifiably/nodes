@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:48:34Z
+updated: 2026-10-30T16:48:35Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -139,3 +139,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T16:45:32Z (design/nodes-6fde14-test-policy): Current closing integration owner; worktree removal will follow done-record integration, ignored-file dispositions, timing harvest and host-pointer checks
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:48:34Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
+- 2026-10-30T16:48:35Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/execution","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
