@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:48:38Z
+updated: 2026-10-30T16:48:40Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -142,3 +142,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T16:48:35Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/execution","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
 - 2026-10-30T16:48:37Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/spec-round-4-report-raw.md","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
 - 2026-10-30T16:48:38Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/plan-round-2-report-raw.md","state":"released","verification":"verified","purpose":"Retention ownership transferred to open ops-56aab7 after its matching kept record and current hash were written; bytes remain at the same path, not deleted","next_owner":"none","cleanup_trigger":"none"}
+- 2026-10-30T16:48:40Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Activation shipped and all promised exact-SHA hosted coverage accepted; only local integration of closeout records and checked removal remain, with all canonical raw evidence transferred to ops-56aab7","next_owner":"session:codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","cleanup_trigger":"This closing turn: after done records merge locally, repeat clean/ignored/pointer checks, unlock and remove the owned worktree; preserve canonical evidence outside it"}
