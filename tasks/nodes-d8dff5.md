@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:37:43Z
-updated: 2026-10-30T14:59:39Z
+updated: 2026-10-30T15:07:11Z
 started: 2026-10-30T14:59:39Z
 depends: []
 parent: nodes-6fde14
@@ -31,3 +31,4 @@ Await user review of the complete frozen plan 6beecc9ad558b85406c199bbae93ec6ec1
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T14:59:39Z (design/nodes-6fde14-test-policy): started
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T15:07:11Z (design/nodes-6fde14-test-policy): Deferred baseline just test passed 755 Python and 592 TypeScript tests before code edits. Development fixtures RED 26 expected missing-route/combined-boundary failures; GREEN 41 passed. just setup succeeded in this external worktree; real focused paths smoke 52 Python and 49 TS passed. just test-fast passed 41 selected Python tests, TS selected zero (not full-suite evidence); just check passed. All test subprocess envs are explicit allowlists; no host SSH/config/launcher changes. Execution evidence and shared worktree owned by open parent nodes-6fde14 in its recorded persistent execution directory.
