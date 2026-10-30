@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:36:34Z
+updated: 2026-10-30T14:37:04Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -77,3 +77,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:36:18Z (design/nodes-6fde14-test-policy): Created persistent scratch on titan at $WORK_ROOT/nodes/nodes-6fde14 for exact round 4 review bytes rejected by layout check; current owner task:nodes-6fde14, contents mutable until checkpoint. Raw file spec-round-4-report-raw.md preserves the verbatim user-supplied review; portable attachment will replace /mnt/ssd3/work with <work-storage>. Plan ace792b is unchanged.
 - 2026-10-30T14:36:26Z (design/nodes-6fde14-test-policy): detached: spec-round-4-report.md: Preserved exact raw review under task storage; replace layout-refused attachment with portable derivative using documented retained-item fallback.
 - 2026-10-30T14:36:34Z (design/nodes-6fde14-test-policy): attached: spec-round-4-report.md (3012 bytes): Portable derivative of full spec round 4 review; <work-storage> replaces one host path. Exact raw bytes retained under task record; accepts cc5df73 with two Minor clarifications and user planning approval.
+- 2026-10-30T14:37:04Z (design/nodes-6fde14-test-policy): review: plan round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
