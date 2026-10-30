@@ -104,9 +104,13 @@ just 1.59.0. These are not the four hosted matrix environments.
 | Focused Task 2 Python including connected Task 1 checks | 81 passed; initial Task 2 RED had 11 failures and 29 passes |
 | Actual TS reporter pilot | 1 parent test passed; its isolated child has 1 passing case and 2 deliberate skips, including one wholly skipped module |
 | Actual pytest reporter pilot | Isolated child has 1 passing case and 2 deliberate skips, with persisted module identities and skip reasons |
-| Latest fast route before runtime commit | Python 40 selected tests passed; TS 1 selected test passed; affected-only, not a full current suite |
+| Latest fast route before runtime commit | Python selected zero tests; TS 1 selected test passed; Python zero selection is not a passing suite, and this is not a full current suite |
 | Mandatory hygiene and broad static checks | ops-check, ops-docs, tasks check, Ruff, Pyright, tsc and Biome passed |
 | Workflow lint | actionlint 1.7.12 passed for CI and Release |
+
+The retained latest fast log reports no Python tests selected. An earlier 40-test
+fast output was overwritten; no verification claim relies on that unavailable
+output. The separately retained focused Python result is 81 passing tests.
 
 The runtime snapshot has 52 Python test modules and 51 TS test modules in its
 tracked test roots. No module exclusion or selector was added to the hosted
