@@ -1,13 +1,15 @@
 ---
 id: nodes-6fde14
 title: Adopt shared broad-test policy and remote verification
-status: todo
+status: doing
 priority: 2
 size: m
 complexity: mid
 process: planned
+owner: main
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-29T13:45:56Z
+updated: 2026-10-30T13:43:25Z
+started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
 source: "tt-policy:nodes"
@@ -43,3 +45,5 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 
 - 2026-10-29T13:45:56Z (add): created
   provenance: {"harness_session":"codex:01a1874f-c2d8-7320-ae81-7114e37e343f","harness_session_source":"CODEX_THREAD_ID","origin":"agent"}
+- 2026-10-30T13:43:25Z (main): started
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
