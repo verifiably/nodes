@@ -1,13 +1,13 @@
 ---
 id: nodes-75252c
 title: Validate approved hosted paths and activate policy
-status: blocked
+status: todo
 priority: 2
 size: m
 complexity: mid
 process: direct
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T14:50:24Z
+updated: 2026-10-30T14:59:24Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
 tags: []
