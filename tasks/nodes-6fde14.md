@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:37:04Z
+updated: 2026-10-30T14:37:12Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -78,3 +78,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:36:26Z (design/nodes-6fde14-test-policy): detached: spec-round-4-report.md: Preserved exact raw review under task storage; replace layout-refused attachment with portable derivative using documented retained-item fallback.
 - 2026-10-30T14:36:34Z (design/nodes-6fde14-test-policy): attached: spec-round-4-report.md (3012 bytes): Portable derivative of full spec round 4 review; <work-storage> replaces one host path. Exact raw bytes retained under task record; accepts cc5df73 with two Minor clarifications and user planning approval.
 - 2026-10-30T14:37:04Z (design/nodes-6fde14-test-policy): review: plan round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
+- 2026-10-30T14:37:12Z (design/nodes-6fde14-test-policy): Self-review of frozen plan ace792b31163d960319a797d9cdcd0b56509c63d at docs/plans/2026-10-30-test-execution-policy.md checked spec coverage, step granularity, interface consistency, five Review Focus fixtures and proportion. No findings; this is a self-review, not independent review or user approval. Spec round 4 minors have explicit Ruling entries in the plan: result-driven outside/external handling and separately approved Release dispatch on a branch. Design cc5df73 unchanged; implementation remains gated on user plan review. Attachment-layout friction filed as ops-8c5a85; raw/portable fallback retained.
