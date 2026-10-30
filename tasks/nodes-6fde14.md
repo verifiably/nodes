@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:51:28Z
+updated: 2026-10-30T14:51:36Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -96,3 +96,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:50:00Z (design/nodes-6fde14-test-policy): attached: plan-round-2-ledger.md (3005 bytes): All four plan round 2 rulings corrected in frozen 6beecc9; plan round 3 self-review accepts, none deferred; implementation not started.
 - 2026-10-30T14:51:20Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"kept","verification":"verified","manifest":"$WORK_ROOT/nodes/nodes-6fde14/retention-manifest.jsonl","sha256":"42ee6b4bfabfdb14e76ff970bd99e1869ef16670b3ae3d8f8b596ec4e8f8b19b","purpose":"Exact spec round 4 and plan round 2 reviews retained under the established attachment-layout fallback; both portable derivatives are attached and mapping notes recorded; both raw hashes verified now","next_owner":"task:nodes-6fde14","cleanup_trigger":"After the executing checker accepts verbatim ledger-backed attachments, preserve and verify both exact raw attachments before considering disposition; approval, merge or done alone grants no deletion"}
 - 2026-10-30T14:51:28Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/spec-round-4-report-raw.md","state":"kept","verification":"verified","sha256":"979ca093c1e91f2196a53e629d0790648a4f09919844ae4e8ecf995ff9329432","purpose":"Unchanged exact spec round 4 supplied review; portable derivative spec-round-4-report.md remains attached with original mapping note; raw bytes freshly verified","next_owner":"task:nodes-6fde14","cleanup_trigger":"After normal checker acceptance of the raw attachment, attach and verify exact bytes before considering deletion of this sole raw copy"}
+- 2026-10-30T14:51:36Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/plan-round-2-report-raw.md","state":"kept","verification":"verified","sha256":"f6c84b394ea1122e982ae3f2e70e6ae66f7f8bb5888a28dac5d024d8a2bf2445","purpose":"Exact plan round 2 supplied review; portable plan-round-2-report.md substitutes <account-ssh-config> and <synced-alias> as recorded in the creation note; known layout fallback, no exemption claimed","next_owner":"task:nodes-6fde14","cleanup_trigger":"After normal checker acceptance of this raw attachment, attach and verify exact bytes before considering deletion of this sole raw copy"}
