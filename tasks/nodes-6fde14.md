@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:51:59Z
+updated: 2026-10-30T14:58:31Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -100,4 +100,6 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:51:44Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Approved design cc5df73 unchanged; revised frozen plan 6beecc9 and four-ruling ledger await user plan review; branch design/nodes-6fde14-test-policy unmerged and all three children blocked","next_owner":"task:nodes-6fde14","cleanup_trigger":"After plan approval, implementation, separately approved external activation and authorized integration, inspect ignored files and host pointers and harvest timings before considering removal; preserve raw review evidence separately"}
 - 2026-10-30T14:51:51Z (design/nodes-6fde14-test-policy): Plan round 2 Important 1 and Minor 3 are all corrected in frozen 6beecc9ad558b85406c199bbae93ec6ec11edc8e, SHA-256 6fc2050edc3f5a3e7fe6aa49517754701b2648e12309c310430de66a3b6d7f6e. Round 3 is an explicitly recorded self-review, not independent review or user approval. Full portable review and four-ruling ledger are attached, listed and byte-verified before duplicate workspace copies were removed. All three blocked child bodies now name 6beecc9, headings and dependencies unchanged. Commit hook hygiene/lint/type checks passed; no tests run in this planning-only revision. Policy absent/enabled; no implementation, merge, push, dispatch, service or host-pointer change.
 - 2026-10-30T14:51:59Z (design/nodes-6fde14-test-policy): parked (waiting on user, review): User reviews frozen 6beecc9ad558b85406c199bbae93ec6ec11edc8e:docs/plans/2026-10-30-test-execution-policy.md (SHA-256 6fc2050edc3f5a3e7fe6aa49517754701b2648e12309c310430de66a3b6d7f6e). After approval the agent resumes .worktrees/nodes-6fde14, unblocks the three children and starts nodes-d8dff5 inline with the deferred full baseline. Vitest pilot is now in TS; all four plan round 2 findings corrected. External activation remains separately gated.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T14:58:31Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
