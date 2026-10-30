@@ -1,15 +1,17 @@
 ---
 id: nodes-75252c
 title: Validate approved hosted paths and activate policy
-status: doing
+status: done
 priority: 2
 size: m
 complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:49:54Z
+updated: 2026-10-30T16:49:55Z
 started: 2026-10-30T15:35:59Z
+completed: 2026-10-30T16:49:55Z
+closed: 2026-10-30T16:49:55Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
 tags: []
@@ -60,3 +62,7 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:39:30Z (design/nodes-6fde14-test-policy): Activation4e912df accepted by fresh codex/gpt-6-astra, Critical0/Important0/Minor1. M1 reference prose literal + is minor(deferred), no corrective round. Exact tag/publication and manual-registry limits/advisories remain; savings unmeasured for ops-56aab7. Controller now performs approved local activation integration and one main push after fresh auth/visibility/ref checks; inspect exact-SHA forced CI before completion.
 - 2026-10-30T16:43:59Z (design/nodes-6fde14-test-policy): attached: main-coverage.json (1179 bytes): Accepted forced main CI41092069379 at activated045ef235;813Python/593TS per version with complete module/config inventories and no skips or omissions
 - 2026-10-30T16:49:54Z (design/nodes-6fde14-test-policy): All approved scope complete: main045ef235 activated/pushed, final forcedCI41092069379 accepted exact SHA,813Python/593TS per version with52/51modules and zero skips/omissions. Branch/Release corrected pilots also accepted, publish jobs skipped. Review Minor M1 deferred on parent/full ledger; no blocking finding. Parent transferred canonical evidence and sole raw reviews to open ops-56aab7 with verified hashes; closing session owns checked worktree removal. Further pushes were not made; final records/evidence docs integrate locally.
+- 2026-10-30T16:49:55Z (design/nodes-6fde14-test-policy): done
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T16:49:55Z (design/nodes-6fde14-test-policy): Activated reviewed policy on main045ef235 at2026-10-30T16:39:31Z; exact-SHA forced CI41092069379 accepted all four jobs813Python/593TS per version, no omissions. Focused126Python/49TS+hygiene passed; broad skips are null. M1 deferred; raw evidence owned by ops-56aab7.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
