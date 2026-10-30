@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:13:20Z
+updated: 2026-10-30T16:15:27Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -44,3 +44,4 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:11:32Z (design/nodes-6fde14-test-policy): attached: hosted-validation-report.md (2570 bytes): Initial hosted outcomes, duplicate-version failure, local correction and remaining authorization gate
 - 2026-10-30T16:13:12Z (design/nodes-6fde14-test-policy): review: impl round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6-astra
 - 2026-10-30T16:13:20Z (design/nodes-6fde14-test-policy): attached: release-rehearsal-review-report.md (3722 bytes): Full fresh read-only scoped review by codex/gpt-6-astra of runtime8695d91 and packet52cf368; accept, zero findings
+- 2026-10-30T16:15:27Z (design/nodes-6fde14-test-policy): Parent nodes-6fde14 owns the retained worktree,87-entry task storage and84-entry execution evidence, with fresh manifest hashes and both raw supplied-review hashes recorded there. Scoped correction accepted at runtime8695d91/packet52cf368; full report and both original hosted coverage summaries are attached here. Latest remote head remains1dfcc54; no additional push/dispatch, policy file or main merge. No persistent session processes.
