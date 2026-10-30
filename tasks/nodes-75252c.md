@@ -8,7 +8,7 @@ complexity: mid
 process: direct
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-30T14:38:16Z
-updated: 2026-10-30T16:15:34Z
+updated: 2026-10-30T16:23:04Z
 started: 2026-10-30T15:35:59Z
 depends: [nodes-3ce05a]
 parent: nodes-6fde14
@@ -46,4 +46,6 @@ Initial authorized runtime1dfcc54 push and branch CI succeeded; manual Release41
 - 2026-10-30T16:13:20Z (design/nodes-6fde14-test-policy): attached: release-rehearsal-review-report.md (3722 bytes): Full fresh read-only scoped review by codex/gpt-6-astra of runtime8695d91 and packet52cf368; accept, zero findings
 - 2026-10-30T16:15:27Z (design/nodes-6fde14-test-policy): Parent nodes-6fde14 owns the retained worktree,87-entry task storage and84-entry execution evidence, with fresh manifest hashes and both raw supplied-review hashes recorded there. Scoped correction accepted at runtime8695d91/packet52cf368; full report and both original hosted coverage summaries are attached here. Latest remote head remains1dfcc54; no additional push/dispatch, policy file or main merge. No persistent session processes.
 - 2026-10-30T16:15:34Z (design/nodes-6fde14-test-policy): parked (waiting on user, approval): User approves revised packet52cf368: one push of runtime8695d91ab87150c4dc9ac083c477d5542a97dddb to origin design/nodes-6fde14-test-policy, then one conditional manual Release dispatch, then conditional reviewed policy-off main push; agent resumes, rechecks auth/public/exact remote SHA and executes only those bounded actions. Original no-retry approval is consumed; no tags or publication.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
+- 2026-10-30T16:23:04Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
