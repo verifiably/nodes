@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:29:01Z
+updated: 2026-10-30T14:29:08Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -72,3 +72,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:28:53Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T14:29:01Z (design/nodes-6fde14-test-policy): review: spec round 4 — verdict: accept; findings: Minor 2; reviewer: claude/claude-opus-5-5
+- 2026-10-30T14:29:08Z (design/nodes-6fde14-test-policy): User explicitly accepted frozen cc5df73 for planning. Design remains frozen and unchanged. Round 4 minors are assigned to the implementation plan: derive attribute marking from the successful work-link --ensure outside result, and validate Release-called CI with an explicitly approved workflow_dispatch on a branch, never by pushing a release tag. Planning only; implementation and external activation remain separately gated.
