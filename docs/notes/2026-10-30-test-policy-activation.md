@@ -1,12 +1,12 @@
 # Nodes test policy activation packet
 
-Status: corrected branch CI and manual Release both accepted at 8695d91. Enabled
-infrastructure is integrated locally; the branch-local activation candidate awaits
-fresh review before its conditional main merge/push. Task nodes-6fde14, delivery
-steps nodes-d8dff5 / nodes-3ce05a / nodes-75252c. The user approved revised packet
-52cf368 after the original Release failure. Its corrected branch push and manual
-dispatch are complete; its one conditional main push remains authorized and unused.
-Approved plan 6beecc9 and design cc5df73 remain unchanged.
+Status: activated and pushed on main at
+045ef235a4a424d81226e6a3ff2316657d33da30, 2026-10-30T16:39:31Z. Corrected
+branch CI, manual Release and final forced main CI are accepted. Task nodes-6fde14,
+delivery steps nodes-d8dff5 / nodes-3ce05a / nodes-75252c. The user approved revised
+packet 52cf368 after the original Release failure; all three approved actions are
+complete. No extra push, retry, real tag or publication was performed. Approved
+plan 6beecc9 and design cc5df73 remain unchanged.
 
 ## Verified snapshot and approved actions
 
@@ -16,7 +16,7 @@ approval bound the following sequence. Later documents/records did not substitut
 another runtime for either pilot. The separate activation diff changes only policy,
 coverage declarations, current guidance/evidence and the coverage test fixture.
 
-Approved bounded sequence (first two actions complete):
+Approved bounded sequence (all complete; retained here as authorization history):
 
 1. Publish that explicit corrected policy-enabled SHA to origin branch
    `design/nodes-6fde14-test-policy`, triggering one standalone CI workflow with
@@ -72,8 +72,8 @@ separate reviewed change under action 3; it is never substituted for a pilot SHA
   outside tt's deleted temporary JUnit directory. An always-run presence check
   rejects missing JUnit/inventory; unique per-version artifacts retain them for
   30 days. Successful upload does not erase an earlier verification failure.
-- Missing policy remains enabled. After accepted coverage, the branch-local
-  candidate adds .tt.toml and origin declarations refs/heads/* refs/tags/v*,
+- Missing policy remains enabled. After accepted coverage and activation review,
+  main gained .tt.toml and origin declarations refs/heads/* refs/tags/v*,
   with the latter covered by the validated shared
   Release-called workflow plus unchanged trigger/guard contracts, not a real tag run.
 
@@ -122,6 +122,8 @@ just 1.59.0. These are not the four hosted matrix environments.
 | Activation fixture RED | 1 failed / 40 passed: the uncovered-ref case inherited the new declared coverage |
 | Activation focused GREEN | Python 126 passed (development routes, paths, Release contracts); TS paths 49 passed |
 | Activation decisions and hygiene | test / check-code / test-fast skipped with null outcomes; check-hygiene executed successfully |
+| Activated registered main selected checks | Python paths 52 passed; TS paths 49 passed |
+| Forced main CI at 045ef235 | Python 813 passed per version; TS 593 passed per version; zero skips or omitted modules |
 
 The original runtime's retained fast log reports no Python tests selected. An
 earlier 40-test fast output was overwritten; no verification claim relies on that
@@ -133,8 +135,7 @@ local suites, and both corrected hosted paths passed as recorded below.
 The runtime snapshot has 52 Python test modules and 51 TS test modules in its
 tracked test roots. No module exclusion or selector was added to the hosted
 commands. Counts for the original snapshot are recorded below; hosted evidence
-for corrected snapshot 8695d91 is accepted below. Activation's covered main push
-still requires its own forced hosted verification.
+for corrected snapshot 8695d91 and activation's covered main push is accepted below.
 Fixture-child skips above are intentional test inputs, not capability omissions
 from the package suites.
 
@@ -162,7 +163,7 @@ checks registry versions unless force is set and independently prevents upload
 when dryRun is set. The correction changes only the manual verification step,
 with no npm patch, dependency change or actual publication change.
 
-## Corrected accepted hosted results and activation candidate
+## Corrected accepted hosted results and activation
 
 Both corrected pilots used exactly 8695d91ab87150c4dc9ac083c477d5542a97dddb:
 
@@ -191,9 +192,24 @@ the isolated forced-failure fixture (child exits 7), hosted force refusal and ho
 hygiene/failure propagation. Actual test/check-code/test-fast requests produced
 policy-disabled skips with null exit/test/selection/content/slowest fields; actual
 check-hygiene ran with exit 0. These skips are not passing suites or timing samples.
-Fresh review precedes integration and the one remaining approved main push. Its
-exact SHA, forced hosted results and activation time will be recorded on the task;
-none is claimed for this branch-local candidate.
+Fresh review accepted activation candidate 4e912df with no Critical/Important
+findings and one deferred Minor: a literal plus in reference prose, without policy
+or evidence impact. The reviewed activation merged and was pushed as
+045ef235a4a424d81226e6a3ff2316657d33da30 at 2026-10-30T16:39:31Z. Selected
+checks on activated main passed Python paths 52 and TS paths 49; its pre-push
+hygiene ran while broad static/fast requests skipped, not passing suites.
+
+[Final main CI 41092069379](https://github.com/verifiably/nodes/actions/runs/41092069379)
+succeeded at exactly 045ef235. Python 3.11/3.13 each executed and passed 813 tests
+in 52 modules; Node 20/24 each executed and passed 593 tests in 51 modules. All
+four complete inventories/configurations and JUnit module identities matched the
+exact revision, with zero failures, skips, partly/wholly skipped modules,
+excluded/absent modules or unresolved reasons. Hosted jobs explicitly forced broad
+execution despite policy-off. Registered main had no open test-latency incidents
+to retire; no performance-verification or measured-savings claim follows.
+
+Later closeout records and this final evidence update are integrated locally;
+the approved one main push carried 045ef235. No extra publication is implied.
 
 Potential capability omissions: symlinks, case-sensitive filename distinctions,
 permission checks for an unprivileged POSIX user, and platform-specific path
