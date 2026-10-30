@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:39:31Z
+updated: 2026-10-30T14:39:39Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -83,3 +83,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:39:15Z (design/nodes-6fde14-test-policy): attached: planning-review-ledger.md (2525 bytes): Controller rulings resolving both spec round 4 minors in frozen plan ace792b; verified codex/gpt-6.1-sol plan self-review accepted with no findings, user review pending.
 - 2026-10-30T14:39:23Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"kept","verification":"verified","manifest":"$WORK_ROOT/nodes/nodes-6fde14/retention-manifest.jsonl","sha256":"9116495257a93fcc6da00f5cd8699ab856d74ee95dbd06435910c936e73fc455","purpose":"Exact round 4 review bytes refused by attachment layout gate; contains one raw evidence file and its verified manifest; portable derivative is attached as spec-round-4-report.md","next_owner":"task:nodes-6fde14","cleanup_trigger":"After the executing checker accepts the verbatim ledger-backed attachment, preserve and verify the exact raw attachment before considering disposition; plan approval or task completion alone does not permit deletion"}
 - 2026-10-30T14:39:31Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"evidence","path":"$WORK_ROOT/nodes/nodes-6fde14/spec-round-4-report-raw.md","state":"kept","verification":"verified","sha256":"979ca093c1e91f2196a53e629d0790648a4f09919844ae4e8ecf995ff9329432","purpose":"Verbatim supplied spec round 4 review; portable attachment substitutes <work-storage> for /mnt/ssd3/work, with mapping recorded in the creation note; required raw/portable fallback reported as ops-8c5a85","next_owner":"task:nodes-6fde14","cleanup_trigger":"After the executing checker admits this raw review through normal attachment checks, attach and verify exact bytes before considering deletion of this sole raw copy"}
+- 2026-10-30T14:39:39Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Approved design cc5df73 and frozen implementation plan ace792b await user plan review; three direct children blocked for plan approval, branch design/nodes-6fde14-test-policy unmerged","next_owner":"task:nodes-6fde14","cleanup_trigger":"After plan approval, implementation, approved external activation and authorized integration, inspect ignored files and host pointers and harvest timings before considering removal; preserve the separately retained raw review"}
