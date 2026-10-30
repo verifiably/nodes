@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T13:49:42Z
+updated: 2026-10-30T13:49:50Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -56,3 +56,5 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T13:49:06Z (design/nodes-6fde14-test-policy): attached: builder-check-report.md (869 bytes): Full read-only builder check by codex/gpt-6.1-sol of frozen design 13a879b; accepted with no findings.
 - 2026-10-30T13:49:34Z (design/nodes-6fde14-test-policy): Frozen design 13a879b3a53d3429f1de335af898f0815a2ddcf9 accepted by builder with no findings, rulings or deferred minors. Full review is attached and tasks show lists it; SHA-256 202c320cfb5ff86272ab5842dace2240b6d20e49695e8e17c83e9476095ae3d4 matched workspace copy, which was removed. No scratch/evidence copy or host pointer remains. Design commit hook passed ops-check, ops-docs check, Ruff, Pyright, tsc, Biome and tasks check; git diff --check passed. No tests run: design-only phase, full baseline deferred to execution Setup. Policy absent/enabled; no implementation, merge, push or hosted activation.
 - 2026-10-30T13:49:42Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"worktree","path":".worktrees/nodes-6fde14","state":"kept","verification":"verified","purpose":"Frozen design and attached accepted builder check await user review; branch design/nodes-6fde14-test-policy is unmerged","next_owner":"task:nodes-6fde14","cleanup_trigger":"After user design and plan review, implementation and authorized integration, inspect ignored items and host pointers and harvest timings before considering removal"}
+- 2026-10-30T13:49:50Z (design/nodes-6fde14-test-policy): parked (waiting on user, review): User reviews frozen 13a879b3a53d3429f1de335af898f0815a2ddcf9:docs/designs/2026-10-30-test-execution-policy-design.md in .worktrees/nodes-6fde14; after approval the agent resumes this worktree and writes the implementation plan for user review. No runtime or workflow activation yet.
+  provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
