@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T15:37:53Z
+updated: 2026-10-30T15:40:47Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -108,3 +108,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:59:31Z (design/nodes-6fde14-test-policy): Created mutable execution scratch on titan at $WORK_ROOT/nodes/nodes-6fde14/execution, reached by .worktrees/nodes-6fde14/.superpowers/sdd/2026-10-30-test-execution-policy; owner task:nodes-6fde14. Prior raw-review hashes/manifest verified before adding execution workspace. Will checkpoint updated directory manifest at park. Shared ops pilot and lore delivery both confirmed done; tools/tt v8 and global instructions are live. No .tt.toml exemption exists.
 - 2026-10-30T15:25:42Z (design/nodes-6fde14-test-policy): attached: plan-round-4-report.md (1933 bytes): Full supplied acceptance of 6beecc9 for inline execution; claude/claude-opus-5-5, no findings; recorded as round 4 because round 3 self-review already existed.
 - 2026-10-30T15:37:53Z (design/nodes-6fde14-test-policy): attached: execution-ledger.md (5739 bytes): Full inline execution ledger: both local preparation steps complete, all controller Rulings and review correction, no deferred minors; Task3 awaits concrete external approval.
+- 2026-10-30T15:40:47Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"kept","verification":"verified","manifest":"$WORK_ROOT/nodes/nodes-6fde14/retention-manifest.jsonl","sha256":"d660f0af01b16161dd1384a44ade9ac0c81ef45d0398e8f1d46cf66925af57f7","purpose":"Persistent task inputs: unchanged exact spec/plan reviews plus reviewed inline execution evidence; 35 manifest entries including the execution submanifest, all readable and freshly hashed","next_owner":"task:nodes-6fde14","cleanup_trigger":"After approved hosted verification/activation or explicit cancellation, preserve needed evidence and transfer remaining raw copies to an open owner before reassessing each item; no automatic deletion on approval, merge or done"}
