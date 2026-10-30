@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T14:39:15Z
+updated: 2026-10-30T14:39:23Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -81,3 +81,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T14:37:04Z (design/nodes-6fde14-test-policy): review: plan round 1 — verdict: accept; findings: none; reviewer: codex/gpt-6.1-sol
 - 2026-10-30T14:37:12Z (design/nodes-6fde14-test-policy): Self-review of frozen plan ace792b31163d960319a797d9cdcd0b56509c63d at docs/plans/2026-10-30-test-execution-policy.md checked spec coverage, step granularity, interface consistency, five Review Focus fixtures and proportion. No findings; this is a self-review, not independent review or user approval. Spec round 4 minors have explicit Ruling entries in the plan: result-driven outside/external handling and separately approved Release dispatch on a branch. Design cc5df73 unchanged; implementation remains gated on user plan review. Attachment-layout friction filed as ops-8c5a85; raw/portable fallback retained.
 - 2026-10-30T14:39:15Z (design/nodes-6fde14-test-policy): attached: planning-review-ledger.md (2525 bytes): Controller rulings resolving both spec round 4 minors in frozen plan ace792b; verified codex/gpt-6.1-sol plan self-review accepted with no findings, user review pending.
+- 2026-10-30T14:39:23Z (design/nodes-6fde14-test-policy): retained: {"host":"titan","kind":"scratch","path":"$WORK_ROOT/nodes/nodes-6fde14","state":"kept","verification":"verified","manifest":"$WORK_ROOT/nodes/nodes-6fde14/retention-manifest.jsonl","sha256":"9116495257a93fcc6da00f5cd8699ab856d74ee95dbd06435910c936e73fc455","purpose":"Exact round 4 review bytes refused by attachment layout gate; contains one raw evidence file and its verified manifest; portable derivative is attached as spec-round-4-report.md","next_owner":"task:nodes-6fde14","cleanup_trigger":"After the executing checker accepts the verbatim ledger-backed attachment, preserve and verify the exact raw attachment before considering disposition; plan approval or task completion alone does not permit deletion"}
