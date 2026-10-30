@@ -8,7 +8,7 @@ complexity: mid
 process: planned
 owner: design/nodes-6fde14-test-policy
 created: 2026-10-29T13:45:56Z
-updated: 2026-10-30T16:41:09Z
+updated: 2026-10-30T16:45:31Z
 started: 2026-10-30T13:43:25Z
 depends: [ops-68729d]
 tags: []
@@ -135,3 +135,4 @@ After approved activation, commit .tt.toml with real broad target names, verify 
 - 2026-10-30T16:31:15Z (design/nodes-6fde14-test-policy): resumed
   provenance: {"harness_session":"codex:01a18d0c-6692-7e81-aa23-4ca449feaad8","harness_session_source":"CODEX_THREAD_ID"}
 - 2026-10-30T16:41:09Z (design/nodes-6fde14-test-policy): policy: disabled at 2026-10-30T16:39:31Z revision 045ef235a4a424d81226e6a3ff2316657d33da30
+- 2026-10-30T16:45:31Z (design/nodes-6fde14-test-policy): attached: execution-ledger-final.md (15356 bytes): Full final inline ledger with all rulings, deferred M1, accepted branch/Release/main evidence, floors and cleanup dispositions
