@@ -90,7 +90,7 @@ deliberately does not do, and where it lives instead:
 | Path | Contents |
 |------|----------|
 | `docs/STANDARD.md` | The versioned, normative portable contract. |
-| `docs/designs/`, `docs/plans/` | Dated historical records (rationale, not authority). |
+| `docs/test-execution-policy.md` | How and when the test suites run. |
 | `python/` | Python core distribution (`verifiably-nodes`); imports are `nodes.core`. |
 | `ts/` | TypeScript core package (`@verifiably/nodes`), the domain-free kernel. |
 | `fixtures/` | Shared cross-language conformance oracles. |
@@ -102,6 +102,9 @@ deliberately does not do, and where it lives instead:
   When any document here disagrees with it, the standard wins.
 - [`python/README.md`](python/README.md), [`ts/README.md`](ts/README.md) — each
   package's own guide.
+
+Task records and the dated design and plan records (rationale, not authority) live in
+the project's records directory, outside this repository.
 
 ## License
 

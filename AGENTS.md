@@ -45,8 +45,10 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
 ## Layout
 
 - `python/`, `ts/` — the two packages; `fixtures/` — the shared conformance oracles.
-- `docs/STANDARD.md` — the authority; `docs/designs/`, `docs/plans/` — dated records,
-  rationale only.
+- `docs/STANDARD.md` — the authority; `docs/test-execution-policy.md` — the test policy.
+  Task records and dated design and plan records (rationale only) live in nodes's
+  records directory, committed in the records repository; new specs, plans, briefs and
+  handoffs go there too.
 
 ## Rules
 

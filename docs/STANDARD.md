@@ -5,8 +5,8 @@
 - **Implementations:** Python (`python/src/nodes/`), TypeScript (`ts/src/`).
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are to be interpreted as
-described in RFC 2119. Where a historical document in `docs/designs/` or `docs/plans/`
-disagrees with this standard, this standard wins.
+described in RFC 2119. Where a historical design or plan record (kept with the project's
+task records) disagrees with this standard, this standard wins.
 
 ## 1. Scope & conformance
 
