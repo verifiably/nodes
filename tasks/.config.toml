@@ -1,5 +1,0 @@
-prefix = "nodes"
-color = "#859982"
-
-[git]
-commit = true
