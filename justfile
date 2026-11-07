@@ -3,7 +3,8 @@
 # governs broad execution; hygiene always runs. Hook timers measure hygiene only. Fresh clone:
 # `git config core.hooksPath .githooks`.
 # Every recipe runs through the vendored timing wrapper tools/tt (source of truth: ops
-# bin/tt) so the run is recorded. Design: ops docs/specs/2026-09-04-test-ci-audit-design.md.
+# bin/tt) so the run is recorded. Reference: ops docs/tooling.md (vendoring and adoption)
+# and ops docs/test-execution-policy.md (run records).
 
 set quiet
 set positional-arguments
