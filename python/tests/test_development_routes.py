@@ -41,6 +41,11 @@ if name == "ssh":
     print("serveraliveinterval " + os.environ.get("SSH_INTERVAL", "60"))
 if name == "uv" and "-v" in args and "--testmon" in args:
     print("testmon: new DB, environment: default\n1 passed in 0.01s")
+for arg in args:
+    if arg.startswith("--junitxml="):
+        pathlib.Path(arg.split("=", 1)[1]).write_text('<testsuite><testcase classname="py.mod" name="t" time="0.123"/></testsuite>')
+    elif arg.startswith("--outputFile.junit="):
+        pathlib.Path(arg.split("=", 1)[1]).write_text('<testsuite><testcase classname="ts/mod.test.ts" name="t" time="0.456"/></testsuite>')
 if "--return-seven" in args:
     sys.exit(7)
 '''
@@ -102,14 +107,21 @@ def checkout(tmp_path):
     return Checkout(tmp_path)
 
 
-@pytest.mark.parametrize("language,runner,prefix", [("python", "uv", ["run", "--frozen", "pytest"]),
-                                                    ("ts", "npm", ["test", "--"])])
-def test_focused_argv(checkout, language, runner, prefix):
+@pytest.mark.parametrize("language,runner,prefix,junit_flag,expected_test", [
+    ("python", "uv", ["run", "--frozen", "pytest"], "--junitxml=", "py.mod › t"),
+    ("ts", "npm", ["test", "--", "--reporter=default", "--reporter=junit"], "--outputFile.junit=", "ts/mod.test.ts › t"),
+])
+def test_focused_argv(checkout, language, runner, prefix, junit_flag, expected_test):
     args = ["tests/a space's.test", "-k", "$(touch INJECTED) $HOME *", "--return-seven"]
     result = checkout.just("test-one", language, *args)
     assert result.returncode == 7, result.stderr
     event = checkout.events()[0]
-    assert event[:3] == [runner, prefix + args, str(checkout.root / ("python" if language == "python" else "ts"))]
+    assert event[0] == runner
+    assert event[1][:len(prefix)] == prefix
+    assert event[1][len(prefix)].startswith(junit_flag) and event[1][len(prefix)].endswith(".xml")
+    assert event[1][len(prefix) + 1:] == args
+    assert event[2] == str(checkout.root / ("python" if language == "python" else "ts"))
+    assert checkout.rows()[-1]["slowest"] == [{"test": expected_test, "seconds": 0.123 if language == "python" else 0.456}]
     assert not (checkout.root / "INJECTED").exists()
 
 
@@ -297,4 +309,17 @@ def test_test_fast_records_testmon_selection(checkout):
     assert result.returncode == 0, result.stderr
     uv_args = checkout.events()[0][1]
     assert uv_args[:5] == ["run", "--frozen", "pytest", "-v", "--testmon"]
-    assert checkout.rows()[-1]["selection"] == "new-db"
+    assert uv_args[5].startswith("--junitxml=") and uv_args[5].endswith("/pytest.xml")
+    row = checkout.rows()[-1]
+    assert row["selection"] == "new-db"
+    assert row["slowest"] == [{"test": "ts/mod.test.ts › t", "seconds": 0.456},
+                             {"test": "py.mod › t", "seconds": 0.123}]
+
+
+@pytest.mark.parametrize("var", ["py_fast_cmd", "py_test_cmd", "ts_fast_cmd", "ts_test_cmd"])
+def test_junit_guard_requires_tt(checkout, var):
+    cmd = checkout.just("--evaluate", var).stdout.strip()
+    result = checkout.run("sh", "-c", cmd)
+    assert result.returncode != 0
+    assert "TT_JUNIT_DIR: run through tt" in result.stderr
+    assert checkout.events() == []

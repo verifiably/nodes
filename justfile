@@ -17,12 +17,12 @@ tt := "python3 tools/tt"
 # and a second `-q` is `-qq`, which drops the summary line the wrapper counts tests from.
 # py_fast_cmd passes `-v` to cancel that `-q` (verbosity 0): testmon's header is part of
 # the pytest report header, which `-q` suppresses.
-py_fast_cmd := "(cd python && uv run --frozen pytest -v --testmon)"
-py_test_cmd := "(cd python && uv run --frozen pytest)"
+py_fast_cmd := "(cd python && uv run --frozen pytest -v --testmon --junitxml=\"${TT_JUNIT_DIR:?run through tt}/pytest.xml\")"
+py_test_cmd := "(cd python && uv run --frozen pytest --junitxml=\"${TT_JUNIT_DIR:?run through tt}/pytest.xml\")"
 py_check_cmd := "(cd python && uv run --frozen ruff check . && uv run --frozen pyright src)"
 
-ts_fast_cmd := "(cd ts && npm test -- --changed --passWithNoTests)"
-ts_test_cmd := "(cd ts && npm test)"
+ts_fast_cmd := "(cd ts && npm test -- --changed --passWithNoTests --reporter=default --reporter=junit --outputFile.junit=\"${TT_JUNIT_DIR:?run through tt}/vitest.xml\")"
+ts_test_cmd := "(cd ts && npm test -- --reporter=default --reporter=junit --outputFile.junit=\"${TT_JUNIT_DIR:?run through tt}/vitest.xml\")"
 ts_check_cmd := "(cd ts && npm run typecheck && npm run check)"
 
 fast_cmd := py_fast_cmd + " && " + ts_fast_cmd
@@ -40,7 +40,7 @@ test-fast:
 
 # Selectors are relative to the chosen package; argv never enters shell source.
 test-one language +args:
-    {{tt}} test-one -- sh -c 'case "$1" in python) shift; cd python && exec uv run --frozen pytest "$@";; ts) shift; cd ts && exec npm test -- "$@";; *) echo "test-one: expected python or ts" >&2; exit 2;; esac' test-one "$@"
+    {{tt}} test-one -- sh -c 'case "$1" in python) shift; cd python && exec uv run --frozen pytest --junitxml="${TT_JUNIT_DIR:?run through tt}/pytest.xml" "$@";; ts) shift; cd ts && exec npm test -- --reporter=default --reporter=junit --outputFile.junit="${TT_JUNIT_DIR:?run through tt}/vitest.xml" "$@";; *) echo "test-one: expected python or ts" >&2; exit 2;; esac' test-one "$@"
 
 setup:
     {{tt}} setup -- sh tools/setup
