@@ -13,9 +13,11 @@ tt := "python3 tools/tt"
 # Two packages, so each command is written once per package and the whole-repo commands
 # below are composed from them. Recipes, hooks, and CI all run these, so none of the
 # three can drift from the others. Each is a subshell: `cd` must not leak to the next.
-# `pytest` is bare on purpose — pyproject's addopts already carries `-q`, and a second
-# `-q` is `-qq`, which drops the summary line the wrapper counts tests from.
-py_fast_cmd := "(cd python && uv run --frozen pytest --testmon)"
+# py_test_cmd leaves `pytest` bare on purpose — pyproject's addopts already carries `-q`,
+# and a second `-q` is `-qq`, which drops the summary line the wrapper counts tests from.
+# py_fast_cmd passes `-v` to cancel that `-q` (verbosity 0): testmon's header is part of
+# the pytest report header, which `-q` suppresses.
+py_fast_cmd := "(cd python && uv run --frozen pytest -v --testmon)"
 py_test_cmd := "(cd python && uv run --frozen pytest)"
 py_check_cmd := "(cd python && uv run --frozen ruff check . && uv run --frozen pyright src)"
 

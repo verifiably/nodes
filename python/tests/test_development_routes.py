@@ -39,6 +39,8 @@ if name == "npm" and args == ["run", "build"]:
     (root / "ts/dist").mkdir(exist_ok=True)
 if name == "ssh":
     print("serveraliveinterval " + os.environ.get("SSH_INTERVAL", "60"))
+if name == "uv" and "-v" in args and "--testmon" in args:
+    print("testmon: new DB, environment: default\n1 passed in 0.01s")
 if "--return-seven" in args:
     sys.exit(7)
 '''
@@ -288,3 +290,11 @@ def test_hook_clears_git_local_environment(checkout):
     result = checkout.run("sh", ".githooks/pre-push", "origin", "git@example.invalid:repo", stdin="bad\n")
     assert result.returncode == 0, result.stderr
     assert checkout.events() and all(e[3] is None for e in checkout.events() if e[0] != "ssh")
+
+
+def test_test_fast_records_testmon_selection(checkout):
+    result = checkout.just("test-fast")
+    assert result.returncode == 0, result.stderr
+    uv_args = checkout.events()[0][1]
+    assert uv_args[:5] == ["run", "--frozen", "pytest", "-v", "--testmon"]
+    assert checkout.rows()[-1]["selection"] == "new-db"
