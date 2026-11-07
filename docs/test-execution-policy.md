@@ -88,7 +88,8 @@ revision as source-derived reasons, never claim they were runtime messages.
 
 Branch CI and a manual Release run accepted the same enabled snapshot, with
 813 Python tests in 52 modules per Python job and 593 TypeScript tests in
-51 modules per Node job, with zero skips or omitted modules. Exact revisions,+runs and subsequent activation results belong in the activation packet.
+51 modules per Node job, with zero skips or omitted modules. Exact revisions,
+runs and subsequent activation results belong in the activation packet.
 
 ## Activation and rollback
 
