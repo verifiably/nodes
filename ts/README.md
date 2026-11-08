@@ -18,8 +18,8 @@ embedding `similar`/`queryVector`/`similarText`, snapshot persistence (`flushInd
 and corpus checking (`check`). TS-only conveniences (tier 3): `idsByKind`/`allByKind`
 and corpus stat fingerprints.
 
-The portable contract this kernel implements is specified in `../docs/STANDARD.md`
-(spec version 1.2); parity with Python is pinned by the shared `../fixtures/` oracles.
+The portable contract this kernel implements is specified in `../docs/STANDARD.md`,
+which states its current version; parity with Python is pinned by the shared `../fixtures/` oracles.
 
 ## Conventions
 

@@ -1,4 +1,4 @@
-"""Pins the PEP 420 layout (layout design §5).
+"""Pins the PEP 420 layout (`nodes` is a native namespace; see python/README.md).
 
 `nodes` is a native namespace package shared by family distributions;
 `nodes.core` is the regular package this distribution owns. A regular

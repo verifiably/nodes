@@ -29,32 +29,28 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
   `TT_FORCE=1`; hosted broad verification requires that explicit setting.
 - Every executed check goes through `tools/tt`; do not call pytest, npm test,
   Ruff, Pyright, tsc or Biome directly. Composing aliases add no timer.
-- Git hooks retain hygiene and request broad children separately. Hook timing now
-  measures hygiene only; the old hook and check timing series do not continue.
-  Fresh clones install hooks with `git config core.hooksPath .githooks`.
+- Git hooks retain hygiene and request broad children separately. Fresh clones
+  install hooks with `git config core.hooksPath .githooks`.
 - CI keeps Python 3.11/3.13 and Node 20/24, sets `TT_FORCE=1` explicitly and
   retains per-job JUnit/module inventory artifacts for 30 days. Its validated
   configuration covers branch pushes and fork PRs, with reusable Release calls.
-  Origin coverage is declared for `refs/heads/*` and Release's `refs/tags/v*`.
-  Branch CI and a manual Release run validated the callable path; actual tag
-  execution remains untested. Results are in the activation packet.
+  Origin coverage is declared for `refs/heads/*` and Release's `refs/tags/v*`;
+  actual tag execution remains untested.
 - Before removing a worktree, run `tt-report` in ops to harvest fallback timings.
-- See `docs/test-execution-policy.md` for setup location handling, force commands,
-  coverage, activation evidence and rollback limits.
+- See `docs/test-execution-policy.md` for setup location handling, the route without
+  the maintainers' host tools, force commands, hosted coverage and rollback.
 
 ## Layout
 
 - `python/`, `ts/` — the two packages; `fixtures/` — the shared conformance oracles.
 - `docs/STANDARD.md` — the authority; `docs/test-execution-policy.md` — the test policy.
-  Task records and dated design and plan records (rationale only) live in nodes's
-  records directory, committed in the records repository; new specs, plans, briefs and
-  handoffs go there too.
+- Task records and design, plan and handoff records live outside this repository;
+  new ones go there too, never into this tree.
 
 ## Rules
 
-- Authority order: `docs/STANDARD.md`, then the code and its tests, then the dated
-  records. When anything disagrees with the standard, it wins, or it has a bug: fix it
-  in the same change. Do not execute old plans or treat their snippets as current.
+- Authority order: `docs/STANDARD.md`, then the code and its tests. When anything
+  disagrees with the standard, it wins, or it has a bug: fix it in the same change.
 - Layering is enforced: `nodes.core` imports nothing above it and names zero knowledge
   kinds; domain kinds live downstream, registered onto the kernel's `Registry`.
 - Decide the parity tier before any feature (`docs/STANDARD.md` §1): tier 1 (format,

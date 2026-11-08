@@ -1,4 +1,4 @@
-"""Test-support profile for the shared conformance fixtures (design §3.2).
+"""Test-support profile for the shared conformance fixtures (docs/STANDARD.md §11).
 
 Registers the kinds the fixture corpora use; not shipped API. `zzz` stays
 unregistered on purpose — the check oracle pins `unknown-kind` for it.

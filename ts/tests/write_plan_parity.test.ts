@@ -17,8 +17,9 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-/** Plan-equality projection (design §2): op kinds, paths, and expected_digest
- * compare position-wise; content compares as its canonical JSON projection. */
+/** Plan-equality projection (docs/STANDARD.md §11; fixture
+ * write-plan.rename.canonical.json): op kinds, paths, and expected_digest compare
+ * position-wise; content compares as its canonical JSON projection. */
 function projectPlan(plan: WritePlan): unknown[] {
   return plan.map((op) => {
     const row: Record<string, unknown> = { op: op.op, path: op.path };

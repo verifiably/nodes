@@ -3,7 +3,7 @@ import { FacetError, InvariantError } from "../src/errors.js";
 import type { Node } from "../src/node.js";
 import type { Registry } from "../src/registry.js";
 
-/** Test-support profile for the shared conformance fixtures (design §3.2).
+/** Test-support profile for the shared conformance fixtures (docs/STANDARD.md §11).
  *  Registers the kinds the fixture corpora use; not shipped API. */
 
 export const SOURCE = "source";

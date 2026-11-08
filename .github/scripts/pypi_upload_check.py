@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hash-verified PyPI pre/post-upload check (first-publish design, 3).
+"""Hash-verified PyPI pre/post-upload check for the release workflow.
 
 pre:  every file PyPI already has for this version must be one of ours with a
       matching SHA-256 (an absent project/version is the expected empty set on

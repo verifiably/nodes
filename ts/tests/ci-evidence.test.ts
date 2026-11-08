@@ -91,7 +91,8 @@ it("retains actual Vitest module and skip evidence after tt exits", async () => 
     expect(xml.match(/<skipped\b/g)).toHaveLength(2);
     expect(xml).toContain("some.test.js");
     expect(xml).toContain("whole.test.js");
-    // Vitest omits runtime reasons: the packet must label guard-derived reasons.
+    // Vitest omits runtime reasons: a reviewer must label guard-derived reasons from
+    // the source revision.
     const skippedNames = [...xml.matchAll(/<testcase\b[^>]*\bname="([^"]+)"[^>]*>([\s\S]*?)<\/testcase>/g)]
       .filter((match) => match[2].includes("<skipped"))
       .map((match) => match[1])

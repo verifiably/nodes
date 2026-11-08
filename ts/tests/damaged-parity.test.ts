@@ -1,5 +1,6 @@
-/** Collecting construction over the committed damaged corpus, and the interactions the
- * design pins around it (reopen stability, repair, mutation refusals, eviction). */
+/** Collecting construction over the committed damaged corpus, and the interactions
+ * docs/STANDARD.md §1 and §8.2 pin around it (reopen stability, repair, mutation
+ * refusals, eviction). */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";

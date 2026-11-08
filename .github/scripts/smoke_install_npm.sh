@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install the tarball into a scratch project and import it
-# (first-publish design, 2.4 verify-artifacts).
+# (release workflow's verify-artifacts job).
 set -euo pipefail
 
 TARBALL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"

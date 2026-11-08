@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assert npm tarball contents (first-publish design, 2.4 verify-artifacts).
+"""Assert npm tarball contents (release workflow's verify-artifacts job).
 
 dist/vocab/ is explicitly forbidden: the retired vocab compiled outputs
 survived in an unclean workstation dist/ once already, and tsc never deletes

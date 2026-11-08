@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assert wheel + sdist contents and metadata (first-publish design, 2.4 verify-artifacts)."""
+"""Assert wheel + sdist contents and metadata (release workflow's verify-artifacts job)."""
 
 import glob
 import os

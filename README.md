@@ -24,6 +24,12 @@ pip install verifiably-nodes
 npm install @verifiably/nodes
 ```
 
+The published packages are version 0.2.0 and implement standard 2.0. `main`
+implements [standard](docs/STANDARD.md) 3.0 and is unreleased, so APIs added since
+0.2.0 need a checkout of this repository, prepared as the
+[test guide](docs/test-execution-policy.md#without-the-maintainers-host-tools)
+describes.
+
 ## Usage
 
 A corpus is a directory; add a node, and a fresh `Corpus` over the same directory reads
@@ -53,8 +59,9 @@ new Corpus(root).add(makeNode({ id: "topic:a", kind: "topic", title: "A", body: 
 console.log(new Corpus(root).get("topic:a").title); // A
 ```
 
-`Corpus.read_and_check()` returns every node with the findings of a structural check;
-inspect the findings before trusting the nodes.
+On `main` (Python only, not yet released), `Corpus.read_and_check()` returns every
+node with the findings of a structural check; inspect the findings before trusting
+the nodes.
 
 ### The model
 
@@ -102,9 +109,6 @@ deliberately does not do, and where it lives instead:
   When any document here disagrees with it, the standard wins.
 - [`python/README.md`](python/README.md), [`ts/README.md`](ts/README.md) — each
   package's own guide.
-
-Task records and the dated design and plan records (rationale, not authority) live in
-the project's records directory, outside this repository.
 
 ## License
 

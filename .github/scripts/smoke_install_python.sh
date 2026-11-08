@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install wheel and sdist independently into scratch envs; run namespace checks
-# (first-publish design, 2.4: installing the sdist proves it rebuilds).
+# (release workflow's verify-artifacts job; installing the sdist proves it rebuilds).
 set -euo pipefail
 
 DIST="$1"

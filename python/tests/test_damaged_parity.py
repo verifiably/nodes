@@ -1,5 +1,6 @@
 """Collecting construction over the committed damaged corpus, and the interactions
-the design pins around it (reopen stability, repair, mutation refusals, eviction)."""
+docs/STANDARD.md §1 and §8.2 pin around it (reopen stability, repair, mutation
+refusals, eviction)."""
 
 from __future__ import annotations
 

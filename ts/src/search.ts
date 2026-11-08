@@ -44,7 +44,7 @@ export const STOP_WORDS: ReadonlySet<string> = new Set([
 const TOKEN_RE = /[\p{L}\p{N}]+/gu;
 
 /** Compare by Unicode code point. Array.from iterates by code point (surrogate-pair aware),
- * so this is the explicit comparator the spec requires instead of default UTF-16 sort.
+ * so this is the explicit comparator the standard requires instead of default UTF-16 sort.
  * Shared ordering contract: query terms (STANDARD §9.1) and check violations/findings (§8). */
 export function compareCodepoints(a: string, b: string): number {
   const ca = Array.from(a);

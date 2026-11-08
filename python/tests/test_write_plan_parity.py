@@ -16,8 +16,9 @@ ORACLE = FIXTURES / "write-plan.rename.canonical.json"
 
 
 def project_plan(plan: WritePlan) -> list[dict]:
-    """Plan-equality projection (design §2): op kinds, paths, and expected_digest
-    compare position-wise; content compares as its canonical JSON projection."""
+    """Plan-equality projection (docs/STANDARD.md §11; fixture
+    write-plan.rename.canonical.json): op kinds, paths, and expected_digest compare
+    position-wise; content compares as its canonical JSON projection."""
     rows: list[dict] = []
     for op in plan:
         row: dict = {"op": op.op, "path": op.path}
