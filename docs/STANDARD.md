@@ -92,8 +92,7 @@ behaviour depends on a name's content beyond equality and ordering, and in
 particular no namespace token (the part before a `/`) selects a kernel code
 path. Caller-supplied invariants (§6) MAY read any facet by name — that is the
 consumer's domain validation, not the kernel's. Consumers check this property
-from outside; Science's D1 negative mutates a scratch copy of the installed
-package and never this tree.
+from outside, against a scratch copy of the installed package, never this tree.
 
 ## 3. Identity, references & rename
 

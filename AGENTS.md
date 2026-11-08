@@ -36,7 +36,6 @@ Member of the verifiably family (https://github.com/verifiably/docs/blob/main/ov
   configuration covers branch pushes and fork PRs, with reusable Release calls.
   Origin coverage is declared for `refs/heads/*` and Release's `refs/tags/v*`;
   actual tag execution remains untested.
-- Before removing a worktree, run `tt-report` in ops to harvest fallback timings.
 - See `docs/test-execution-policy.md` for setup location handling, the route without
   the maintainers' host tools, force commands, hosted coverage and rollback.
 
