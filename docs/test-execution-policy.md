@@ -1,6 +1,9 @@
 # Test execution policy
 
-Type: reference
+Type: development guide; document types 1. How nodes runs its checks: setup,
+the focused, fast and full test routes, hygiene versus broad checks, Git hooks,
+hosted CI and its evidence artifacts, and rollback. [`AGENTS.md`](../AGENTS.md)
+summarizes the gates and the [`justfile`](../justfile) defines every recipe.
 
 Development commands run from any directory through the root justfile. Their
 execution decisions come from the invoking Git top level's `.tt.toml`, validated
@@ -31,7 +34,23 @@ an empty affected selection is not a successful full-suite verification.
 with `TT_FORCE=1`; only the inner suite produces a timing record. Use
 `TT_FORCE=1 just check-code` for deliberate broad static verification.
 
-## Hygiene, hooks and timing
+## Without the maintainers' host tools
+
+`just setup` calls the maintainers' `work-link` and `just check-hygiene` calls
+`tasks`; neither is published with this repository, so both recipes fail without
+them. Contributors prepare each package as CI does instead, with `uv`, Node.js,
+npm and `just` on `PATH`:
+
+```sh
+(cd python && uv sync --frozen)
+(cd ts && npm ci && npm run build)
+just test-one python tests/test_paths.py
+just test-one ts tests/paths.test.ts
+TT_FORCE=1 just test
+TT_FORCE=1 just check-code
+```
+
+## Hygiene, hooks and policy skips
 
 `just check-hygiene` always runs ops-check, generated-document validation and
 tasks check. `just check-code` runs Ruff, Pyright, tsc and Biome. `just check`
@@ -41,25 +60,18 @@ Pre-commit times hygiene under its hook target, then requests check-code.
 Pre-push preserves SSH keepalive and ref handling, clears Git-local environment
 variables, times hygiene, then requests check-code and the suite. A push to
 validated covered refs may use the existing fast selectors instead.
-A policy-off uncovered push warns
-and retains hygiene; it does not restore a local broad suite.
+A policy-off uncovered push warns and retains hygiene; it does not restore a
+local broad suite. Hook timers measure hygiene only; child timings describe
+broad work separately.
 
 With an approved `automatic_broad=false` policy, broad test and code-check requests
 record explicit skipped decisions with null outcomes. Protected focused/setup/
 hygiene commands still run. Skips are not passing suites or latency samples.
 Missing or invalid policy never means disabled. Hosted broad calls without
-explicit `TT_FORCE=1` fail instead of silently skipping.
+explicit `TT_FORCE=1` fail instead of silently skipping. Under policy-off,
+routine lint and type errors may surface only in the next completed CI run.
 
-The old whole-hook timing series ends at hook-split integration. Hook timers now
-measure hygiene only; child timings describe broad work separately. The old
-`check` series also ends, replaced by check-hygiene and check-code. Do not splice
-those series or add their medians as though they measured the old invocation.
-Historical local medians were about 4.8 seconds for test, 6.6 for check, 7.3 for
-commit hooks and 12.9 for push hooks. Expected savings are modest and unmeasured;
-routine lint/type errors under policy-off may wait until a completed pushed CI
-run, with further delay during queues, cancellation or outages.
-
-## Hosted verification and evidence
+## Hosted verification
 
 The CI workflow retains Python 3.11/3.13 and Node 20/24 on standard
 Ubuntu runners. It covers every branch push, including names with slashes,
@@ -72,8 +84,7 @@ Each verification job has a 15-minute timeout and explicitly sets TT_FORCE=1,
 including the jobs invoked by Release. Complete package suites and static checks
 run through ci-python/ci-typescript. These recipes require an absolute
 NODES_CI_EVIDENCE_DIR; they add reporting flags without selecting tests. Local
-commands retain their original selections. The Python suite needs no Node install;
-the actual Vitest reporter pilot belongs to the TS suite.
+commands retain their original selections. The Python suite needs no Node install.
 
 JUnit reports and module inventories live under RUNNER_TEMP outside tt's temporary
 JUnit directory. Each matrix job uploads a unique coverage artifact retained for
@@ -85,31 +96,16 @@ inventory; list excluded or unexplained absent modules, partially/wholly skipped
 modules and reasons. A missing/unknown case blocks acceptance. Pytest includes
 runtime skip reasons; Vitest may not, so annotate guards from the exact source
 revision as source-derived reasons, never claim they were runtime messages.
-
-Branch CI and a manual Release run accepted the same enabled snapshot, with
-813 Python tests in 52 modules per Python job and 593 TypeScript tests in
-51 modules per Node job, with zero skips or omitted modules. Exact revisions,
-runs and subsequent activation results belong in the activation packet.
-
-## Activation and rollback
-
-Policy-off activation requires a reviewed packet and explicit external approval,
-then accepted hosted coverage at the reviewed SHA before committing `.tt.toml`.
-The packet names setup, actual test/skip/module counts, unsupported capabilities,
-public/private status, applicable billing controls, refs, run limits and rollback.
 Neither a workflow trigger nor a green job alone proves equivalent coverage.
 
 The broad target list is test, test-fast, check-code, ci-python and ci-typescript.
-Origin coverage includes all branches and Release's `v*` tags, supported by branch
-CI, the approved manual Release run and local event/concurrency checks. Both
-publish jobs skipped in that dispatch. Manual npm dry-runs use --force to rehearse
-already-published versions; tag dry-runs and real publication retain registry
-eligibility checks. Actual tag-trigger execution and manual-path registry
-eligibility remain untested. No real release tag is used for this adoption check.
+Origin coverage includes all branches and Release's `v*` tags. Manual npm dry-runs
+use --force to rehearse already-published versions; tag dry-runs and real
+publication retain registry eligibility checks. Actual tag-trigger execution and
+manual-path registry eligibility remain untested.
 
-Rollback enables automatic broad work, restores its local cadence and records
-`policy: enabled at <RFC3339-UTC> revision <full-sha>` on nodes-6fde14 at the actual
-landed time/revision. Publishing rollback is another gated external action.
-Disabled timing obligations are explicitly policy-retired, never called
-performance-verified; unrelated halts and remaining diagnosis stay intact.
-The shared regret review is ops-56aab7, due 2026-11-28.
+## Rollback
+
+Set `automatic_broad = true` in `.tt.toml`, or remove the file, to restore local
+broad runs and their hook cadence. Publishing a rollback is a separate, gated
+action.

@@ -9,3 +9,6 @@ Entities as markdown files, typed relations, structural shapes and rebuildable d
 """
 authority = ["docs/STANDARD.md"]
 subsystems = []
+
+[documents]
+standard = 1

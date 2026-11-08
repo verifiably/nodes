@@ -1,12 +1,17 @@
 # The nodes Standard
 
-- **Spec version:** 3.0
-- **Status:** Living standard — the authoritative definition of the portable `nodes` contract.
-- **Implementations:** Python (`python/src/nodes/`), TypeScript (`ts/src/`).
+Type: standard; document types 1. This is version 3.0 of the portable `nodes`
+standard, a living standard for the Python (`python/src/nodes/`) and TypeScript
+(`ts/src/`) implementations in this repository. It covers the data model, identity,
+the on-disk format, structural shapes, validation, corpus semantics and checking,
+the derived indexes and their persistence, and the shared conformance fixtures.
+[README](../README.md) gives an overview and examples;
+[`python/README.md`](../python/README.md) and [`ts/README.md`](../ts/README.md) are
+the package guides. §12 states the change policy and [Versions](#versions) the history.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are to be interpreted as
-described in RFC 2119. Where a historical design or plan record (kept with the project's
-task records) disagrees with this standard, this standard wins.
+described in RFC 2119. Where any other document disagrees with this standard, this
+standard wins.
 
 ## 1. Scope & conformance
 
@@ -329,7 +334,7 @@ and dangling tracking but are not relation-graph edges.
   containment (§4.1) over the whole plan before any effect, refusing with
   `ExecutionError` whose `index` is the offending operation and `applied = 0`; a durable
   executor keeps its own pre-effect refusal contract (`ExecutionError(index=None,
-  applied=0)` for a topology or resolution refusal, per the seam design §3). Any
+  applied=0)` for a topology or resolution refusal). Any
   executor refuses a plan naming a non-portable path as malformed
   (`PlanRefusedError`).
 - `get(ref)` / `resolve(ref)`: resolve via the index (live then deprecated), read the
@@ -557,47 +562,16 @@ fingerprint nor the path-keyed snapshot manifest (§10) may be extended toward t
 
 ## 12. Versioning & change policy
 
-- This standard carries a spec version (header). **Minor** bumps are
-  backward-compatible: additive changes (new optional fields, new finding codes, new
-  fixtures), or removals and relaxations that break neither reading/writing existing
+- This standard carries a spec version (stated in the opening paragraph). **Minor**
+  bumps are backward-compatible: additive changes (new optional fields, new finding
+  codes, new fixtures), or removals and relaxations that break neither reading/writing existing
   corpora nor pinned tier-2 behavior. **Major** bumps break reading or writing
   existing corpora, or change pinned tier-2 behavior.
 - Any tier-1/tier-2 change MUST update this document and the affected fixtures in the
   same change. Tier-3 additions do not touch this document.
 - Projection versions are stable: changing a projection's value or canonical text is a
   major bump of that projection version.
-- History: **1.0** (2026-07-10) — initial consolidation; adds §8 corpus validity.
-  **1.1** (2026-07-11) — membership traversal (§7); `dangling-member` finding (§8.2).
-  **1.2** (2026-07-12) — knowledge vocab retired from the shipped surface
-  (base-vocabulary boundary design); §2.3 source-facet rule removed; minor bumps
-  redefined to cover backward-compatible removals.
-  **2.0** (2026-09-12) — major because the pinned transitive traversal surface
-  (`descendants`, `ancestors`, `dangling()`) is withdrawn and its `traversal.oracle.json`
-  rows deleted, leaving the five one-hop methods (§7). Landed with it: construction
-  modes and the parse floor (§1, §4.2, `frontmatter.malformed.json`); the reserved
-  namespace, non-Markdown preservation, containment, and portable-path rules (§4.1,
-  §10, `containment.oracle.json`); well-placedness, the collision key, mapped-path
-  admission, and the `path-collision` finding (§3, §4.1, §8.2,
-  `path-collision.oracle.json`); `PlacementError` and the collecting-mode findings
-  (§6, §8.2, `damaged.oracle.json`); non-empty opaque uids (§2.1, `uid.oracle.json`);
-  code-point collation of query results and referrer replaces (§3, §7,
-  `write-plan.rename.canonical.json`); the executor's attribution of the single-writer
-  obligation and rename's crash state (§3, §7, from the write-plan/executor seam design
-  §7); per-language snapshot schema versions bumped (§10); the identity boundary
-  (§11.1); the `biology/gene-axis` facet-name fixture (§11.2). *Corrected the same
-  day, before any consumer read it:* the plan-path suffix rule was withdrawn when
-  Beliefs' landed executor — which takes `validate_plan` as its one lexical authority —
-  was shown to write its manifests, registry and epoch records through the seam; §4.1's
-  non-Markdown guarantee is stated over nodes' own derived effects.
-  **3.0** (2026-10-15) — major because the parse floor now refuses documents both
-  kernels read under 2.0 (§4.2, `frontmatter.malformed.json`): a lone surrogate escape
-  (`"\uD800"`, which neither `projection.v1` could represent) and a frontmatter line
-  beginning with U+FEFF; an escaped surrogate pair, which the two languages read as
-  different values, is refused too, and both writers refuse a surrogate. Python also
-  refuses a block scalar whose first non-empty content line has a tab in its leading
-  whitespace, which the TypeScript writer emitted for such strings and now writes
-  double-quoted, JSON-style. Relaxed in the same change: a tab may separate tokens on a
-  line, as TypeScript already allowed. Python parses with libyaml.
+- Every version, with its date and changes, is listed under [Versions](#versions).
 
 ## 13. Known limitations
 
@@ -619,3 +593,44 @@ fingerprint nor the path-keyed snapshot manifest (§10) may be extended toward t
 - Collecting construction excludes and reports (§1, §8.2); it never repairs.
 - In-memory indexes and brute-force cosine target personal-corpus scale (order of
   10⁴–10⁵ nodes), not bulk graph workloads.
+
+## Versions
+
+- **1.0 — 2026-07-10:** initial consolidation; adds §8 corpus validity.
+- **1.1 — 2026-07-11:** membership traversal (§7); `dangling-member` finding (§8.2).
+- **1.2 — 2026-07-12:** knowledge vocab retired from the shipped surface; §2.3
+  source-facet rule removed; minor bumps redefined to cover backward-compatible
+  removals.
+- **2.0 — 2026-09-12:** major because the pinned transitive traversal surface
+  (`descendants`, `ancestors`, `dangling()`) is withdrawn and its
+  `traversal.oracle.json` rows deleted, leaving the five one-hop methods (§7). Landed
+  with it: construction modes and the parse floor (§1, §4.2,
+  `frontmatter.malformed.json`); the reserved namespace, non-Markdown preservation,
+  containment, and portable-path rules (§4.1, §10, `containment.oracle.json`);
+  well-placedness, the collision key, mapped-path admission, and the `path-collision`
+  finding (§3, §4.1, §8.2, `path-collision.oracle.json`); `PlacementError` and the
+  collecting-mode findings (§6, §8.2, `damaged.oracle.json`); non-empty opaque uids
+  (§2.1, `uid.oracle.json`); code-point collation of query results and referrer replaces
+  (§3, §7, `write-plan.rename.canonical.json`); the executor's attribution of the
+  single-writer obligation and rename's crash state (§3, §7); per-language snapshot
+  schema versions bumped (§10); the identity boundary (§11.1); the `biology/gene-axis`
+  facet-name fixture (§11.2). *Corrected the same day, before any consumer read it:* the
+  plan-path suffix rule was withdrawn when Beliefs' landed executor — which takes
+  `validate_plan` as its one lexical authority — was shown to write its manifests,
+  registry and epoch records through the seam; §4.1's non-Markdown guarantee is stated
+  over nodes' own derived effects.
+- **2.1 — 2026-10-15:** the parse floor reads YAML as libyaml does (§4.2,
+  `frontmatter.malformed.json`): a tab before a plain scalar is accepted, as TypeScript
+  already did, and surrogate code points are malformed in both languages. Minor: the
+  documents it newly refuses were never portable — Python could not write a lone
+  surrogate back, and an escaped pair read as two different values across the languages.
+  Superseded the same day by 3.0; never released.
+- **3.0 — 2026-10-15:** major because the parse floor now refuses documents both kernels
+  read under 2.0 (§4.2, `frontmatter.malformed.json`): a lone surrogate escape
+  (`"\uD800"`, which neither `projection.v1` could represent) and a frontmatter line
+  beginning with U+FEFF; an escaped surrogate pair, which the two languages read as
+  different values, is refused too, and both writers refuse a surrogate. Python also
+  refuses a block scalar whose first non-empty content line has a tab in its leading
+  whitespace, which the TypeScript writer emitted for such strings and now writes
+  double-quoted, JSON-style. Relaxed in the same change: a tab may separate tokens on a
+  line, as TypeScript already allowed. Python parses with libyaml.
