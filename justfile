@@ -44,11 +44,11 @@ test-one language +args:
     {{tt}} test-one -- sh -c 'case "$1" in python) shift; cd python && exec uv run --frozen pytest --junitxml="${TT_JUNIT_DIR:?run through tt}/pytest.xml" "$@";; ts) shift; cd ts && exec npm test -- --reporter=default --reporter=junit --outputFile.junit="${TT_JUNIT_DIR:?run through tt}/vitest.xml" "$@";; *) echo "test-one: expected python or ts" >&2; exit 2;; esac' test-one "$@"
 
 # Run once after `git worktree add` and after a dependency change. The suite reads
-# only tracked fixtures under `fixtures/` (no gitignored inputs); `tools/setup`
+# only tracked fixtures under `fixtures/` (no gitignored inputs); `scripts/setup`
 # prepares managed Python storage, installs both frozen lockfiles, builds
 # TypeScript and restores Dropbox marks where required.
 setup:
-    {{tt}} setup -- sh tools/setup
+    {{tt}} setup -- sh scripts/setup
 
 # The full suite, both languages.
 test:

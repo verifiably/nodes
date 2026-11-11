@@ -55,9 +55,9 @@ class Checkout:
     def __init__(self, tmp: Path):
         self.root = tmp / "checkout"
         self.root.mkdir()
-        for directory in ("python", "ts", "tools", ".githooks", "bin", "home", "evidence"):
+        for directory in ("python", "ts", "tools", "scripts", ".githooks", "bin", "home", "evidence"):
             (self.root / directory).mkdir()
-        for path in ("justfile", "tools/tt", ".githooks/pre-push", "tools/setup"):
+        for path in ("justfile", "tools/tt", ".githooks/pre-push", "scripts/setup"):
             if (ROOT / path).exists():
                 shutil.copy(ROOT / path, self.root / path)
         self.env = {
@@ -174,7 +174,7 @@ def test_setup_failure_stops_installation(checkout, step):
 def test_setup_uses_physical_git_root_through_symlink(checkout, tmp_path):
     alias = tmp_path / "alias"
     alias.symlink_to(checkout.root, target_is_directory=True)
-    result = checkout.run("sh", "-c", 'cd "$1" && sh tools/setup', "fixture", str(alias))
+    result = checkout.run("sh", "-c", 'cd "$1" && sh scripts/setup', "fixture", str(alias))
     assert result.returncode == 0, result.stderr
     assert [e[0] for e in checkout.events()] == ["work-link", "uv", "npm", "npm"]
 
