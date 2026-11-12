@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   type CorpusFileStat,
@@ -149,6 +150,122 @@ describe("corpus stat fingerprints", () => {
     expect(sameCorpusFingerprint(base, changedMtime)).toBe(false);
     expect(sameCorpusFingerprint(base, changedSize)).toBe(false);
     expect(sameCorpusFingerprint(base, changedCount)).toBe(false);
+  });
+
+  it("traverses nested dirs, dot-dirs, and nested .nodes-index while skipping root .nodes-index", () => {
+    write(".nodes-index/ignored.md", "ignored");
+    write(".notes/hidden.md", "dotdir");
+    write("root.md", "root");
+    write("thought/.nodes-index/nested.md", "nested-reserved-name");
+    write("thought/sub/deep/leaf.md", "deep");
+    write("thought/sub/ignore.json", "{}");
+
+    const expectedPaths = [".notes/hidden.md", "root.md", "thought/.nodes-index/nested.md", "thought/sub/deep/leaf.md"];
+
+    expect(listCorpusFileStats(root).map((row) => row.path)).toEqual(expectedPaths);
+    expect(readCorpusFingerprint(root).files.map((row) => row.path)).toEqual(expectedPaths);
+    expect(iterCorpusFiles(root).map((row) => row.path)).toEqual(expectedPaths);
+  });
+
+  it("normalizes trailing path separators on root", () => {
+    write(".nodes-index/ignored.md", "ignored");
+    write("root.md", "R");
+    write("thought/nested.md", "NN");
+
+    const trailingSlash = `${root}/`;
+    const doubleSep = `${root}${sep}${sep}`;
+
+    expect(listCorpusFileStats(trailingSlash).map((row) => row.path)).toEqual(["root.md", "thought/nested.md"]);
+    expect(listCorpusFileStats(doubleSep).map((row) => row.path)).toEqual(["root.md", "thought/nested.md"]);
+    expect(sameCorpusFingerprint(readCorpusFingerprint(trailingSlash), readCorpusFingerprint(root))).toBe(true);
+    expect(iterCorpusFiles(trailingSlash)).toEqual(iterCorpusFiles(root));
+  });
+
+  it("resolves relative root paths including '.' and relative subdirectories", () => {
+    write("sub/corpus/.nodes-index/ignored.md", "ignored");
+    write("sub/corpus/a.md", "alpha");
+    write("sub/corpus/nested/b.md", "beta");
+
+    const prevCwd = process.cwd();
+    try {
+      process.chdir(root);
+      expect(listCorpusFileStats("sub/corpus").map((row) => row.path)).toEqual(["a.md", "nested/b.md"]);
+      expect(listCorpusFileStats("./sub/corpus/").map((row) => row.path)).toEqual(["a.md", "nested/b.md"]);
+      expect(readCorpusFingerprint("sub/corpus").files.map((row) => row.size)).toEqual([5, 4]);
+      expect(iterCorpusFiles("sub/corpus").map((row) => row.data.toString("utf-8"))).toEqual(["alpha", "beta"]);
+
+      process.chdir(join(root, "sub", "corpus"));
+      expect(listCorpusFileStats(".").map((row) => row.path)).toEqual(["a.md", "nested/b.md"]);
+      expect(listCorpusFileStats("./").map((row) => row.path)).toEqual(["a.md", "nested/b.md"]);
+      expect(readCorpusFingerprint(".").files.map((row) => row.size)).toEqual([5, 4]);
+      expect(iterCorpusFiles(".").map((row) => row.data.toString("utf-8"))).toEqual(["alpha", "beta"]);
+    } finally {
+      process.chdir(prevCwd);
+    }
+  });
+
+  it("skips symlinked markdown files and symlinked directories at nested depths across all readers", () => {
+    write("outside-target.md", "target");
+    write("real/doc.md", "doc");
+    try {
+      symlinkSync(join(root, "outside-target.md"), join(root, "linked-root.md"));
+      symlinkSync(join(root, "real"), join(root, "linked-dir"));
+      symlinkSync(join(root, "outside-target.md"), join(root, "real", "linked-nested.md"));
+      symlinkSync(root, join(root, "real", "cycle"));
+    } catch {
+      return;
+    }
+
+    expect(listCorpusFileStats(root).map((row) => row.path)).toEqual(["outside-target.md", "real/doc.md"]);
+    expect(readCorpusFingerprint(root).files.map((row) => row.path)).toEqual(["outside-target.md", "real/doc.md"]);
+    expect(iterCorpusFiles(root).map((row) => row.path)).toEqual(["outside-target.md", "real/doc.md"]);
+  });
+
+  it("sorts paths in Unicode codepoint order with ASCII uppercase before lowercase", () => {
+    write("thought/alpha.md", "lower-alpha");
+    write("thought/Alpha.md", "upper-alpha");
+    write("thought/a.md", "lower-a");
+    write("thought/Z.md", "upper-z");
+
+    const expectedOrder = ["thought/Alpha.md", "thought/Z.md", "thought/a.md", "thought/alpha.md"];
+
+    expect(listCorpusFileStats(root).map((row) => row.path)).toEqual(expectedOrder);
+    expect(readCorpusFingerprint(root).files.map((row) => row.path)).toEqual(expectedOrder);
+    expect(iterCorpusFiles(root).map((row) => row.path)).toEqual(expectedOrder);
+  });
+
+  it("preserves byte-for-byte parity across readCorpusFingerprint, listCorpusFileStats, and iterCorpusFiles", () => {
+    write(".nodes-index/ignored.md", "ignored");
+    write("empty.md", "");
+    write(".notes/utf8.md", "café\n");
+    write("thought/Alpha.md", "Alpha body");
+    write("thought/.nodes-index/nested.md", "nested");
+
+    const stats = listCorpusFileStats(root);
+    const fingerprint = readCorpusFingerprint(root);
+    const files = iterCorpusFiles(root);
+
+    const expectedRows = [
+      { path: ".notes/utf8.md", bytes: Buffer.from("café\n", "utf-8") },
+      { path: "empty.md", bytes: Buffer.alloc(0) },
+      { path: "thought/.nodes-index/nested.md", bytes: Buffer.from("nested", "utf-8") },
+      { path: "thought/Alpha.md", bytes: Buffer.from("Alpha body", "utf-8") },
+    ];
+
+    expect(fingerprint.files).toEqual(stats);
+    expect(stats.map((row) => ({ path: row.path, size: row.size }))).toEqual([
+      { path: ".notes/utf8.md", size: 6 },
+      { path: "empty.md", size: 0 },
+      { path: "thought/.nodes-index/nested.md", size: 6 },
+      { path: "thought/Alpha.md", size: 10 },
+    ]);
+    expect(files).toEqual(
+      expectedRows.map(({ path, bytes }) => ({
+        path,
+        data: bytes,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+      })),
+    );
   });
 
   it("CorpusFileStat is a plain structural shape", () => {

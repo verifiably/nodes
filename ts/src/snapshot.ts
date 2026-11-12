@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { type Dirent, readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join, sep } from "node:path";
 import { ContainmentError } from "./errors.js";
 import { RESERVED_NAMESPACE, isPortableRelativePath, pathForNodeId, readJson, writeJsonAtomic } from "./paths.js";
 import { SearchIndex, compareCodepoints } from "./search.js";
@@ -45,27 +45,30 @@ interface WalkedCorpusPath {
   readonly fullPath: string;
 }
 
-/** Root-relative POSIX path (forward slashes on every platform), the cross-language form. */
-function relPosix(root: string, full: string): string {
-  return relative(root, full).split(sep).join("/");
+function joinChild(dir: string, name: string): string {
+  return dir === "." ? name : dir.endsWith(sep) ? `${dir}${name}` : `${dir}${sep}${name}`;
 }
 
+/** Walk markdown files once, building root-relative POSIX `path` (forward slashes on every
+ * platform, the cross-language form) directly alongside host `fullPath`. */
 function listCorpusMarkdownPaths(root: string): WalkedCorpusPath[] {
+  const base = join(root, ".");
   const files: WalkedCorpusPath[] = [];
-  const walk = (dir: string, atRoot: boolean): void => {
+  const walk = (dir: string, relDir: string): void => {
     const entries: Dirent[] = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const full = join(dir, entry.name);
       if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) {
-        if (atRoot && entry.name === RESERVED_NAMESPACE) continue;
-        walk(full, false);
+        if (relDir === "" && entry.name === RESERVED_NAMESPACE) continue;
+        const nextRel = relDir === "" ? entry.name : `${relDir}/${entry.name}`;
+        walk(joinChild(dir, entry.name), nextRel);
       } else if (entry.isFile() && entry.name.endsWith(".md")) {
-        files.push({ path: relPosix(root, full), fullPath: full });
+        const path = relDir === "" ? entry.name : `${relDir}/${entry.name}`;
+        files.push({ path, fullPath: joinChild(dir, entry.name) });
       }
     }
   };
-  walk(root, true);
+  walk(base, "");
   files.sort((a, b) => compareCodepoints(a.path, b.path));
   return files;
 }
